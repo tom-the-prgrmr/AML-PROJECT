@@ -1,0 +1,69 @@
+# Each service sits behind a profile so you only run what the machine can handle:
+#   docker compose --profile oracle up -d     # Oracle only (~2.5 GB RAM)
+#   docker compose --profile graph  up -d     # Neo4j only  (~2 GB RAM)
+#   docker compose --profile llm    up -d     # Ollama only (model-dependent)
+#   docker compose --profile full   up -d     # everything (needs >= 8 GB for Docker)
+# DuckDB mode (DB_BACKEND=duckdb) needs none of these.
+
+name: aml-toolkit
+
+services:
+  oracle:
+    # Pinned digest (reports as Oracle 23.26.3, the "26ai" rename of the 23ai line).
+    image: gvenzl/oracle-free:23-slim@sha256:6d61d267a3b978c24c5ac1790e62e927416a0aec446bd86e4b3a1527562757bd
+    profiles: [oracle, full]
+    ports: ["1521:1521"]
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_SYS_PASSWORD:-aml_sys_pw}      # SYS/SYSTEM (demo only)
+      APP_USER: ${ORACLE_APP_USER:-aml_owner}                  # schema owner in FREEPDB1
+      APP_USER_PASSWORD: ${ORACLE_APP_PASSWORD:-aml_owner_pw}
+    volumes:
+      - oradata:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 60s
+    mem_limit: 3g
+
+  neo4j:
+    image: neo4j:5.26-community                                # 5.26 = LTS line
+    profiles: [graph, full]
+    ports: ["7474:7474", "7687:7687"]
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-aml_neo4j_pw}
+      NEO4J_PLUGINS: '["apoc", "graph-data-science"]'
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 1g
+      NEO4J_server_memory_pagecache_size: 512m
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*,gds.*
+    volumes:
+      - neo4jdata:/data
+      - neo4jplugins:/plugins
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    mem_limit: 2500m
+
+  ollama:
+    image: ollama/ollama:latest
+    profiles: [llm, full]
+    ports: ["11434:11434"]
+    volumes:
+      - ollamadata:/root/.ollama
+    mem_limit: 5g
+    # GPU (NVIDIA, WSL2): uncomment to offload the model to the GPU.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+
+volumes:
+  oradata:
+  neo4jdata:
+  neo4jplugins:
+  ollamadata:

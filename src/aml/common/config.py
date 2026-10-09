@@ -1,0 +1,128 @@
+"""Typed configuration loaded from ``config.yaml`` with env-var overrides.
+
+Override rules (applied in order):
+1. ``AML__<SECTION>__<KEY>[__<SUBKEY>...]=value`` sets any nested key (YAML-parsed value).
+2. ``DB_BACKEND=oracle|duckdb`` is a shortcut for ``db.backend``.
+"""
+
+from __future__ import annotations
+
+import os
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Literal
+
+import yaml
+from pydantic import BaseModel
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config.yaml"
+ENV_PREFIX = "AML__"
+
+
+class OracleConfig(BaseModel):
+    host: str
+    port: int
+    service: str
+    user: str
+    password: str
+
+    @property
+    def dsn(self) -> str:
+        return f"{self.host}:{self.port}/{self.service}"
+
+
+class DbConfig(BaseModel):
+    backend: Literal["oracle", "duckdb"]
+    duckdb_path: str
+    oracle: OracleConfig
+    fallback_to_duckdb: bool = True
+
+
+class Neo4jConfig(BaseModel):
+    uri: str
+    user: str
+    password: str
+
+
+class OllamaConfig(BaseModel):
+    host: str
+    llm_model: str
+    embed_model: str
+
+
+class ProfileConfig(BaseModel):
+    customers: int
+    transactions: int
+    months: int
+    counterparties: tuple[int, int]
+
+
+class DataConfig(BaseModel):
+    profile: Literal["small", "dense", "large"]
+    output_dir: str
+    profiles: dict[str, ProfileConfig]
+    duplicate_person_rate: float
+    dq_defect_rate: float
+
+    @property
+    def active(self) -> ProfileConfig:
+        return self.profiles[self.profile]
+
+
+class ThresholdConfig(BaseModel):
+    large_cash_vnd: int
+    structuring_band_pct: float
+
+
+class AuditConfig(BaseModel):
+    system_actor: str = "system"
+
+
+class Settings(BaseModel):
+    seed: int
+    db: DbConfig
+    neo4j: Neo4jConfig
+    ollama: OllamaConfig
+    data: DataConfig
+    thresholds: ThresholdConfig
+    audit: AuditConfig
+
+    def path(self, relative: str) -> Path:
+        """Resolve a config path relative to the project root."""
+        p = Path(relative)
+        return p if p.is_absolute() else PROJECT_ROOT / p
+
+
+def _set_nested(tree: dict[str, Any], keys: list[str], value: Any) -> None:
+    node = tree
+    for key in keys[:-1]:
+        node = node.setdefault(key, {})
+    node[keys[-1]] = value
+
+
+def apply_env_overrides(raw: dict[str, Any], environ: dict[str, str]) -> dict[str, Any]:
+    """Return ``raw`` with env-var overrides applied (mutates and returns ``raw``)."""
+    for name, value in environ.items():
+        if name.startswith(ENV_PREFIX):
+            keys = [k.lower() for k in name[len(ENV_PREFIX) :].split("__") if k]
+            if keys:
+                _set_nested(raw, keys, yaml.safe_load(value))
+    if backend := environ.get("DB_BACKEND"):
+        _set_nested(raw, ["db", "backend"], backend.strip().lower())
+    return raw
+
+
+def load_settings(
+    path: Path = DEFAULT_CONFIG_PATH, environ: dict[str, str] | None = None
+) -> Settings:
+    """Load and validate settings from YAML plus environment overrides."""
+    raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    raw = apply_env_overrides(raw, dict(os.environ) if environ is None else environ)
+    return Settings.model_validate(raw)
+
+
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    """Process-wide cached settings."""
+    return load_settings()

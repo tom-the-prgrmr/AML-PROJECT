@@ -1,0 +1,46 @@
+# Single source of configuration. Any key can be overridden by an env var:
+#   AML__<SECTION>__<KEY>=value      e.g. AML__THRESHOLDS__LARGE_CASH_VND=300000000
+# Shortcut: DB_BACKEND=oracle|duckdb overrides db.backend.
+
+seed: 42
+
+db:
+  backend: duckdb            # oracle | duckdb
+  duckdb_path: data/aml.duckdb
+  oracle:
+    host: localhost
+    port: 1521
+    service: FREEPDB1
+    user: aml_owner
+    password: aml_owner_pw    # demo only; real deployments use a wallet / vault
+  fallback_to_duckdb: true    # if Oracle is unreachable, warn and use DuckDB
+
+neo4j:
+  uri: bolt://localhost:7687
+  user: neo4j
+  password: aml_neo4j_pw
+  # Neo4j Community has no RBAC, so a separate read-only user is impossible.
+  # Investigation/Text2Cypher sessions use READ access mode (server rejects writes)
+  # plus an application-level write-clause guard. Enterprise would add a reader role.
+
+ollama:
+  host: http://localhost:11434
+  llm_model: qwen2.5:3b-instruct     # fits a 4GB GPU; switch to a 7B model on bigger hardware
+  embed_model: bge-m3
+
+data:
+  profile: small             # small | dense | large
+  output_dir: data/parquet
+  profiles:
+    small: {customers: 5000,  transactions: 300000,  months: 6, counterparties: [3, 12]}
+    dense: {customers: 5000,  transactions: 300000,  months: 6, counterparties: [50, 100]}
+    large: {customers: 50000, transactions: 5000000, months: 6, counterparties: [3, 12]}
+  duplicate_person_rate: 0.08
+  dq_defect_rate: 0.02
+
+thresholds:
+  large_cash_vnd: 400000000          # large-value cash reporting threshold (configurable)
+  structuring_band_pct: 0.10         # "just below" = within 10% under the threshold
+
+audit:
+  system_actor: system
