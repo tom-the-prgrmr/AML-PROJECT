@@ -14,6 +14,7 @@ source = { editable = "." }
 dependencies = [
     { name = "duckdb" },
     { name = "neo4j" },
+    { name = "numpy" },
     { name = "oracledb" },
     { name = "pandas" },
     { name = "pyarrow" },
@@ -33,6 +34,7 @@ dev = [
 requires-dist = [
     { name = "duckdb", specifier = ">=1.1" },
     { name = "neo4j", specifier = ">=5.20" },
+    { name = "numpy", specifier = ">=1.26" },
     { name = "oracledb", specifier = ">=2.4" },
     { name = "pandas", specifier = ">=2.2" },
     { name = "pyarrow", specifier = ">=16.0" },

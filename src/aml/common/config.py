@@ -13,6 +13,7 @@ Override rules (applied in order):
 from __future__ import annotations
 
 import os
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
@@ -70,14 +71,28 @@ class ProfileConfig(BaseModel):
     transactions: int
     months: int
     counterparties: tuple[int, int]
+    typology_scale: int = 1  # multiplies every data.typologies count
+
+
+class WatchlistConfig(BaseModel):
+    entries: int  # total watchlist rows (true hits and traps included)
+    true_hits: int  # customers planted on the list (sanctions_hit / pep_hit)
+    traps: int  # look-alike entries that match no customer (screening_trap)
+    year_only_dob_rate: float  # share of entries with only a birth year
+    unknown_dob_rate: float  # share of entries with no DOB information
 
 
 class DataConfig(BaseModel):
     profile: Literal["small", "dense", "large"]
     output_dir: str
+    reference_date: date
+    start_date: date
     profiles: dict[str, ProfileConfig]
     duplicate_person_rate: float
     dq_defect_rate: float
+    injection_memos: int
+    typologies: dict[str, int]  # scenarios injected per typology (before profile scaling)
+    watchlist: WatchlistConfig
 
     @property
     def active(self) -> ProfileConfig:

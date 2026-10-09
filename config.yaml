@@ -31,12 +31,28 @@ ollama:
 data:
   profile: small             # small | dense | large
   output_dir: data/parquet
+  reference_date: 2026-06-30   # "today" for data generation (ages, KYC dates, txn window end)
+  start_date: 2026-01-01       # first day of the transaction window (spans profile `months`)
   profiles:
     small: {customers: 5000,  transactions: 300000,  months: 6, counterparties: [3, 12]}
     dense: {customers: 5000,  transactions: 300000,  months: 6, counterparties: [50, 100]}
-    large: {customers: 50000, transactions: 5000000, months: 6, counterparties: [3, 12]}
+    large: {customers: 50000, transactions: 5000000, months: 6, counterparties: [3, 12], typology_scale: 10}
   duplicate_person_rate: 0.08
   dq_defect_rate: 0.02
+  injection_memos: 30        # prompt-injection memos planted in background transactions
+  typologies:                # scenarios per typology; multiplied by the profile's typology_scale
+    structuring: 20
+    rapid_movement: 20
+    mule_ring: 5
+    round_tripping: 15
+    benign_payroll: 5
+    benign_merchant: 5
+  watchlist:                 # fixed for every profile (override: AML__DATA__WATCHLIST__ENTRIES=200)
+    entries: 2000
+    true_hits: 20            # customers planted on the list
+    traps: 30                # look-alike entries matching no customer
+    year_only_dob_rate: 0.30
+    unknown_dob_rate: 0.05
 
 thresholds:
   large_cash_vnd: 400000000          # large-value cash reporting threshold (configurable)

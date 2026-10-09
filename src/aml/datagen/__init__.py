@@ -1,0 +1,1 @@
+"""Synthetic AML data generation."""

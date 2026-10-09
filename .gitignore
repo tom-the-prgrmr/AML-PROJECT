@@ -23,3 +23,6 @@ data/
 .idea/
 Thumbs.db
 .DS_Store
+
+# Claude loop runtime state
+.claude
