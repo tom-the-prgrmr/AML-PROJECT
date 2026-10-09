@@ -11,14 +11,14 @@ db:
     host: localhost
     port: 1521
     service: FREEPDB1
-    user: aml_owner
-    password: aml_owner_pw    # demo only; real deployments use a wallet / vault
+    user: aml_owner           # overridden by ORACLE_APP_USER in .env
+    password: ""              # set ORACLE_APP_PASSWORD in .env (prod: wallet / vault)
   fallback_to_duckdb: true    # if Oracle is unreachable, warn and use DuckDB
 
 neo4j:
   uri: bolt://localhost:7687
   user: neo4j
-  password: aml_neo4j_pw
+  password: ""                # set NEO4J_PASSWORD in .env
   # Neo4j Community has no RBAC, so a separate read-only user is impossible.
   # Investigation/Text2Cypher sessions use READ access mode (server rejects writes)
   # plus an application-level write-clause guard. Enterprise would add a reader role.

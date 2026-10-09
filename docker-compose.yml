@@ -14,9 +14,9 @@ services:
     profiles: [oracle, full]
     ports: ["1521:1521"]
     environment:
-      ORACLE_PASSWORD: ${ORACLE_SYS_PASSWORD:-aml_sys_pw}      # SYS/SYSTEM (demo only)
-      APP_USER: ${ORACLE_APP_USER:-aml_owner}                  # schema owner in FREEPDB1
-      APP_USER_PASSWORD: ${ORACLE_APP_PASSWORD:-aml_owner_pw}
+      ORACLE_PASSWORD: ${ORACLE_SYS_PASSWORD:?set ORACLE_SYS_PASSWORD in .env}   # SYS/SYSTEM
+      APP_USER: ${ORACLE_APP_USER:-aml_owner}                # schema owner in FREEPDB1
+      APP_USER_PASSWORD: ${ORACLE_APP_PASSWORD:?set ORACLE_APP_PASSWORD in .env}
     volumes:
       - oradata:/opt/oracle/oradata
     healthcheck:
@@ -32,7 +32,7 @@ services:
     profiles: [graph, full]
     ports: ["7474:7474", "7687:7687"]
     environment:
-      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-aml_neo4j_pw}
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env}
       NEO4J_PLUGINS: '["apoc", "graph-data-science"]'
       NEO4J_server_memory_heap_initial__size: 512m
       NEO4J_server_memory_heap_max__size: 1g

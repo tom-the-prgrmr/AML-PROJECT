@@ -55,6 +55,7 @@ def test_oracle_down_falls_back_to_duckdb(tmp_path, caplog) -> None:
         environ={
             "DB_BACKEND": "oracle",
             "AML__DB__ORACLE__PORT": "1",  # nothing listens here
+            "ORACLE_APP_PASSWORD": "x",
             "AML__DB__DUCKDB_PATH": str(tmp_path / "fb.duckdb"),
         }
     )
@@ -70,6 +71,7 @@ def test_oracle_down_without_fallback_raises(tmp_path) -> None:
         environ={
             "DB_BACKEND": "oracle",
             "AML__DB__ORACLE__PORT": "1",
+            "ORACLE_APP_PASSWORD": "x",
             "AML__DB__FALLBACK_TO_DUCKDB": "false",
         }
     )
@@ -79,5 +81,5 @@ def test_oracle_down_without_fallback_raises(tmp_path) -> None:
 
 @pytest.mark.oracle
 def test_oracle_connect_and_query() -> None:
-    with OracleDb(load_settings(environ={})) as db:
+    with OracleDb(load_settings()) as db:
         assert db.query_df("SELECT 1 AS one FROM dual")["one"].iloc[0] == 1

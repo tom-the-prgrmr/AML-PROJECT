@@ -156,6 +156,10 @@ class OracleDb(Database):
         import oracledb
 
         cfg = settings.db.oracle
+        if not cfg.password:
+            raise ServiceUnavailableError(
+                "Oracle password not set: add ORACLE_APP_PASSWORD to .env"
+            )
         try:
             self.con = oracledb.connect(
                 user=cfg.user, password=cfg.password, dsn=cfg.dsn, tcp_connect_timeout=5

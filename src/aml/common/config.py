@@ -1,8 +1,13 @@
 """Typed configuration loaded from ``config.yaml`` with env-var overrides.
 
+Secrets never live in ``config.yaml``: they come from the environment or from the
+git-ignored ``.env`` file (real env vars win over ``.env``). The same ``.env`` is read by
+docker-compose, so container and client credentials have a single source.
+
 Override rules (applied in order):
 1. ``AML__<SECTION>__<KEY>[__<SUBKEY>...]=value`` sets any nested key (YAML-parsed value).
-2. ``DB_BACKEND=oracle|duckdb`` is a shortcut for ``db.backend``.
+2. Credential vars shared with docker-compose (see ``SECRET_ENV_MAP``).
+3. ``DB_BACKEND=oracle|duckdb`` is a shortcut for ``db.backend``.
 """
 
 from __future__ import annotations
@@ -13,11 +18,20 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml
+from dotenv import dotenv_values
 from pydantic import BaseModel
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config.yaml"
+DOTENV_PATH = PROJECT_ROOT / ".env"
 ENV_PREFIX = "AML__"
+
+# docker-compose variable -> config key path (raw strings, not YAML-parsed).
+SECRET_ENV_MAP: dict[str, list[str]] = {
+    "ORACLE_APP_USER": ["db", "oracle", "user"],
+    "ORACLE_APP_PASSWORD": ["db", "oracle", "password"],
+    "NEO4J_PASSWORD": ["neo4j", "password"],
+}
 
 
 class OracleConfig(BaseModel):
@@ -108,17 +122,27 @@ def apply_env_overrides(raw: dict[str, Any], environ: dict[str, str]) -> dict[st
             keys = [k.lower() for k in name[len(ENV_PREFIX) :].split("__") if k]
             if keys:
                 _set_nested(raw, keys, yaml.safe_load(value))
+    for name, keys in SECRET_ENV_MAP.items():
+        if value := environ.get(name):
+            _set_nested(raw, keys, value)
     if backend := environ.get("DB_BACKEND"):
         _set_nested(raw, ["db", "backend"], backend.strip().lower())
     return raw
 
 
+def read_environ(dotenv_path: Path = DOTENV_PATH) -> dict[str, str]:
+    """Process env layered over ``.env`` (process env wins, like docker-compose)."""
+    merged = {k: v for k, v in dotenv_values(dotenv_path).items() if v is not None}
+    merged.update(os.environ)
+    return merged
+
+
 def load_settings(
     path: Path = DEFAULT_CONFIG_PATH, environ: dict[str, str] | None = None
 ) -> Settings:
-    """Load and validate settings from YAML plus environment overrides."""
+    """Load and validate settings from YAML plus environment (default: env + ``.env``)."""
     raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    raw = apply_env_overrides(raw, dict(os.environ) if environ is None else environ)
+    raw = apply_env_overrides(raw, read_environ() if environ is None else environ)
     return Settings.model_validate(raw)
 
 

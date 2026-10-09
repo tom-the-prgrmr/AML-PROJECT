@@ -52,7 +52,7 @@ def test_audit_many_batches_and_is_idempotent_ddl(duck: DuckDb) -> None:
 
 @pytest.mark.oracle
 def test_audit_on_oracle() -> None:
-    with OracleDb(load_settings(environ={})) as db:
+    with OracleDb(load_settings()) as db:
         _init(db)
         audit(
             db, module="test", entity_type="probe", entity_id="pytest",
