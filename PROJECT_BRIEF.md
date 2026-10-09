@@ -42,7 +42,13 @@ The project must also demonstrate solid Oracle SQL/DBA practice and data governa
   - matching: rapidfuzz, unidecode, splink (DuckDB backend)
   - graph and ML: networkx, scikit-learn, lightgbm (optional)
   - utilities: faker, pydantic, pytest
-  - UI: streamlit, pyvis
+  - API: fastapi, uvicorn (serves the UI and exposes the Python modules over REST/SSE)
+- **Frontend** (`web/`): React 18 + TypeScript, built with Vite as a static SPA that FastAPI serves.
+  - TanStack Query (server state), TanStack Table (case queue), React Router
+  - Tailwind CSS + shadcn/ui
+  - Cytoscape.js for network graphs (replaces pyvis), ECharts for charts
+  - API types generated from FastAPI's OpenAPI schema (`openapi-typescript`), so the frontend never hand-writes response shapes
+  - Why not Next.js: all business logic stays in Python (Oracle, Splink, Neo4j, Ollama), the tool is internal (no SEO/SSR need), and Next.js would add a second Node server and a second backend layer. A Vite build is just static files, so `make ui` stays one process.
   - drivers: neo4j, oracledb
 - **Databases** (docker-compose, each service behind a profile so I can run only what my machine can handle):
   - `oracle`: Oracle Database 23ai Free (`gvenzl/oracle-free`).
@@ -367,13 +373,21 @@ The assistant answers questions and drafts narratives **grounded in the Neo4j ca
 
 ---
 
-## 10. Phase 9 — Investigator UI & metrics (`ui/`, Streamlit)
+## 10. Phase 9 — Investigator UI & metrics (`src/aml/api/` + `web/`, FastAPI + React)
+
+### Architecture
+- `src/aml/api/`: a FastAPI app with thin routers over the existing modules (cases, screening, DQ, benchmark, metrics, trace, assistant). No business logic in routers.
+  - Reads go through the `Database` abstraction, so the UI works in DuckDB mode.
+  - Assistant chat streams over Server-Sent Events.
+  - Every decision endpoint writes to `audit_log` with the acting user.
+- `web/`: the React SPA. In dev, `npm run dev` proxies `/api` to uvicorn. In `make ui`, FastAPI serves the built `web/dist`.
+- PII masking is enforced server-side (analyst role sees the masked view); the frontend never receives unmasked fields it should not show.
 
 ### Pages
 - **Case queue**: sorted by priority, with filters.
 - **Case detail**:
   - enrichment panels
-  - network graph (pyvis)
+  - network graph (Cytoscape.js); clicking an assistant citation highlights the cited nodes
   - fund-flow trace, with a backend selector (CTE / property graph / Neo4j)
   - case summary
   - assistant chat and draft narrative
@@ -450,5 +464,6 @@ Talking points, written concisely, in Vietnamese with English technical terms:
   - cycle prevention in the traces
   - the Text2Cypher write-clause rejection
   - prompt-injection tests
+- Frontend: TypeScript `strict`, ESLint + Prettier, `tsc --noEmit`, Vitest + React Testing Library for components; FastAPI routes tested with `TestClient` in pytest.
 - Deterministic outputs via the seed.
 - Fail gracefully when an optional service (Oracle/Neo4j/Ollama) is not running: skip with a clear message and fall back to DuckDB/NetworkX where possible.
