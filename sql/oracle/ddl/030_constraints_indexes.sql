@@ -1,0 +1,82 @@
+-- Phase 2a: named constraints (ENABLE VALIDATE) and FK-lookup indexes.
+-- No FK from transactions to accounts (EXT- accounts); nothing here blocks the planted DQ defects.
+-- Swallowed "already exists" codes: 2260/2261/2264/2275 (constraints), 955/1408 (indexes).
+
+BEGIN
+  EXECUTE IMMEDIATE q'[ALTER TABLE accounts ADD CONSTRAINT fk_accounts_customer
+    FOREIGN KEY (cif) REFERENCES customers (cif) ENABLE VALIDATE]';
+EXCEPTION
+  WHEN OTHERS THEN
+    IF SQLCODE NOT IN (-2260, -2261, -2264, -2275) THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE q'[ALTER TABLE customer_person ADD CONSTRAINT fk_cp_customer
+    FOREIGN KEY (cif) REFERENCES customers (cif) ENABLE VALIDATE]';
+EXCEPTION
+  WHEN OTHERS THEN
+    IF SQLCODE NOT IN (-2260, -2261, -2264, -2275) THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE q'[ALTER TABLE watchlist_alias ADD CONSTRAINT fk_wla_watchlist
+    FOREIGN KEY (entry_id) REFERENCES watchlist (entry_id) ENABLE VALIDATE]';
+EXCEPTION
+  WHEN OTHERS THEN
+    IF SQLCODE NOT IN (-2260, -2261, -2264, -2275) THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE q'[ALTER TABLE transactions ADD CONSTRAINT ck_txn_amount_pos
+    CHECK (amount_vnd > 0) ENABLE VALIDATE]';
+EXCEPTION
+  WHEN OTHERS THEN
+    IF SQLCODE NOT IN (-2260, -2261, -2264, -2275) THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE q'[ALTER TABLE transactions ADD CONSTRAINT ck_txn_channel
+    CHECK (channel IN ('CASH', 'CARD', 'INTERNAL_TRANSFER', 'INTERBANK_TRANSFER', 'EBANKING'))
+    ENABLE VALIDATE]';
+EXCEPTION
+  WHEN OTHERS THEN
+    IF SQLCODE NOT IN (-2260, -2261, -2264, -2275) THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE q'[ALTER TABLE transactions ADD CONSTRAINT ck_txn_has_party
+    CHECK (from_account_id IS NOT NULL OR to_account_id IS NOT NULL) ENABLE VALIDATE]';
+EXCEPTION
+  WHEN OTHERS THEN
+    IF SQLCODE NOT IN (-2260, -2261, -2264, -2275) THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE 'CREATE INDEX ix_accounts_cif ON accounts (cif)';
+EXCEPTION
+  WHEN OTHERS THEN
+    IF SQLCODE NOT IN (-955, -1408) THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE 'CREATE INDEX ix_wla_entry ON watchlist_alias (entry_id)';
+EXCEPTION
+  WHEN OTHERS THEN
+    IF SQLCODE NOT IN (-955, -1408) THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+  EXECUTE IMMEDIATE 'CREATE INDEX ix_cp_person ON customer_person (person_id)';
+EXCEPTION
+  WHEN OTHERS THEN
+    IF SQLCODE NOT IN (-955, -1408) THEN RAISE; END IF;
+END;
+/

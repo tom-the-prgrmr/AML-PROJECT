@@ -18,6 +18,8 @@ from aml.common.db import get_db
 from aml.common.services import all_statuses
 from aml.datagen.load import LoadError, load_parquet, read_manifest
 from aml.datagen.pipeline import run_pipeline
+from aml.dba.plans import explain_plan, pruning_queries
+from aml.dba.schema import apply_schema
 
 app = typer.Typer(add_completion=False, help="AML Investigation Toolkit")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -37,7 +39,7 @@ def status() -> None:
 def init_db() -> None:
     """Create the base schema (audit_log) on the configured backend."""
     with get_db() as db:
-        n = db.run_named_script("ddl/000_audit_log.sql")
+        n = sum(apply_schema(db).values())
         audit(
             db,
             module="setup",
@@ -49,6 +51,39 @@ def init_db() -> None:
         )
         count = db.query_df("SELECT COUNT(*) AS n FROM audit_log")["n"].iloc[0]
         typer.echo(f"backend={db.backend}: audit_log ready, {count} row(s)")
+
+
+@app.command("explain-pruning")
+def explain_pruning(
+    out: Annotated[Path, typer.Option(help="Where to write the plans.")] = Path(
+        "results/phase2/partition_pruning.txt"
+    ),
+) -> None:
+    """Capture partition-pruning execution plans for `transactions` (Oracle only)."""
+    s = get_settings()
+    with get_db(s) as db:
+        if db.backend != "oracle":
+            typer.echo("explain-pruning: Oracle only (active backend is duckdb).", err=True)
+            raise typer.Exit(code=2)
+        blocks = [
+            f"== {q.name} (expected {q.expected_op}) ==\n{q.sql}\n\n{explain_plan(db, q.sql)}\n"
+            for q in pruning_queries(s)
+        ]
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text("\n".join(blocks), encoding="utf-8")
+        audit(
+            db,
+            module="dba",
+            entity_type="table",
+            entity_id="transactions",
+            decision="EVIDENCE_CAPTURED",
+            reason=(
+                f"Captured {len(blocks)} partition-pruning execution plans "
+                "(single, iterator, all) for transactions."
+            ),
+            details={"path": str(out)},
+        )
+    typer.echo(f"wrote {len(blocks)} plans to {out}")
 
 
 PROFILES = ("small", "dense", "large")

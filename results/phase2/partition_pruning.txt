@@ -1,0 +1,41 @@
+== single (expected PARTITION RANGE SINGLE) ==
+SELECT SUM(amount_vnd) FROM transactions WHERE txn_ts >= TIMESTAMP '2026-02-01 00:00:00' AND txn_ts < TIMESTAMP '2026-03-01 00:00:00'
+
+Plan hash value: 3096277536
+ 
+--------------------------------------------------------------------------------------------------------
+| Id  | Operation               | Name         | Rows  | Bytes | Cost (%CPU)| Time     | Pstart| Pstop |
+--------------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT        |              |     1 |    12 |     6   (0)| 00:00:01 |       |       |
+|   1 |  SORT AGGREGATE         |              |     1 |    12 |            |          |       |       |
+|   2 |   PARTITION RANGE SINGLE|              |   783 |  9396 |     6   (0)| 00:00:01 |   315 |   315 |
+|   3 |    TABLE ACCESS FULL    | TRANSACTIONS |   783 |  9396 |     6   (0)| 00:00:01 |   315 |   315 |
+--------------------------------------------------------------------------------------------------------
+
+== iterator (expected PARTITION RANGE ITERATOR) ==
+SELECT SUM(amount_vnd) FROM transactions WHERE txn_ts >= TIMESTAMP '2026-02-01 00:00:00' AND txn_ts < TIMESTAMP '2026-04-01 00:00:00'
+
+Plan hash value: 2776712995
+ 
+----------------------------------------------------------------------------------------------------------
+| Id  | Operation                 | Name         | Rows  | Bytes | Cost (%CPU)| Time     | Pstart| Pstop |
+----------------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT          |              |     1 |    12 |    10   (0)| 00:00:01 |       |       |
+|   1 |  SORT AGGREGATE           |              |     1 |    12 |            |          |       |       |
+|   2 |   PARTITION RANGE ITERATOR|              |  1665 | 19980 |    10   (0)| 00:00:01 |   315 |   316 |
+|   3 |    TABLE ACCESS FULL      | TRANSACTIONS |  1665 | 19980 |    10   (0)| 00:00:01 |   315 |   316 |
+----------------------------------------------------------------------------------------------------------
+
+== all (expected PARTITION RANGE ALL) ==
+SELECT SUM(amount_vnd) FROM transactions
+
+Plan hash value: 4195887397
+ 
+-----------------------------------------------------------------------------------------------------
+| Id  | Operation            | Name         | Rows  | Bytes | Cost (%CPU)| Time     | Pstart| Pstop |
+-----------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT     |              |     1 |     5 |    25   (0)| 00:00:01 |       |       |
+|   1 |  SORT AGGREGATE      |              |     1 |     5 |            |          |       |       |
+|   2 |   PARTITION RANGE ALL|              |  5100 | 25500 |    25   (0)| 00:00:01 |     1 |1048575|
+|   3 |    TABLE ACCESS FULL | TRANSACTIONS |  5100 | 25500 |    25   (0)| 00:00:01 |     1 |1048575|
+-----------------------------------------------------------------------------------------------------

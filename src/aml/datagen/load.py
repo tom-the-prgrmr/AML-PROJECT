@@ -12,11 +12,13 @@ import pandas as pd
 from aml.common.audit import audit
 from aml.common.db import Database
 from aml.datagen.pipeline import TABLES
+from aml.dba.edges import refresh_acct_edge_daily
+from aml.dba.schema import apply_schema
+from aml.dba.stats import gather_stats
 
 log = logging.getLogger(__name__)
 
 CHUNK_ROWS = 50_000
-DDL_SCRIPTS = ("ddl/000_audit_log.sql", "ddl/010_datagen.sql")
 MANIFEST_NAME = "manifest.json"
 
 
@@ -61,11 +63,10 @@ def load_parquet(db: Database, src_dir: Path) -> dict[str, int]:
     """
     manifest = read_manifest(Path(src_dir))
     src = Path(src_dir)
-    tables: list[str] = list(manifest["tables"])
+    tables = [t for t in TABLES if t in manifest["tables"]]  # FK-safe order
 
-    for script in DDL_SCRIPTS:
-        db.run_named_script(script)
-    for table in tables:
+    apply_schema(db)
+    for table in reversed(tables):  # children before parents (foreign keys)
         db.execute(f"DELETE FROM {table}")
 
     counts: dict[str, int] = {}
@@ -91,4 +92,6 @@ def load_parquet(db: Database, src_dir: Path) -> dict[str, int]:
         version="ddl/010",
         details={"tables": counts},
     )
+    refresh_acct_edge_daily(db)
+    gather_stats(db)
     return counts
