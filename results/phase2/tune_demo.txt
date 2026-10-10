@@ -1,0 +1,80 @@
+# aml tune-demo: 30-day outflow per account, before/after predicate rewrite
+transactions_rows: 306000
+runs: 5
+oracle_version: Oracle AI Database 26ai Free Release 23.26.3.0.0 - Develop, Learn, and Run for Free
+
+== before ==
+SELECT from_account_id, COUNT(*) AS txn_count, SUM(amount_vnd) AS total_out FROM transactions WHERE TRUNC(txn_ts) BETWEEN DATE '2026-03-01' AND DATE '2026-03-30' AND from_account_id IS NOT NULL GROUP BY from_account_id HAVING SUM(amount_vnd) >= 400000000
+
+plan_hash_value: 935595979
+buffer_gets: 4449
+elapsed_ms: 77.530 59.802 60.391 60.367 63.264
+elapsed_ms_median: 60.391
+rows: 155
+
+SQL_ID  d9qsn6mrmyqrb, child number 0
+-------------------------------------
+SELECT /*+ GATHER_PLAN_STATISTICS */ /* aml-tune-demo:before */ 
+from_account_id, COUNT(*) AS txn_count, SUM(amount_vnd) AS total_out 
+FROM transactions WHERE TRUNC(txn_ts) BETWEEN DATE '2026-03-01' AND 
+DATE '2026-03-30' AND from_account_id IS NOT NULL GROUP BY 
+from_account_id HAVING SUM(amount_vnd) >= 400000000
+ 
+Plan hash value: 935595979
+ 
+---------------------------------------------------------------------------------------------------------------------------
+| Id  | Operation             | Name         | Starts | E-Rows | A-Rows |   A-Time   | Buffers |  OMem |  1Mem | Used-Mem |
+---------------------------------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT      |              |      1 |        |    155 |00:00:00.06 |    4449 |       |       |          |
+|*  1 |  FILTER               |              |      1 |        |    155 |00:00:00.06 |    4449 |       |       |          |
+|   2 |   HASH GROUP BY       |              |      1 |     35 |   8769 |00:00:00.06 |    4449 |  1551K|  1379K| 1658K (0)|
+|   3 |    PARTITION RANGE ALL|              |      1 |    703 |  46404 |00:00:00.02 |    4449 |       |       |          |
+|*  4 |     TABLE ACCESS FULL | TRANSACTIONS |      7 |    703 |  46404 |00:00:00.05 |    4449 |       |       |          |
+---------------------------------------------------------------------------------------------------------------------------
+ 
+Predicate Information (identified by operation id):
+---------------------------------------------------
+ 
+   1 - filter(SUM("AMOUNT_VND")>=400000000)
+   4 - filter(("FROM_ACCOUNT_ID" IS NOT NULL AND TRUNC(INTERNAL_FUNCTION("TXN_TS"))>=TO_DATE(' 2026-03-01 
+              00:00:00', 'syyyy-mm-dd hh24:mi:ss') AND TRUNC(INTERNAL_FUNCTION("TXN_TS"))<=TO_DATE(' 2026-03-30 00:00:00', 
+              'syyyy-mm-dd hh24:mi:ss')))
+ 
+
+== after ==
+SELECT from_account_id, COUNT(*) AS txn_count, SUM(amount_vnd) AS total_out FROM transactions WHERE txn_ts >= TIMESTAMP '2026-03-01 00:00:00' AND txn_ts < TIMESTAMP '2026-03-31 00:00:00' AND from_account_id IS NOT NULL GROUP BY from_account_id HAVING SUM(amount_vnd) >= 400000000
+
+plan_hash_value: 3905367866
+buffer_gets: 752
+elapsed_ms: 5.505 5.644 5.161 5.197 5.339
+elapsed_ms_median: 5.339
+rows: 155
+
+SQL_ID  fn1b4wbz3xv8c, child number 0
+-------------------------------------
+SELECT /*+ GATHER_PLAN_STATISTICS */ /* aml-tune-demo:after */ 
+from_account_id, COUNT(*) AS txn_count, SUM(amount_vnd) AS total_out 
+FROM transactions WHERE txn_ts >= TIMESTAMP '2026-03-01 00:00:00' AND 
+txn_ts < TIMESTAMP '2026-03-31 00:00:00' AND from_account_id IS NOT 
+NULL GROUP BY from_account_id HAVING SUM(amount_vnd) >= 400000000
+ 
+Plan hash value: 3905367866
+ 
+------------------------------------------------------------------------------------------------------------------------------
+| Id  | Operation                | Name         | Starts | E-Rows | A-Rows |   A-Time   | Buffers |  OMem |  1Mem | Used-Mem |
+------------------------------------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT         |              |      1 |        |    155 |00:00:00.01 |     752 |       |       |          |
+|*  1 |  FILTER                  |              |      1 |        |    155 |00:00:00.01 |     752 |       |       |          |
+|   2 |   HASH GROUP BY          |              |      1 |    463 |   8769 |00:00:00.01 |     752 |  1551K|  1379K| 1661K (0)|
+|   3 |    PARTITION RANGE SINGLE|              |      1 |  46455 |  46404 |00:00:00.01 |     752 |       |       |          |
+|*  4 |     TABLE ACCESS FULL    | TRANSACTIONS |      1 |  46455 |  46404 |00:00:00.01 |     752 |       |       |          |
+------------------------------------------------------------------------------------------------------------------------------
+ 
+Predicate Information (identified by operation id):
+---------------------------------------------------
+ 
+   1 - filter(SUM("AMOUNT_VND")>=400000000)
+   4 - filter(("FROM_ACCOUNT_ID" IS NOT NULL AND "TXN_TS"<TIMESTAMP' 2026-03-31 00:00:00.000000000'))
+ 
+
+summary: buffer_gets 4449 -> 752, elapsed_ms_median 60.391 -> 5.339

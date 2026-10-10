@@ -1,0 +1,23 @@
+
+Session altered.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+Grant succeeded.
+
+
+LABEL GRANTEE		   VIEW_NAME			  PRIVILEGE
+----- -------------------- ------------------------------ ----------------------------------------
+grant AML_OWNER 	   V_$SESSION			  SELECT
+grant AML_OWNER 	   V_$SQL			  SELECT
+grant AML_OWNER 	   V_$SQL_PLAN			  SELECT
+grant AML_OWNER 	   V_$SQL_PLAN_STATISTICS_ALL	  SELECT
+

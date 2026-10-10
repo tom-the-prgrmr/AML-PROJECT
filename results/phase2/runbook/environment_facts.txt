@@ -1,0 +1,38 @@
+
+Session altered.
+
+
+LABEL	VALUE
+------- --------------------------------------------------------------------------------
+version Oracle AI Database 26ai Free Release 23.26.3.0.0 - Develop, Learn, and Run for F
+
+
+LABEL	 VALUE
+-------- ------------
+log_mode NOARCHIVELOG
+
+
+LABEL											   VALUE
+------------------------------------------------------------------------------------------ --------------------------------------------------------------------------------
+parameter db_recovery_file_dest 							   (empty)
+parameter db_recovery_file_dest_size							   0
+parameter statistics_level								   TYPICAL
+parameter control_management_pack_access						   DIAGNOSTIC+TUNING
+
+
+LABEL														 VALUE
+---------------------------------------------------------------------------------------------------------------- ----------------------------------------
+awr_snapshot_count dbid=1514744704 con_id=0									 13
+awr_snapshot_count dbid=3182349174 con_id=3									 13
+
+
+LABEL														     VALUE
+-------------------------------------------------------------------------------------------------------------------- ---------------------------------------
+awr_interval_retention dbid=1514744704 con_id=0 								     +00000 01:00:00.0 / +00008 00:00:00.0
+awr_interval_retention dbid=3182349174 con_id=3 								     +00000 01:00:00.0 / +00008 00:00:00.0
+
+
+LABEL	 VALUE
+-------- ----------------------------------------
+ash_rows 1108
+

@@ -1,0 +1,4 @@
+# captured 2026-10-10 as aml_graph_sync_usr (has SELECT only on this table)
+Oracle AI Database 26ai Free Release 23.26.3.0.0 - Develop, Learn, and Run for Free
+INSERT INTO aml_owner.transactions (txn_id) VALUES ('X')
+ORA-41900: missing INSERT privilege on "AML_OWNER"."TRANSACTIONS"

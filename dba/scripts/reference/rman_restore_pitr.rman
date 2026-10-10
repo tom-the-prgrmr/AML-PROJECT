@@ -1,0 +1,10 @@
+# REFERENCE ONLY: never run in this repo's environment (no rman binary, NOARCHIVELOG database).
+# Point-in-time recovery of the pluggable database FREEPDB1 to just before a bad change.
+ALTER PLUGGABLE DATABASE FREEPDB1 CLOSE IMMEDIATE;
+RUN {
+  SET UNTIL TIME "TO_DATE('2026-10-10 09:30:00', 'YYYY-MM-DD HH24:MI:SS')";
+  RESTORE PLUGGABLE DATABASE FREEPDB1;
+  RECOVER PLUGGABLE DATABASE FREEPDB1;
+}
+ALTER PLUGGABLE DATABASE FREEPDB1 OPEN RESETLOGS;
+# Afterwards rebuild derived objects: DBMS_MVIEW.REFRESH('ACCT_EDGE_DAILY', 'C').

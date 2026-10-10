@@ -1,0 +1,19 @@
+
+Session altered.
+
+
+LABEL	    SQL_ID	     SAMPLES LAST_STATE LAST_EVENT
+----------- ------------- ---------- ---------- ----------------------------------------
+ash_top_sql 9cbrc95ffwbpx	  78 WAITING	log file switch completion
+ash_top_sql 4xmwsb5kkjwb3	  74 WAITING	online DDL delay
+ash_top_sql 3hn0wn4n89s9k	  39 WAITING	undo segment extension
+ash_top_sql 1uqrvy79dbkvv	  30 WAITING	reliable message
+ash_top_sql 9htsvxtypzyvt	  29 WAITING	undo segment extension
+ash_top_sql fwsqqv3b3kfmk	  24 ON CPU
+ash_top_sql b6usrg82hwsa3	  21 ON CPU
+ash_top_sql 3h397cadak78y	  18 WAITING	SQL*Net more data from client
+ash_top_sql f6w8rqdkx0bnv	  16 ON CPU
+ash_top_sql 7vb0cua57vxm1	  16 WAITING	SQL*Net more data from client
+
+10 rows selected.
+

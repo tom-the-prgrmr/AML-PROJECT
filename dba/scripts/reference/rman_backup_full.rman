@@ -1,0 +1,11 @@
+# REFERENCE ONLY: never run in this repo's environment (the slim image has no rman binary and the
+# database is NOARCHIVELOG). Run against the CDB root of an ARCHIVELOG database with a FRA.
+CONFIGURE CONTROLFILE AUTOBACKUP ON;
+CONFIGURE RETENTION POLICY TO RECOVERY WINDOW OF 7 DAYS;
+# Level 0 once a week, level 1 incremental on the other days.
+BACKUP INCREMENTAL LEVEL 0 DATABASE PLUS ARCHIVELOG TAG 'weekly_l0';
+BACKUP INCREMENTAL LEVEL 1 DATABASE PLUS ARCHIVELOG TAG 'daily_l1';
+# Single pluggable database (the AML data lives in FREEPDB1).
+BACKUP PLUGGABLE DATABASE FREEPDB1 TAG 'freepdb1';
+REPORT OBSOLETE;
+DELETE NOPROMPT OBSOLETE;

@@ -1,0 +1,12 @@
+# REFERENCE ONLY (not run; Status reference). Logical backup of the AML schema with Data Pump.
+# Usage inside the container:
+#   expdp aml_owner@//localhost:1521/FREEPDB1 parfile=expdp_schema.par
+# Restore into another schema or database with impdp and the same directory:
+#   impdp aml_owner@//localhost:1521/FREEPDB1 directory=DATA_PUMP_DIR dumpfile=aml_owner_%U.dmp remap_schema=aml_owner:aml_restore
+schemas=aml_owner
+directory=DATA_PUMP_DIR
+dumpfile=aml_owner_%U.dmp
+logfile=aml_owner_expdp.log
+parallel=2
+compression=all
+exclude=statistics

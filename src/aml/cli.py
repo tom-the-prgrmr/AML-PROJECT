@@ -23,6 +23,7 @@ from aml.dba.plans import explain_plan, pruning_queries
 from aml.dba.retention import RetentionError, purge_transactions
 from aml.dba.schema import apply_schema
 from aml.dba.security import SecurityConfigError, apply_security
+from aml.dba.tuning import has_cursor_stats_access, median_ms, render_evidence, run_tuning
 from aml.dq.runner import label_agreement, run_dq
 
 app = typer.Typer(add_completion=False, help="AML Investigation Toolkit")
@@ -88,6 +89,53 @@ def explain_pruning(
             details={"path": str(out)},
         )
     typer.echo(f"wrote {len(blocks)} plans to {out}")
+
+
+@app.command("tune-demo")
+def tune_demo(
+    out: Annotated[Path, typer.Option(help="Where to write the evidence.")] = Path(
+        "results/phase2/tune_demo.txt"
+    ),
+    runs: Annotated[int, typer.Option(min=1, help="Timed runs per step.")] = 5,
+) -> None:
+    """Tune the 30-day outflow query and capture before/after plans and timings (Oracle only)."""
+    s = get_settings()
+    with get_db(s) as db:
+        if db.backend != "oracle":
+            typer.echo(f"tune-demo: Oracle only (active backend is {db.backend}).", err=True)
+            raise typer.Exit(code=2)
+        if not has_cursor_stats_access(db):
+            typer.echo(
+                "tune-demo: no access to V$ views; apply "
+                "dba/scripts/sys/010_grant_tuning_views.sql as SYS (see dba/RUNBOOK.md).",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+        n_rows = int(db.query_df("SELECT COUNT(*) AS n FROM transactions").iloc[0, 0])
+        banner = str(db.query_df("SELECT banner FROM v$version").iloc[0, 0])
+        before, after = results = run_tuning(db, s, runs=runs)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(
+            render_evidence(results, transactions_rows=n_rows, runs=runs, oracle_version=banner),
+            encoding="utf-8",
+        )
+        audit(
+            db,
+            module="dba",
+            entity_type="query",
+            entity_id="outflow_30d",
+            decision="TUNING_CAPTURED",
+            reason=(
+                f"{after.step.change} Buffer gets {before.buffer_gets} -> {after.buffer_gets}, "
+                f"median {median_ms(before)} -> {median_ms(after)} ms over {runs} runs."
+            ),
+            details={
+                "path": str(out),
+                "before": {"plan_hash_value": before.plan_hash_value},
+                "after": {"plan_hash_value": after.plan_hash_value},
+            },
+        )
+    typer.echo(f"wrote tuning evidence to {out}")
 
 
 @app.command("security-setup")
