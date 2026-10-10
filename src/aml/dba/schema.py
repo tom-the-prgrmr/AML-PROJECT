@@ -14,8 +14,14 @@ SCHEMA_SCRIPTS: dict[str, tuple[str, ...]] = {
         "ddl/020_transactions_partitioning.sql",
         "ddl/030_constraints_indexes.sql",
         "ddl/040_acct_edge_daily.sql",
+        "ddl/050_security_objects.sql",
     ),
-    "duckdb": ("ddl/000_audit_log.sql", "ddl/010_datagen.sql", "ddl/040_acct_edge_daily.sql"),
+    "duckdb": (
+        "ddl/000_audit_log.sql",
+        "ddl/010_datagen.sql",
+        "ddl/040_acct_edge_daily.sql",
+        "ddl/050_customers_masked.sql",
+    ),
 }
 
 

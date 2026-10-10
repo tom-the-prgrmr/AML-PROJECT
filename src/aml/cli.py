@@ -20,6 +20,7 @@ from aml.datagen.load import LoadError, load_parquet, read_manifest
 from aml.datagen.pipeline import run_pipeline
 from aml.dba.plans import explain_plan, pruning_queries
 from aml.dba.schema import apply_schema
+from aml.dba.security import SecurityConfigError, apply_security
 
 app = typer.Typer(add_completion=False, help="AML Investigation Toolkit")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -84,6 +85,18 @@ def explain_pruning(
             details={"path": str(out)},
         )
     typer.echo(f"wrote {len(blocks)} plans to {out}")
+
+
+@app.command("security-setup")
+def security_setup() -> None:
+    """Create Oracle roles, demo users, grants and audit policies (Oracle only, idempotent)."""
+    try:
+        result = apply_security(get_settings())
+    except (NotImplementedError, SecurityConfigError) as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=2) from exc
+    for key, names in result.items():
+        typer.echo(f"{key}: {', '.join(names)}")
 
 
 PROFILES = ("small", "dense", "large")

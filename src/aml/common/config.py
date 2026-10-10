@@ -31,6 +31,8 @@ ENV_PREFIX = "AML__"
 SECRET_ENV_MAP: dict[str, list[str]] = {
     "ORACLE_APP_USER": ["db", "oracle", "user"],
     "ORACLE_APP_PASSWORD": ["db", "oracle", "password"],
+    "ORACLE_SYS_PASSWORD": ["db", "oracle", "admin_password"],
+    "ORACLE_DEMO_PASSWORD": ["db", "oracle", "demo_password"],
     "NEO4J_PASSWORD": ["neo4j", "password"],
 }
 
@@ -41,6 +43,9 @@ class OracleConfig(BaseModel):
     service: str
     user: str
     password: str
+    admin_user: str = "system"
+    admin_password: str = ""  # ORACLE_SYS_PASSWORD in .env; only `aml security-setup` uses it
+    demo_password: str = ""  # ORACLE_DEMO_PASSWORD in .env; shared by the 4 demo users
 
     @property
     def dsn(self) -> str:
