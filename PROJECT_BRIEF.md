@@ -312,6 +312,30 @@ All rules write into an `alerts` table with a rule id, rule version, and evidenc
 
 ---
 
+## 8b. Phase 7b — ML additions (`ml/anomaly/`, `screening/ml/`, `cases/`)
+
+1. **Unsupervised anomaly detection** (`ml/anomaly/`):
+   - Build per-customer behavioural features: velocity, cash ratio, counterparty count, night-time ratio, deviation from own 90-day baseline, and graph features from Phase 6.
+   - Train Isolation Forest. Its anomaly score becomes an extra alert source and an extra feature for prioritization.
+   - Report how many injected typologies it catches that the rules missed.
+2. **Learned screening match model** (`screening/ml/`):
+   - Simulate investigator dispositions on screening hits.
+   - Train a small classifier on match features: name similarity scores, token rarity, DOB/nationality/gender/ID agreement.
+   - Compare against the fixed-threshold logic: precision/recall at equal recall.
+3. **Selection-bias handling in prioritization**:
+   - Document the bias: labels exist only for alerted cases.
+   - Add a below-the-line random sample with ground-truth labels to the training/validation data, and report the model's performance on it separately.
+4. **Model governance**:
+   - A model card per model: data, features, metrics, limitations, version.
+   - Store the model version on every score written to `audit_log`.
+   - No model may auto-close a case.
+5. **LLM memo analysis** (built in Phase 8, because it needs the local LLM):
+   - Classify transaction memos into categories (salary, loan repayment, gambling-like, crypto-like, suspicious wording) with the local LLM, using structured JSON output.
+   - Feed the categories as features into the prioritization model.
+   - Treat memo text strictly as untrusted data (prompt-injection tests apply).
+
+---
+
 ## 9. Phase 8 — GraphRAG investigator assistant (`assistant/`)
 
 The assistant answers questions and drafts narratives **grounded in the Neo4j case graph and an AML knowledge base**, with citations. It never clears, closes, or files anything.
@@ -355,6 +379,7 @@ The assistant answers questions and drafts narratives **grounded in the Neo4j ca
 - **"Draft case narrative"**: a structured draft covering subject, activity timeline, matched typologies with evidence, red flags, and a suggested next step for the human.
   - Watermark it `DRAFT — requires investigator review`.
 - **Typology explainer**: "why does this case match structuring?" It shows the rule definition, the matching transactions, and the relevant SOP chunks.
+- **Memo analysis** (Phase 7b, item 5): classify transaction memos into categories with structured JSON output and feed them to the prioritization model as features. Memo text is untrusted data.
 
 ### Evaluation
 - Build a golden set of about 30 questions from the ground truth, mixing:
