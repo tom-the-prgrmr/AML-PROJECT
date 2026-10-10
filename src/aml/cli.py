@@ -20,6 +20,7 @@ from aml.common.services import all_statuses
 from aml.datagen.load import LoadError, load_parquet, read_manifest
 from aml.datagen.pipeline import run_pipeline
 from aml.dba.plans import explain_plan, pruning_queries
+from aml.dba.retention import RetentionError, purge_transactions
 from aml.dba.schema import apply_schema
 from aml.dba.security import SecurityConfigError, apply_security
 from aml.dq.runner import label_agreement, run_dq
@@ -99,6 +100,37 @@ def security_setup() -> None:
         raise typer.Exit(code=2) from exc
     for key, names in result.items():
         typer.echo(f"{key}: {', '.join(names)}")
+
+
+@app.command()
+def retention(
+    as_of: Annotated[
+        datetime | None,
+        typer.Option(formats=["%Y-%m-%d"], help="Reference date (default: data.reference_date)."),
+    ] = None,
+    execute: Annotated[
+        bool, typer.Option("--execute", help="Archive and drop (default: dry run).")
+    ] = False,
+) -> None:
+    """Archive then drop `transactions` partitions older than the retention cutoff (Oracle only)."""
+    s = get_settings()
+    with get_db(s) as db:
+        try:
+            plan = purge_transactions(
+                db, s, as_of=as_of.date() if as_of else None, dry_run=not execute
+            )
+        except RetentionError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=2) from exc
+    label = "EXECUTED" if plan.executed else "DRY RUN"
+    typer.echo(
+        f"{label}: {plan.table} as_of={plan.as_of} cutoff={plan.cutoff.date()} "
+        f"retention_months={plan.retention_months}: {len(plan.drop)} partition(s)"
+    )
+    for a in plan.drop:
+        typer.echo(
+            f"  {a.month} partition={a.partition} rows={a.rows} archive_path={a.archive_path}"
+        )
 
 
 PROFILES = ("small", "dense", "large")

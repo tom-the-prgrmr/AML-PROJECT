@@ -13,7 +13,7 @@ function Invoke-Step([string]$exe, [string[]]$argv) {
     if ($LASTEXITCODE -ne 0) { throw "'$exe $($argv -join ' ')' failed with exit code $LASTEXITCODE" }
 }
 
-$amlCommands = @("status", "data", "load", "screen", "er", "monitor", "graph", "bench", "score", "rag", "ui")
+$amlCommands = @("status", "retention", "data", "load", "screen", "er", "monitor", "graph", "bench", "score", "rag", "ui")
 
 switch ($Target) {
     "up"   { Invoke-Step docker @("compose", "--profile", $ComposeProfile, "up", "-d") }

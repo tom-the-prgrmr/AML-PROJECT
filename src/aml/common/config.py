@@ -118,6 +118,11 @@ class DqConfig(BaseModel):
     sample_size: int  # failing entity_ids (ascending) stored in dq_results.sample_ids
 
 
+class RetentionConfig(BaseModel):
+    transactions_months: int  # months kept in the hot table; must be >= the legal minimum (60)
+    archive_dir: str  # root directory of the Parquet archive
+
+
 class Settings(BaseModel):
     seed: int
     db: DbConfig
@@ -127,6 +132,7 @@ class Settings(BaseModel):
     thresholds: ThresholdConfig
     audit: AuditConfig
     dq: DqConfig
+    retention: RetentionConfig
 
     def path(self, relative: str) -> Path:
         """Resolve a config path relative to the project root."""

@@ -3,12 +3,13 @@
 PROFILE ?= oracle
 AML := uv run aml
 
-.PHONY: up down status init data load screen er monitor graph bench score rag ui test lint all
+.PHONY: up down status init retention data load screen er monitor graph bench score rag ui test lint all
 
 up:      ; docker compose --profile $(PROFILE) up -d
 down:    ; docker compose --profile full down
 status:  ; $(AML) status
 init:    ; $(AML) init-db
+retention: ; $(AML) retention
 data:    ; $(AML) data
 load:    ; $(AML) load
 screen:  ; $(AML) screen

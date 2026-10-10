@@ -14,8 +14,9 @@ SCHEMA_SCRIPTS: dict[str, tuple[str, ...]] = {
         "ddl/020_transactions_partitioning.sql",
         "ddl/030_constraints_indexes.sql",
         "ddl/040_acct_edge_daily.sql",
-        "ddl/060_dq.sql",  # security objects are applied last, after all tables exist
-        "ddl/050_security_objects.sql",
+        "ddl/060_dq.sql",
+        "ddl/070_audit_log_partitioning.sql",  # before 050, which recompiles the triggers
+        "ddl/050_security_objects.sql",  # security objects are applied last
     ),
     "duckdb": (
         "ddl/000_audit_log.sql",
@@ -27,31 +28,49 @@ SCHEMA_SCRIPTS: dict[str, tuple[str, ...]] = {
 }
 
 
-def _is_partitioned(db: Database) -> bool:
-    df = db.query_df("SELECT COUNT(*) AS n FROM user_part_tables WHERE table_name = 'TRANSACTIONS'")
+AUDIT_PARTITION_SCRIPT = "ddl/070_audit_log_partitioning.sql"
+
+# script -> (table, reason) for scripts that convert a heap table to interval partitioning
+CONVERSIONS: dict[str, tuple[str, str]] = {
+    PARTITION_SCRIPT: (
+        "transactions",
+        "Converted heap table transactions to monthly interval partitioning on "
+        "txn_ts (online); txn_ts indexes are local, the primary key stays global.",
+    ),
+    AUDIT_PARTITION_SCRIPT: (
+        "audit_log",
+        "Converted heap table audit_log to monthly interval partitioning on event_ts "
+        "(ALTER TABLE ... MODIFY PARTITION BY ... ONLINE UPDATE INDEXES); "
+        "the primary key stays global and the append-only triggers are kept.",
+    ),
+}
+
+
+def _is_partitioned(db: Database, table: str) -> bool:
+    df = db.query_df(
+        f"SELECT COUNT(*) AS n FROM user_part_tables WHERE table_name = '{table.upper()}'"
+    )
     return int(df.iloc[0, 0]) > 0
 
 
 def apply_schema(db: Database) -> dict[str, int]:
     """Run every schema script for ``db``; return ``script -> number of statements``.
 
-    Audits ``PARTITIONED`` only when this call actually converted ``transactions``.
+    Audits ``PARTITIONED`` only when this call actually converted the table.
     """
     counts: dict[str, int] = {}
     for script in SCHEMA_SCRIPTS[db.backend]:
-        was_partitioned = _is_partitioned(db) if script == PARTITION_SCRIPT else True
+        conversion = CONVERSIONS.get(script) if db.backend == "oracle" else None
+        was_partitioned = _is_partitioned(db, conversion[0]) if conversion else True
         counts[script] = db.run_named_script(script)
-        if script == PARTITION_SCRIPT and not was_partitioned and _is_partitioned(db):
+        if conversion and not was_partitioned and _is_partitioned(db, conversion[0]):
             audit(
                 db,
                 module="dba",
                 entity_type="table",
-                entity_id="transactions",
+                entity_id=conversion[0],
                 decision="PARTITIONED",
-                reason=(
-                    "Converted heap table transactions to monthly interval partitioning on "
-                    "txn_ts (online); txn_ts indexes are local, the primary key stays global."
-                ),
+                reason=conversion[1],
                 version=script,
             )
     return counts
