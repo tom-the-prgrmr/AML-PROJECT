@@ -7,6 +7,7 @@ runs the same way on Linux/macOS and on Windows without ``make``.
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Annotated
 
@@ -21,6 +22,7 @@ from aml.datagen.pipeline import run_pipeline
 from aml.dba.plans import explain_plan, pruning_queries
 from aml.dba.schema import apply_schema
 from aml.dba.security import SecurityConfigError, apply_security
+from aml.dq.runner import label_agreement, run_dq
 
 app = typer.Typer(add_completion=False, help="AML Investigation Toolkit")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -154,6 +156,41 @@ def load(
         typer.echo(
             f"backend={db.backend}: loaded {len(counts)} tables ({sum(counts.values())} rows)"
         )
+
+
+dq_app = typer.Typer(add_completion=False, help="Data quality rules and results.")
+app.add_typer(dq_app, name="dq")
+
+
+@dq_app.command("run")
+def dq_run(
+    as_of: Annotated[
+        datetime | None,
+        typer.Option(formats=["%Y-%m-%d"], help="Reference date (default: data.reference_date)."),
+    ] = None,
+) -> None:
+    """Run every enabled data quality rule; FAIL results are measurements, not errors."""
+    s = get_settings()
+    with get_db(s) as db:
+        run = run_dq(db, s, as_of=as_of.date() if as_of else None)
+        for r in run.results:
+            rate = "n/a" if r.fail_rate is None else f"{r.fail_rate:.6f}"
+            typer.echo(
+                f"{r.rule_id:<26} {r.status:<7} failed={r.failed_rows}/{r.total_rows} rate={rate}"
+            )
+        passed = sum(r.status == "PASS" for r in run.results)
+        failed = sum(r.status == "FAIL" for r in run.results)
+        typer.echo(
+            f"run_id={run.run_id} as_of={run.as_of}: {passed} PASS, {failed} FAIL, "
+            f"{len(run.results) - passed - failed} NO_DATA"
+        )
+        labelled = int(db.query_df("SELECT COUNT(*) AS n FROM dq_labels")["n"].iloc[0])
+        if labelled:
+            for row in label_agreement(db, run).itertuples():
+                typer.echo(
+                    f"{row.rule_id:<26} vs {row.defect_type}: "
+                    f"precision={row.precision:.2f} recall={row.recall:.2f}"
+                )
 
 
 def _not_yet(phase: int) -> None:

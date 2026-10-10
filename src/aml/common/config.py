@@ -113,6 +113,11 @@ class AuditConfig(BaseModel):
     system_actor: str = "system"
 
 
+class DqConfig(BaseModel):
+    max_feed_lag_days: int  # TXN_FEED_STALE: allowed lag of the newest transaction behind as_of
+    sample_size: int  # failing entity_ids (ascending) stored in dq_results.sample_ids
+
+
 class Settings(BaseModel):
     seed: int
     db: DbConfig
@@ -121,6 +126,7 @@ class Settings(BaseModel):
     data: DataConfig
     thresholds: ThresholdConfig
     audit: AuditConfig
+    dq: DqConfig
 
     def path(self, relative: str) -> Path:
         """Resolve a config path relative to the project root."""

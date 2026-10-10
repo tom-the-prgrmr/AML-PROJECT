@@ -60,3 +60,7 @@ thresholds:
 
 audit:
   system_actor: system
+
+dq:
+  max_feed_lag_days: 1       # TXN_FEED_STALE: newest transaction may lag as_of by this many days
+  sample_size: 20            # failing entity_ids kept in dq_results.sample_ids
