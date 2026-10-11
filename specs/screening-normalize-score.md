@@ -64,7 +64,9 @@ class TokenStats:
 
 
 def build_token_stats(normalized_names: Iterable[str]) -> TokenStats: ...
-def customer_token_stats(db: Database, cfg: ScreeningConfig) -> TokenStats: ...  # đọc customers.full_name
+def customer_token_stats(
+    db: Database, cfg: ScreeningConfig
+) -> TokenStats: ...  # đọc customers.full_name
 
 
 # src/aml/screening/scoring.py

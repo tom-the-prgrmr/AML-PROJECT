@@ -12,6 +12,7 @@ Override rules (applied in order):
 
 from __future__ import annotations
 
+import math
 import os
 from datetime import date
 from functools import lru_cache
@@ -20,7 +21,7 @@ from typing import Any, Literal
 
 import yaml
 from dotenv import dotenv_values
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config.yaml"
@@ -123,6 +124,22 @@ class RetentionConfig(BaseModel):
     archive_dir: str  # root directory of the Parquet archive
 
 
+class ScreeningConfig(BaseModel):
+    token_set_weight: float  # weight of rapidfuzz token_set_ratio in the fuzzy score
+    jaro_winkler_weight: float  # weight of Jaro-Winkler; the two weights must sum to 1.0
+    token_match_min: float  # min Jaro-Winkler for two tokens to count as the same token
+    token_length_band: int  # max length difference between two tokens that are compared
+    rare_token_max_df_rate: float  # a token is "rare" when doc_freq / n_names <= this
+    legal_strong_terms: list[str]  # legal-entity terms that cannot be person names; always dropped
+    legal_weak_terms: list[str]  # ambiguous terms; dropped only if a strong term was dropped
+
+    @model_validator(mode="after")
+    def _weights_sum_to_one(self) -> ScreeningConfig:
+        if not math.isclose(self.token_set_weight + self.jaro_winkler_weight, 1.0):
+            raise ValueError("screening token_set_weight + jaro_winkler_weight must sum to 1.0")
+        return self
+
+
 class Settings(BaseModel):
     seed: int
     db: DbConfig
@@ -133,6 +150,7 @@ class Settings(BaseModel):
     audit: AuditConfig
     dq: DqConfig
     retention: RetentionConfig
+    screening: ScreeningConfig
 
     def path(self, relative: str) -> Path:
         """Resolve a config path relative to the project root."""

@@ -68,3 +68,12 @@ dq:
 retention:
   transactions_months: 60    # months kept in the hot table; must be >= 60 (legal floor, 5 years)
   archive_dir: data/archive  # Parquet archive root (git-ignored under data/)
+
+screening:
+  token_set_weight: 0.5      # fuzzy = token_set_weight * token_set_ratio + jaro_winkler_weight * JW
+  jaro_winkler_weight: 0.5   # the two weights must sum to 1.0
+  token_match_min: 0.90      # min Jaro-Winkler for two tokens to count as the same token
+  token_length_band: 1       # max length difference between two compared tokens
+  rare_token_max_df_rate: 0.02   # token is "rare" when doc_freq / n_names <= this
+  legal_strong_terms: [TNHH, MTV, CP, JSC, LTD, CTY, LLC, INC, CORP]   # dropped everywhere
+  legal_weak_terms: [CONG TY, CO PHAN, CO]   # dropped only when a strong term was dropped
