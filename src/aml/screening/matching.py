@@ -28,7 +28,7 @@ class ScreeningError(RuntimeError):
 @dataclass(frozen=True)
 class ScreeningInputs:
     customers: pd.DataFrame  # cif, full_name, gender, dob, nationality, id_number
-    entries: pd.DataFrame  # entry_id, list_type, primary_name, dob_year, nationality
+    entries: pd.DataFrame  # entry_id, list_type, primary_name, dob*, nationality (see load_inputs)
     aliases: pd.DataFrame  # entry_id, alias_name, alias_type
 
 
@@ -53,7 +53,8 @@ def load_inputs(db: Database) -> ScreeningInputs:
             "SELECT cif, full_name, gender, dob, nationality, id_number FROM customers"
         ),
         entries=db.query_df(
-            "SELECT entry_id, list_type, primary_name, dob_year, nationality FROM watchlist"
+            "SELECT entry_id, list_type, primary_name, dob, dob_year, dob_precision, nationality "
+            "FROM watchlist"
         ),
         aliases=db.query_df("SELECT entry_id, alias_name, alias_type FROM watchlist_alias"),
     )
@@ -118,13 +119,13 @@ def entry_names(inputs: ScreeningInputs, cfg: ScreeningConfig) -> dict[str, list
     return out
 
 
-def best_matches(
+def match_candidates(
     customers: dict[str, list[str]],
     names: dict[str, list[tuple[str, str]]],
     stats: TokenStats,
     cfg: ScreeningConfig,
-) -> tuple[dict[tuple[str, str], BestMatch], int]:
-    """Best name per (cif, entry_id) with ``fuzzy >= review_threshold``, and the candidate count."""
+) -> tuple[dict[tuple[str, str], BestMatch], set[tuple[str, str]]]:
+    """Best name per (cif, entry_id) with fuzzy >= review_threshold, and every candidate pair."""
     pairs = candidate_name_pairs(customers, names, stats, cfg)
     scores: dict[tuple[str, str], NameScore] = {}  # one score per distinct name pair
     candidates: set[tuple[str, str]] = set()
@@ -144,4 +145,15 @@ def best_matches(
                 if key not in rank or order < rank[key]:
                     rank[key] = order
                     best[key] = BestMatch(list_name, name_type, score)
+    return best, candidates
+
+
+def best_matches(
+    customers: dict[str, list[str]],
+    names: dict[str, list[tuple[str, str]]],
+    stats: TokenStats,
+    cfg: ScreeningConfig,
+) -> tuple[dict[tuple[str, str], BestMatch], int]:
+    """Like ``match_candidates`` but returns only the number of candidate pairs."""
+    best, candidates = match_candidates(customers, names, stats, cfg)
     return best, len(candidates)

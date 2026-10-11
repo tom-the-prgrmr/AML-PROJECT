@@ -139,6 +139,7 @@ class ScreeningConfig(BaseModel):
     dob_gap_discount: float  # points off when the gap is in (tolerance, clear]
     nationality_mismatch_discount: float  # points off when both nationalities differ
     gender_mismatch_discount: float  # points off when both genders differ
+    sql_length_band: int  # SQL screen: max length gap between two name keys that are compared
 
     @model_validator(mode="after")
     def _weights_sum_to_one(self) -> ScreeningConfig:

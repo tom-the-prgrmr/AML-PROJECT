@@ -26,7 +26,9 @@ from aml.dba.security import SecurityConfigError, apply_security
 from aml.dba.tuning import has_cursor_stats_access, median_ms, render_evidence, run_tuning
 from aml.dq.runner import label_agreement, run_dq
 from aml.screening.evaluate import evaluate, truth_pairs
+from aml.screening.incremental import run_incremental
 from aml.screening.runner import ScreeningError, run_screening
+from aml.screening.sql_compare import compare_sql_python
 
 app = typer.Typer(add_completion=False, help="AML Investigation Toolkit")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -284,12 +286,17 @@ def screen(
     eval_out: Annotated[
         Path | None, typer.Option(help="Write the evaluation table to this CSV file.")
     ] = None,
+    incremental: Annotated[
+        bool,
+        typer.Option("--incremental", help="Re-screen only what changed since the last FULL run."),
+    ] = False,
 ) -> None:
     """Screen all customers against the watchlist (two tiers) and evaluate against ground truth."""
     s = get_settings()
+    run_fn = run_incremental if incremental else run_screening
     with get_db(s) as db:
         try:
-            run = run_screening(db, s, as_of=as_of.date() if as_of else None)
+            run = run_fn(db, s, as_of=as_of.date() if as_of else None)
         except ScreeningError as exc:
             typer.echo(str(exc), err=True)
             raise typer.Exit(code=1) from exc
@@ -311,6 +318,24 @@ def screen(
         if eval_out is not None:
             eval_out.parent.mkdir(parents=True, exist_ok=True)
             table.to_csv(eval_out, index=False, encoding="utf-8")
+
+
+@app.command("screen-compare")
+def screen_compare() -> None:
+    """Compare the in-database SQL screen (Jaro-Winkler) with the two-tier Python screen."""
+    s = get_settings()
+    with get_db(s) as db:
+        try:
+            c = compare_sql_python(db, s)
+        except ScreeningError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+        typer.echo(
+            f"backend={c.backend} function={c.function} threshold={c.threshold} "
+            f"sql_pairs={c.sql_pairs} python_pairs={c.python_pairs} both={c.both} "
+            f"sql_only={c.sql_only} python_only={c.python_only} truth={c.truth} "
+            f"sql_tp={c.sql_tp} python_tp={c.python_tp} sql_seconds={c.sql_seconds:.3f}"
+        )
 
 
 def _not_yet(phase: int) -> None:

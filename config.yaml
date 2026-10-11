@@ -84,3 +84,4 @@ screening:
   dob_gap_discount: 15       # points off when the gap is in (tolerance, clear]
   nationality_mismatch_discount: 15   # points off when both nationalities are known and differ
   gender_mismatch_discount: 15        # points off when both genders are known and differ
+  sql_length_band: 3         # SQL screen: max length gap between two compared name keys

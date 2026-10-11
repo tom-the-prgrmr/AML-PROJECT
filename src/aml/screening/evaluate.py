@@ -85,7 +85,7 @@ def _row(method: str, flagged: set[Pair], truth: frozenset[Pair]) -> dict[str, o
     }
 
 
-def _current_pairs(db: Database, decisions: str) -> set[Pair]:
+def current_pairs(db: Database, decisions: str) -> set[Pair]:
     df = db.query_df(f"SELECT cif, entry_id FROM screening_current WHERE decision IN ({decisions})")
     return set(zip(df["cif"].astype(str), df["entry_id"].astype(str), strict=True))
 
@@ -99,8 +99,8 @@ def evaluate(db: Database, settings: Settings) -> pd.DataFrame:
     flagged = {
         "exact": _exact_pairs(customers, names),
         "fuzzy": _fuzzy_pairs(customers, names, cfg.alert_threshold),
-        "two_tier_alert": _current_pairs(db, "'ALERT'"),
-        "two_tier": _current_pairs(db, "'ALERT', 'REVIEW'"),
+        "two_tier_alert": current_pairs(db, "'ALERT'"),
+        "two_tier": current_pairs(db, "'ALERT', 'REVIEW'"),
     }
     rows = [_row(m, flagged[m], truth) for m in METHODS]
     baseline_fp = rows[1]["fp"]

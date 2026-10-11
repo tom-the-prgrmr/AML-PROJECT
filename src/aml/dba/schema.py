@@ -17,6 +17,7 @@ SCHEMA_SCRIPTS: dict[str, tuple[str, ...]] = {
         "ddl/060_dq.sql",
         "ddl/070_audit_log_partitioning.sql",  # before 050, which recompiles the triggers
         "ddl/080_screening.sql",
+        "ddl/090_screening_state.sql",
         "ddl/050_security_objects.sql",  # security objects are applied last
     ),
     "duckdb": (
@@ -24,7 +25,8 @@ SCHEMA_SCRIPTS: dict[str, tuple[str, ...]] = {
         "ddl/010_datagen.sql",
         "ddl/040_acct_edge_daily.sql",
         "ddl/060_dq.sql",
-        "ddl/080_screening.sql",  # security objects are applied last, after all tables exist
+        "ddl/080_screening.sql",
+        "ddl/090_screening_state.sql",  # security objects are applied last, after all tables exist
         "ddl/050_customers_masked.sql",
     ),
 }
