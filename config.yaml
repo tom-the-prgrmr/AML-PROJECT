@@ -77,3 +77,10 @@ screening:
   rare_token_max_df_rate: 0.02   # token is "rare" when doc_freq / n_names <= this
   legal_strong_terms: [TNHH, MTV, CP, JSC, LTD, CTY, LLC, INC, CORP]   # dropped everywhere
   legal_weak_terms: [CONG TY, CO PHAN, CO]   # dropped only when a strong term was dropped
+  alert_threshold: 90        # final_score >= this -> ALERT
+  review_threshold: 75       # final_score >= this -> REVIEW (also the recording threshold)
+  dob_tolerance_years: 1     # birth-year gap <= this counts as a match
+  dob_clear_years: 5         # birth-year gap > this -> AUTO_CLEARED
+  dob_gap_discount: 15       # points off when the gap is in (tolerance, clear]
+  nationality_mismatch_discount: 15   # points off when both nationalities are known and differ
+  gender_mismatch_discount: 15        # points off when both genders are known and differ

@@ -132,11 +132,24 @@ class ScreeningConfig(BaseModel):
     rare_token_max_df_rate: float  # a token is "rare" when doc_freq / n_names <= this
     legal_strong_terms: list[str]  # legal-entity terms that cannot be person names; always dropped
     legal_weak_terms: list[str]  # ambiguous terms; dropped only if a strong term was dropped
+    alert_threshold: float  # final_score >= this -> ALERT
+    review_threshold: float  # final_score >= this -> REVIEW; also the recording threshold
+    dob_tolerance_years: int  # birth-year gap <= this counts as a match
+    dob_clear_years: int  # birth-year gap > this -> AUTO_CLEARED
+    dob_gap_discount: float  # points off when the gap is in (tolerance, clear]
+    nationality_mismatch_discount: float  # points off when both nationalities differ
+    gender_mismatch_discount: float  # points off when both genders differ
 
     @model_validator(mode="after")
     def _weights_sum_to_one(self) -> ScreeningConfig:
         if not math.isclose(self.token_set_weight + self.jaro_winkler_weight, 1.0):
             raise ValueError("screening token_set_weight + jaro_winkler_weight must sum to 1.0")
+        return self
+
+    @model_validator(mode="after")
+    def _review_not_above_alert(self) -> ScreeningConfig:
+        if self.review_threshold > self.alert_threshold:
+            raise ValueError("screening review_threshold must not exceed alert_threshold")
         return self
 
 

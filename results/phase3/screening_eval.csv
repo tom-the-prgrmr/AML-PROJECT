@@ -1,0 +1,5 @@
+method,flagged,tp,fp,fn,precision,recall,fp_reduction_pct
+exact,137,24,113,1,0.1752,0.96,97.44
+fuzzy,4436,25,4411,0,0.0056,1.0,0.0
+two_tier_alert,41,25,16,0,0.6098,1.0,99.64
+two_tier,72,25,47,0,0.3472,1.0,98.93

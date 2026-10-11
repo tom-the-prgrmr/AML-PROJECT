@@ -25,6 +25,8 @@ from aml.dba.schema import apply_schema
 from aml.dba.security import SecurityConfigError, apply_security
 from aml.dba.tuning import has_cursor_stats_access, median_ms, render_evidence, run_tuning
 from aml.dq.runner import label_agreement, run_dq
+from aml.screening.evaluate import evaluate, truth_pairs
+from aml.screening.runner import ScreeningError, run_screening
 
 app = typer.Typer(add_completion=False, help="AML Investigation Toolkit")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -273,13 +275,51 @@ def dq_run(
                 )
 
 
+@app.command()
+def screen(
+    as_of: Annotated[
+        datetime | None,
+        typer.Option(formats=["%Y-%m-%d"], help="Reference date (default: data.reference_date)."),
+    ] = None,
+    eval_out: Annotated[
+        Path | None, typer.Option(help="Write the evaluation table to this CSV file.")
+    ] = None,
+) -> None:
+    """Screen all customers against the watchlist (two tiers) and evaluate against ground truth."""
+    s = get_settings()
+    with get_db(s) as db:
+        try:
+            run = run_screening(db, s, as_of=as_of.date() if as_of else None)
+        except ScreeningError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+        typer.echo(
+            f"run_id={run.run_id} mode={run.mode} as_of={run.as_of} "
+            f"customers={run.customers_screened} entries={run.entries_screened} "
+            f"candidates={run.candidate_pairs} recorded={run.recorded} ALERT={run.alerts} "
+            f"REVIEW={run.reviews} AUTO_CLEARED={run.auto_cleared} superseded={run.superseded}"
+        )
+        if not truth_pairs(db):
+            return
+        table = evaluate(db, s)
+        for r in table.itertuples():
+            pct = "n/a" if r.fp_reduction_pct is None else f"{r.fp_reduction_pct:.2f}%"
+            typer.echo(
+                f"{r.method:<15} flagged={r.flagged} tp={r.tp} fp={r.fp} fn={r.fn} "
+                f"precision={r.precision:.2f} recall={r.recall:.2f} fp_reduction={pct}"
+            )
+        if eval_out is not None:
+            eval_out.parent.mkdir(parents=True, exist_ok=True)
+            table.to_csv(eval_out, index=False, encoding="utf-8")
+
+
 def _not_yet(phase: int) -> None:
     typer.echo(f"Not implemented yet - arrives in Phase {phase}.", err=True)
     raise typer.Exit(code=1)
 
 
 for _name, _phase in {
-    "screen": 3, "er": 4, "monitor": 5, "graph": 6,
+    "er": 4, "monitor": 5, "graph": 6,
     "bench": 6, "score": 7, "rag": 8, "ui": 9,
 }.items():  # fmt: skip
     app.command(_name, help=f"(Phase {_phase})")(lambda p=_phase: _not_yet(p))
