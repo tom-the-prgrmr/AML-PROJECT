@@ -176,6 +176,56 @@ class EntityResolutionConfig(BaseModel):
         return self
 
 
+class StructuringRuleConfig(BaseModel):
+    window_days: int  # sliding window for counting deposits
+    min_deposits: int  # near-threshold cash deposits in the window -> alert
+
+
+class RapidMovementRuleConfig(BaseModel):
+    window_hours: int  # sliding window from each inflow
+    min_inflow_vnd: int  # total inflow in the window must reach this
+    min_pass_through_pct: float  # share of the inflow sent out in the window, in (0, 1]
+
+    @model_validator(mode="after")
+    def _pct_in_range(self) -> RapidMovementRuleConfig:
+        if not 0 < self.min_pass_through_pct <= 1:
+            raise ValueError("monitoring min_pass_through_pct must be in (0, 1]")
+        return self
+
+
+class HighVelocityRuleConfig(BaseModel):
+    window_hours: int  # sliding window
+    min_txns: int  # transactions with new counterparties in the window -> alert
+    min_total_vnd: int  # and their total must reach this
+
+
+class FanRuleConfig(BaseModel):
+    window_days: int  # sliding window
+    min_counterparties: int  # distinct new counterparties in the window -> alert
+    min_total_vnd: int  # and the total must reach this
+
+
+class DormantRuleConfig(BaseModel):
+    dormant_days: int  # quiet period before a transaction counts as reactivation
+    window_hours: int  # activity window after the reactivating transaction
+    min_amount_vnd: int  # total moved in the window must reach this
+
+
+class MonitoringConfig(BaseModel):
+    known_counterparty_days: int  # HIGH_VELOCITY / FAN_*: skip counterparties seen this long ago
+    structuring: StructuringRuleConfig
+    rapid_movement: RapidMovementRuleConfig
+    high_velocity: HighVelocityRuleConfig
+    fan_in_out: FanRuleConfig
+    dormant_reactivation: DormantRuleConfig
+
+    @model_validator(mode="after")
+    def _known_days_positive(self) -> MonitoringConfig:
+        if self.known_counterparty_days < 1:
+            raise ValueError("monitoring known_counterparty_days must be >= 1")
+        return self
+
+
 class Settings(BaseModel):
     seed: int
     db: DbConfig
@@ -188,6 +238,7 @@ class Settings(BaseModel):
     retention: RetentionConfig
     screening: ScreeningConfig
     entity_resolution: EntityResolutionConfig
+    monitoring: MonitoringConfig
 
     def path(self, relative: str) -> Path:
         """Resolve a config path relative to the project root."""

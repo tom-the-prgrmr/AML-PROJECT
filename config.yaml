@@ -99,3 +99,11 @@ entity_resolution:
     email: [0.45, 0.55]                # same | different
     address: [0.85, 0.10, 0.05]        # same normalised address | same new province | other
     id: [0.98, 0.02]                   # same kind and number | same kind, different number
+
+monitoring:                  # Phase 5a; thresholds.large_cash_vnd / structuring_band_pct are reused
+  known_counterparty_days: 14   # counterparties seen this long ago are "known"; also the warm-up period
+  structuring: {window_days: 14, min_deposits: 3}
+  rapid_movement: {window_hours: 24, min_inflow_vnd: 200000000, min_pass_through_pct: 0.90}
+  high_velocity: {window_hours: 24, min_txns: 8, min_total_vnd: 100000000}
+  fan_in_out: {window_days: 7, min_counterparties: 8, min_total_vnd: 100000000}
+  dormant_reactivation: {dormant_days: 90, window_hours: 24, min_amount_vnd: 100000000}

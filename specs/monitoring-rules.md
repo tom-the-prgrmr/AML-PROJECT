@@ -71,7 +71,9 @@ TINY = fixture `tiny_parquet`, `small` = `data/parquet` hiện có (5000 custome
 ```python
 # src/aml/common/config.py
 class MonitoringConfig(BaseModel):
-    known_counterparty_days: int  # HIGH_VELOCITY / FAN_*: bỏ đối tác đã quen; cũng là số ngày khởi động
+    known_counterparty_days: (
+        int  # HIGH_VELOCITY / FAN_*: bỏ đối tác đã quen; cũng là số ngày khởi động
+    )
     structuring: StructuringRuleConfig  # window_days, min_deposits
     rapid_movement: RapidMovementRuleConfig  # window_hours, min_inflow_vnd, min_pass_through_pct
     high_velocity: HighVelocityRuleConfig  # window_hours, min_txns, min_total_vnd
@@ -110,7 +112,11 @@ class Detection:
     alert_key: str  # "<rule_id>|<account_id>|<window_start dạng YYYY-MM-DDTHH:MM:SS>"
 
 
-def detect(db: Database, settings: Settings, *, as_of: date | None = None) -> tuple[Detection, ...]: ...
+def detect(
+    db: Database, settings: Settings, *, as_of: date | None = None
+) -> tuple[Detection, ...]: ...
+
+
 # không ghi gì; thứ tự: theo RULES, rồi account_id, rồi window_start
 
 
@@ -139,7 +145,12 @@ class AlertRecord:
 
 
 def record_run(
-    db: Database, *, as_of: date, source: str, rules: Sequence[RuleRun], alerts: Sequence[AlertRecord]
+    db: Database,
+    *,
+    as_of: date,
+    source: str,
+    rules: Sequence[RuleRun],
+    alerts: Sequence[AlertRecord],
 ) -> int: ...  # cấp run_id + alert_id, ghi 4 bảng, audit; trả run_id
 
 
@@ -156,7 +167,9 @@ class MonitoringRun:
     by_rule: dict[str, int]  # rule_id -> số alert (đủ 6 khoá, kể cả 0)
 
 
-def run_monitoring(db: Database, settings: Settings, *, as_of: date | None = None) -> MonitoringRun: ...
+def run_monitoring(
+    db: Database, settings: Settings, *, as_of: date | None = None
+) -> MonitoringRun: ...
 
 
 # src/aml/monitoring/evaluate.py
@@ -164,6 +177,8 @@ def evaluate_rules(db: Database) -> pd.DataFrame: ...
 # cột: rule_id, target_typology, alerts, target_hits, other_suspicious, benign, unlabelled,
 #      precision, precision_suspicious, scenarios, detected, recall; 6 dòng theo thứ tự RULES
 def typology_coverage(db: Database) -> pd.DataFrame: ...
+
+
 # cột: typology, is_suspicious, scenarios, flagged, rate, rules; 6 dòng theo thứ tự: structuring,
 #      rapid_movement, mule_ring, round_tripping, benign_payroll, benign_merchant
 ```

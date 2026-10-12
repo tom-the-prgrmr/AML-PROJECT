@@ -91,7 +91,16 @@ class Settings(BaseModel):
 
 
 # src/aml/graph/trace.py
-PATH_COLUMNS = ["hop", "path", "account_id", "step_path", "first_ts", "last_ts", "amount_vnd", "is_cycle"]
+PATH_COLUMNS = [
+    "hop",
+    "path",
+    "account_id",
+    "step_path",
+    "first_ts",
+    "last_ts",
+    "amount_vnd",
+    "is_cycle",
+]
 PATH_SEPARATOR = ">"
 
 
@@ -118,6 +127,8 @@ class TraceMethod:
 
 
 METHODS: dict[str, TraceMethod]  # thứ tự: cte_raw, cte_edge, pgq
+
+
 def register_method(method: TraceMethod) -> None: ...  # chỗ cắm cho backend thứ tư
 
 
@@ -135,15 +146,25 @@ class TraceResult:
 
 
 def trace(
-    db: Database, settings: Settings, account_id: str, *, method: str = "cte_raw",
-    hops: int | None = None, hours: int | None = None, since: datetime | None = None,
-    min_amount_vnd: int | None = None, top_k: int | None = None,
-    actor: str | None = None, record_audit: bool = True,
+    db: Database,
+    settings: Settings,
+    account_id: str,
+    *,
+    method: str = "cte_raw",
+    hops: int | None = None,
+    hours: int | None = None,
+    since: datetime | None = None,
+    min_amount_vnd: int | None = None,
+    top_k: int | None = None,
+    actor: str | None = None,
+    record_audit: bool = True,
 ) -> TraceResult: ...
 
 
 # src/aml/graph/schema.py
-def refresh_account_nodes(db: Database) -> int: ...  # Oracle: refresh MV acct_node, trả số dòng; DuckDB: 0
+def refresh_account_nodes(
+    db: Database,
+) -> int: ...  # Oracle: refresh MV acct_node, trả số dòng; DuckDB: 0
 ```
 - `config.yaml` thêm mục `trace`: `default_hops: 3`, `default_hours: 72`, `max_hops: 6`, `max_hours: 720`,
   `max_paths: 100000`, `edge_min_amount_vnd: 10000000`, `edge_top_k: 5`.

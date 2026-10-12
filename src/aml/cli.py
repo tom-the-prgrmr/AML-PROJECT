@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Annotated
 
+import pandas as pd
 import typer
 
 from aml.common.audit import audit
@@ -27,6 +28,8 @@ from aml.dba.tuning import has_cursor_stats_access, median_ms, render_evidence, 
 from aml.dq.runner import label_agreement, run_dq
 from aml.entity_resolution.evaluate import evaluate_er
 from aml.entity_resolution.runner import ErError, explain_cluster, run_er
+from aml.monitoring.evaluate import evaluate_rules, typology_coverage
+from aml.monitoring.runner import MonitoringError, run_monitoring
 from aml.screening.evaluate import evaluate, truth_pairs
 from aml.screening.incremental import run_incremental
 from aml.screening.runner import ScreeningError, run_screening
@@ -404,14 +407,70 @@ def er(
             table.to_csv(eval_out, index=False, encoding="utf-8")
 
 
+def _count(value: float | None) -> str:
+    return "n/a" if value is None or pd.isna(value) else str(int(value))
+
+
+def _fmt(value: float | None) -> str:
+    return "n/a" if value is None or pd.isna(value) else f"{value:.2f}"
+
+
+@app.command()
+def monitor(
+    as_of: Annotated[
+        datetime | None,
+        typer.Option(formats=["%Y-%m-%d"], help="Reference date (default: data.reference_date)."),
+    ] = None,
+    eval_out: Annotated[
+        Path | None, typer.Option(help="Write the evaluation table to this CSV file.")
+    ] = None,
+) -> None:
+    """Run the transaction-monitoring rules, store alerts and evaluate against ground truth."""
+    s = get_settings()
+    with get_db(s) as db:
+        try:
+            run = run_monitoring(db, s, as_of=as_of.date() if as_of else None)
+        except MonitoringError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+        evidence = db.query_df(
+            f"SELECT rule_id, evidence FROM monitoring_runs WHERE run_id = {run.run_id}"
+        )
+        evidence_of = {
+            str(r): int(e) for r, e in zip(evidence.iloc[:, 0], evidence.iloc[:, 1], strict=True)
+        }
+        for rule_id, alerts in run.by_rule.items():
+            typer.echo(f"{rule_id:<22} alerts={alerts} evidence={evidence_of.get(rule_id, 0)}")
+        typer.echo(
+            f"run_id={run.run_id} as_of={run.as_of} alerts={run.alerts} evidence={run.evidence}"
+        )
+        if int(db.query_df("SELECT COUNT(*) AS n FROM ground_truth")["n"].iloc[0]) == 0:
+            return
+        table = evaluate_rules(db)
+        for r in table.itertuples():
+            typer.echo(
+                f"{r.rule_id:<22} target_hits={_count(r.target_hits)} "
+                f"other_suspicious={r.other_suspicious} benign={r.benign} "
+                f"precision={_fmt(r.precision)} recall={_fmt(r.recall)} "
+                f"precision_suspicious={_fmt(r.precision_suspicious)}"
+            )
+        for c in typology_coverage(db).itertuples():
+            typer.echo(
+                f"{c.typology:<16} scenarios={c.scenarios} flagged={c.flagged} "
+                f"rate={c.rate:.2f} rules={c.rules or '-'}"
+            )
+        if eval_out is not None:
+            eval_out.parent.mkdir(parents=True, exist_ok=True)
+            table.to_csv(eval_out, index=False, encoding="utf-8")
+
+
 def _not_yet(phase: int) -> None:
     typer.echo(f"Not implemented yet - arrives in Phase {phase}.", err=True)
     raise typer.Exit(code=1)
 
 
 for _name, _phase in {
-    "monitor": 5, "graph": 6,
-    "bench": 6, "score": 7, "rag": 8, "ui": 9,
+    "graph": 6, "bench": 6, "score": 7, "rag": 8, "ui": 9,
 }.items():  # fmt: skip
     app.command(_name, help=f"(Phase {_phase})")(lambda p=_phase: _not_yet(p))
 

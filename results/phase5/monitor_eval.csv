@@ -1,0 +1,7 @@
+rule_id,target_typology,alerts,target_hits,other_suspicious,benign,unlabelled,precision,precision_suspicious,scenarios,detected,recall
+STRUCTURING,structuring,20,20.0,0,0,0,1.0,1.0,20.0,20.0,1.0
+RAPID_MOVEMENT,rapid_movement,45,20.0,24,0,1,0.4444,0.9778,20.0,20.0,1.0
+HIGH_VELOCITY,,15,,15,0,0,,1.0,,,
+FAN_IN,mule_ring,5,5.0,0,0,0,1.0,1.0,5.0,5.0,1.0
+FAN_OUT,mule_ring,20,20.0,0,0,0,1.0,1.0,5.0,5.0,1.0
+DORMANT_REACTIVATION,,137,,136,0,1,,0.9927,,,

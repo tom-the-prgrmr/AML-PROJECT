@@ -169,13 +169,24 @@ def network_rule_params(rule_id: str, settings: Settings) -> dict[str, int | flo
 
 # src/aml/graph/network/shared.py
 def attribute_keys(customers: pd.DataFrame, mapping: pd.DataFrame) -> pd.DataFrame: ...
+
+
 # cột: cif, device_key, phone_key, address_key; sắp theo cif; giá trị không dùng được -> None
 
 
 # src/aml/graph/network/runner.py
 FEATURE_COLUMNS = [
-    "account_id", "in_degree", "out_degree", "in_vnd", "out_vnd", "pagerank", "pagerank_ratio",
-    "cycle_alerts", "shared_cluster_id", "shared_cluster_size", "is_hub",
+    "account_id",
+    "in_degree",
+    "out_degree",
+    "in_vnd",
+    "out_vnd",
+    "pagerank",
+    "pagerank_ratio",
+    "cycle_alerts",
+    "shared_cluster_id",
+    "shared_cluster_size",
+    "is_hub",
 ]
 
 
@@ -202,7 +213,9 @@ class NetworkRun:
     cycle_search_steps: int
 
 
-def detect_network(db: Database, settings: Settings, *, as_of: date | None = None) -> NetworkDetections: ...
+def detect_network(
+    db: Database, settings: Settings, *, as_of: date | None = None
+) -> NetworkDetections: ...
 # không ghi gì; thứ tự alert: NET_SHARED_ATTRIBUTE (theo subject_id), NET_CYCLE (theo window_start, subject_id),
 # NET_HUB (theo subject_id)
 def run_network(db: Database, settings: Settings, *, as_of: date | None = None) -> NetworkRun: ...
@@ -213,6 +226,8 @@ def evaluate_network(db: Database) -> pd.DataFrame: ...
 # cột như evaluate_rules của 5a: rule_id, target_typology, alerts, target_hits, other_suspicious, benign,
 #      unlabelled, precision, precision_suspicious, scenarios, detected, recall; 3 dòng theo thứ tự NETWORK_RULES
 def network_coverage(db: Database) -> pd.DataFrame: ...
+
+
 # cột: typology, is_suspicious, scenarios, flagged_rule, flagged_network, flagged_any, new_by_network,
 #      accounts, accounts_rule, accounts_network, accounts_any, accounts_new, rules; 6 dòng theo thứ tự:
 #      structuring, rapid_movement, mule_ring, round_tripping, benign_payroll, benign_merchant
