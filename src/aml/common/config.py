@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 from datetime import date
 from functools import lru_cache
 from pathlib import Path
@@ -64,6 +65,8 @@ class Neo4jConfig(BaseModel):
     uri: str
     user: str
     password: str
+    database: str = "neo4j"
+    read_procedures: list[str] = []  # fnmatch patterns of procedures the read path may CALL
 
 
 class OllamaConfig(BaseModel):
@@ -310,6 +313,22 @@ class NetworkConfig(BaseModel):
     hubs: HubConfig
 
 
+class GraphSyncConfig(BaseModel):
+    oracle_user: str  # read-only user; its password is db.oracle.demo_password
+    batch_size: int  # rows per UNWIND = one Neo4j transaction
+    overlap_minutes: int  # incremental sync re-reads from (watermark - overlap)
+
+    @model_validator(mode="after")
+    def _in_range(self) -> GraphSyncConfig:
+        if not 1 <= self.batch_size <= 50000:
+            raise ValueError("graph_sync batch_size must be between 1 and 50000")
+        if self.overlap_minutes < 0:
+            raise ValueError("graph_sync overlap_minutes must be >= 0")
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_$#]{0,29}", self.oracle_user):
+            raise ValueError("graph_sync oracle_user must be a plain identifier")
+        return self
+
+
 class Settings(BaseModel):
     seed: int
     db: DbConfig
@@ -325,6 +344,7 @@ class Settings(BaseModel):
     monitoring: MonitoringConfig
     trace: TraceConfig
     network: NetworkConfig
+    graph_sync: GraphSyncConfig
 
     def path(self, relative: str) -> Path:
         """Resolve a config path relative to the project root."""

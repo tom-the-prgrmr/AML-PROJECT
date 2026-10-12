@@ -104,7 +104,7 @@ def test_ac10_trace_invalid_hops_exits_2(cli_tiny: None) -> None:
     assert "hops" in result.stderr
 
 
-@pytest.mark.parametrize("command", ["graph", "bench"])
+@pytest.mark.parametrize("command", ["bench"])
 def test_ac10_phase_6_stubs_are_untouched(command: str) -> None:
     result = _cli(command)
     assert result.exit_code == 1

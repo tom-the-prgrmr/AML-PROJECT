@@ -41,7 +41,15 @@ EXPECTED_GRANTS: dict[str, set[tuple[str, str]]] = {
     },
     "aml_graph_sync": {
         ("SELECT", t.upper())
-        for t in ("customers_masked", "accounts", "transactions", "acct_edge_daily")
+        for t in (
+            "customers_masked",
+            "accounts",
+            "transactions",
+            "acct_edge_daily",
+            "graph_customer_attrs",
+            "customer_golden",
+            "admin_unit_mapping",
+        )
     },
     "aml_auditor": {("SELECT", "AUDIT_LOG")},
 }
@@ -106,7 +114,7 @@ def test_ac5_apply_security_is_idempotent_and_creates_everything(oracle_settings
 def test_ac6_role_and_user_privileges_are_least_privilege(secured: Settings) -> None:
     security = mod("aml.dba.security")
     owner = secured.db.oracle.user.upper()
-    sizes = {"aml_app": 10, "aml_analyst": 7, "aml_graph_sync": 4, "aml_auditor": 1}
+    sizes = {"aml_app": 10, "aml_analyst": 7, "aml_graph_sync": 7, "aml_auditor": 1}
     for role in ROLES:
         normalised = {(p.upper(), o.upper()) for p, o in security.ROLE_GRANTS[role]}
         assert normalised == EXPECTED_GRANTS[role], role

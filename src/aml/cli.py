@@ -16,7 +16,7 @@ import typer
 
 from aml.common.audit import audit
 from aml.common.config import get_settings
-from aml.common.db import Database, get_db
+from aml.common.db import Database, ServiceUnavailableError, get_db
 from aml.common.services import all_statuses
 from aml.datagen.load import LoadError, load_parquet, read_manifest
 from aml.datagen.pipeline import run_pipeline
@@ -28,6 +28,11 @@ from aml.dba.tuning import has_cursor_stats_access, median_ms, render_evidence, 
 from aml.dq.runner import label_agreement, run_dq
 from aml.entity_resolution.evaluate import evaluate_er
 from aml.entity_resolution.runner import ErError, explain_cluster, run_er
+from aml.graph.neo4j import client
+from aml.graph.neo4j.client import open_driver
+from aml.graph.neo4j.extract import NODE_LABELS, REL_TYPES, SyncError
+from aml.graph.neo4j.guard import GraphError
+from aml.graph.neo4j.sync import graph_counts, read_state, run_sync, source_stats
 from aml.graph.network.evaluate import evaluate_network, network_coverage
 from aml.graph.network.runner import NetworkError, run_network
 from aml.graph.trace import METHODS, TraceError, TraceResult
@@ -593,13 +598,104 @@ def trace(
             raise typer.Exit(code=2) from exc
 
 
+graph_app = typer.Typer(add_completion=False, help="Neo4j investigation projection.")
+app.add_typer(graph_app, name="graph")
+
+
+def _iso(value: datetime | None) -> str:
+    return "-" if value is None else value.strftime("%Y-%m-%dT%H:%M:%S")
+
+
+def _int_or_dash(value: int | None) -> str:
+    return "-" if value is None else str(value)
+
+
+@graph_app.command("sync")
+def graph_sync(
+    full: Annotated[bool, typer.Option("--full", help="Wipe and rebuild the whole graph.")] = False,
+) -> None:
+    """Sync the Neo4j projection from the system of record (incremental unless --full)."""
+    s = get_settings()
+    try:
+        db = get_db(s)
+    except ServiceUnavailableError as exc:
+        typer.echo(f"source database not available: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    try:
+        with db:
+            run = run_sync(db, s, full=full, actor="cli")
+    except (SyncError, GraphError) as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    except ServiceUnavailableError as exc:
+        typer.echo(f"neo4j not available: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    nodes = sum(run.sent[k] for k in NODE_LABELS)
+    rels = sum(run.sent[k] for k in REL_TYPES)
+    typer.echo(
+        f"run_id={run.run_id} mode={run.mode} source={run.source_backend} "
+        f"since={_iso(run.since)} watermark={_iso(run.watermark_to)} nodes={nodes} rels={rels} "
+        f"pruned={run.pruned} swept={run.swept} "
+        f"lag_before_s={_int_or_dash(run.lag_before_seconds)} "
+        f"lag_after_s={run.lag_after_seconds} seconds={run.seconds} in_sync={run.in_sync}"
+    )
+    for key in (*NODE_LABELS, *REL_TYPES):
+        typer.echo(f"{key} sent={run.sent[key]} graph={run.graph[key]}")
+    if not run.in_sync:
+        typer.echo("OUT OF SYNC: run aml graph sync --full", err=True)
+
+
+@graph_app.command("status")
+def graph_status() -> None:
+    """Show the watermark and element counts of the projection (read-only)."""
+    s = get_settings()
+    try:
+        driver = open_driver(s)
+    except ServiceUnavailableError as exc:
+        typer.echo(f"neo4j not available: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    try:
+        state = read_state(driver, s)
+        if state is None:
+            typer.echo("graph not synced: run aml graph sync", err=True)
+            raise typer.Exit(code=1)
+        counts = graph_counts(driver, s)
+        last = client.run_read_file(driver, s, "read/sync_state.cypher").iloc[0]
+    except GraphError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    finally:
+        driver.close()
+    watermark, source = state
+    lag = _graph_lag(watermark)
+    typer.echo(
+        f"watermark={_iso(watermark)} source={source} last_run_id={last.get('last_run_id', '-')} "
+        f"lag_s={lag}"
+    )
+    for key in (*NODE_LABELS, *REL_TYPES):
+        typer.echo(f"{key} {counts[key]}")
+
+
+def _graph_lag(watermark: datetime | None) -> str:
+    """Seconds between the newest source transaction and the watermark (reads the source)."""
+    s = get_settings()
+    try:
+        with get_db(s) as db:
+            latest = source_stats(db).last_ts
+    except Exception:  # status stays usable when the source cannot be read
+        return "-"
+    if latest is None or watermark is None:
+        return "-"
+    return str(max(0, int((latest - watermark).total_seconds())))
+
+
 def _not_yet(phase: int) -> None:
     typer.echo(f"Not implemented yet - arrives in Phase {phase}.", err=True)
     raise typer.Exit(code=1)
 
 
 for _name, _phase in {
-    "graph": 6, "bench": 6, "score": 7, "rag": 8, "ui": 9,
+    "bench": 6, "score": 7, "rag": 8, "ui": 9,
 }.items():  # fmt: skip
     app.command(_name, help=f"(Phase {_phase})")(lambda p=_phase: _not_yet(p))
 

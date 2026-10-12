@@ -26,7 +26,10 @@ _READ_ANALYST = (
     "customers_masked", "accounts", "transactions", "acct_edge_daily",
     "watchlist", "watchlist_alias", "admin_unit_mapping",
 )  # fmt: skip
-_READ_GRAPH = ("customers_masked", "accounts", "transactions", "acct_edge_daily")
+_READ_GRAPH = (
+    "customers_masked", "accounts", "transactions", "acct_edge_daily",
+    "graph_customer_attrs", "customer_golden", "admin_unit_mapping",
+)  # fmt: skip
 
 # Keep in step with sql/oracle/security/020_grants.sql (the tests compare with dba_tab_privs).
 ROLE_GRANTS: dict[str, frozenset[tuple[str, str]]] = {

@@ -46,6 +46,12 @@ GRANT SELECT ON transactions TO aml_graph_sync
 /
 GRANT SELECT ON acct_edge_daily TO aml_graph_sync
 /
+GRANT SELECT ON graph_customer_attrs TO aml_graph_sync
+/
+GRANT SELECT ON customer_golden TO aml_graph_sync
+/
+GRANT SELECT ON admin_unit_mapping TO aml_graph_sync
+/
 
 GRANT SELECT ON audit_log TO aml_auditor
 /
