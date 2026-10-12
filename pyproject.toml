@@ -15,6 +15,7 @@ dependencies = [
     "neo4j>=5.20",
     "python-dotenv>=1.2.4",
     "rapidfuzz>=3.9",
+    "splink>=5.0,<6",
 ]
 
 [project.scripts]

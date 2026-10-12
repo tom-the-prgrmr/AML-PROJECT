@@ -15,7 +15,7 @@ import typer
 
 from aml.common.audit import audit
 from aml.common.config import get_settings
-from aml.common.db import get_db
+from aml.common.db import Database, get_db
 from aml.common.services import all_statuses
 from aml.datagen.load import LoadError, load_parquet, read_manifest
 from aml.datagen.pipeline import run_pipeline
@@ -25,6 +25,8 @@ from aml.dba.schema import apply_schema
 from aml.dba.security import SecurityConfigError, apply_security
 from aml.dba.tuning import has_cursor_stats_access, median_ms, render_evidence, run_tuning
 from aml.dq.runner import label_agreement, run_dq
+from aml.entity_resolution.evaluate import evaluate_er
+from aml.entity_resolution.runner import ErError, explain_cluster, run_er
 from aml.screening.evaluate import evaluate, truth_pairs
 from aml.screening.incremental import run_incremental
 from aml.screening.runner import ScreeningError, run_screening
@@ -338,13 +340,77 @@ def screen_compare() -> None:
         )
 
 
+def _explain(db: Database, golden_customer_id: str) -> None:
+    pairs = explain_cluster(db, golden_customer_id)  # raises ErError for an unknown id
+    gid = golden_customer_id.replace("'", "''")
+    size = int(
+        db.query_df(
+            f"SELECT COUNT(*) AS n FROM customer_golden WHERE golden_customer_id = '{gid}'"
+        )["n"].iloc[0]
+    )
+    weakest = "n/a" if pairs.empty else f"{pairs['match_weight'].min():.2f}"
+    typer.echo(
+        f"{golden_customer_id} cluster_size={size} pairs={len(pairs)} min_match_weight={weakest}"
+    )
+    for r in pairs.itertuples():
+        typer.echo(
+            f"  {r.cif_l} {r.cif_r} weight={r.match_weight:.2f} prior={r.mw_prior:+.2f} "
+            f"name={r.mw_name:+.2f} dob={r.mw_dob:+.2f} phone={r.mw_phone:+.2f} "
+            f"email={r.mw_email:+.2f} address={r.mw_address:+.2f} id={r.mw_id:+.2f}"
+        )
+
+
+@app.command()
+def er(
+    as_of: Annotated[
+        datetime | None,
+        typer.Option(formats=["%Y-%m-%d"], help="Reference date (default: data.reference_date)."),
+    ] = None,
+    eval_out: Annotated[
+        Path | None, typer.Option(help="Write the evaluation table to this CSV file.")
+    ] = None,
+    explain: Annotated[
+        str | None,
+        typer.Option(help="Show the match weights of one golden customer (reads, no new run)."),
+    ] = None,
+) -> None:
+    """Resolve customers into golden ids with Splink and evaluate against ground truth."""
+    s = get_settings()
+    with get_db(s) as db:
+        try:
+            if explain is not None:
+                _explain(db, explain)
+                return
+            run = run_er(db, s, as_of=as_of.date() if as_of else None)
+        except ErError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+        typer.echo(
+            f"run_id={run.run_id} as_of={run.as_of} customers={run.customers_resolved} "
+            f"blocked_pairs={run.blocked_pairs} MATCH={run.match_pairs} "
+            f"REVIEW={run.review_pairs} clusters={run.clusters} "
+            f"merged_clusters={run.merged_clusters} merged_cifs={run.merged_cifs}"
+        )
+        if int(db.query_df("SELECT COUNT(*) AS n FROM customer_person")["n"].iloc[0]) == 0:
+            return
+        table = evaluate_er(db)
+        for r in table.itertuples():
+            typer.echo(
+                f"{r.level:<9} predicted={r.predicted} truth={r.truth} tp={r.tp} fp={r.fp} "
+                f"fn={r.fn} precision={r.precision:.2f} recall={r.recall:.2f}"
+            )
+        if eval_out is not None:
+            eval_out.parent.mkdir(parents=True, exist_ok=True)
+            table.to_csv(eval_out, index=False, encoding="utf-8")
+
+
 def _not_yet(phase: int) -> None:
     typer.echo(f"Not implemented yet - arrives in Phase {phase}.", err=True)
     raise typer.Exit(code=1)
 
 
 for _name, _phase in {
-    "er": 4, "monitor": 5, "graph": 6,
+    "monitor": 5, "graph": 6,
     "bench": 6, "score": 7, "rag": 8, "ui": 9,
 }.items():  # fmt: skip
     app.command(_name, help=f"(Phase {_phase})")(lambda p=_phase: _not_yet(p))

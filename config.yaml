@@ -85,3 +85,17 @@ screening:
   nationality_mismatch_discount: 15   # points off when both nationalities are known and differ
   gender_mismatch_discount: 15        # points off when both genders are known and differ
   sql_length_band: 3         # SQL screen: max length gap between two compared name keys
+
+entity_resolution:
+  match_threshold: 0.95      # match_probability >= this -> MATCH (clustered)
+  review_threshold: 0.50     # >= this and < match_threshold -> REVIEW (stored, not clustered)
+  name_jw_thresholds: [0.92, 0.80]   # Jaro-Winkler levels on name_key, descending
+  deterministic_recall: 0.9  # assumed recall of the deterministic rules (prior estimate)
+  u_max_pairs: 1000000       # max random pairs used to estimate u
+  m_probabilities:           # fixed m per comparison level (null level excluded); each sums to 1.0
+    name: [0.60, 0.25, 0.10, 0.05]     # same name_key | JW >= 0.92 | JW >= 0.80 | other
+    dob: [0.97, 0.03]                  # same | different
+    phone: [0.90, 0.10]                # same | different
+    email: [0.45, 0.55]                # same | different
+    address: [0.85, 0.10, 0.05]        # same normalised address | same new province | other
+    id: [0.98, 0.02]                   # same kind and number | same kind, different number

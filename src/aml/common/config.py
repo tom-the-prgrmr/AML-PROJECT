@@ -154,6 +154,28 @@ class ScreeningConfig(BaseModel):
         return self
 
 
+class EntityResolutionConfig(BaseModel):
+    match_threshold: float  # match_probability >= this -> MATCH (clustered)
+    review_threshold: float  # >= this and < match_threshold -> REVIEW (stored, not clustered)
+    name_jw_thresholds: tuple[float, float]  # two Jaro-Winkler levels on name_key, descending
+    deterministic_recall: float  # assumed recall of the deterministic rules (prior estimate)
+    u_max_pairs: int  # max random pairs used to estimate u
+    m_probabilities: dict[str, list[float]]  # comparison -> m per level (null level excluded)
+
+    @model_validator(mode="after")
+    def _review_not_above_match(self) -> EntityResolutionConfig:
+        if self.review_threshold > self.match_threshold:
+            raise ValueError("entity_resolution review_threshold must not exceed match_threshold")
+        return self
+
+    @model_validator(mode="after")
+    def _m_sums_to_one(self) -> EntityResolutionConfig:
+        for name, values in self.m_probabilities.items():
+            if not math.isclose(sum(values), 1.0):
+                raise ValueError(f"entity_resolution m_probabilities.{name} must sum to 1.0")
+        return self
+
+
 class Settings(BaseModel):
     seed: int
     db: DbConfig
@@ -165,6 +187,7 @@ class Settings(BaseModel):
     dq: DqConfig
     retention: RetentionConfig
     screening: ScreeningConfig
+    entity_resolution: EntityResolutionConfig
 
     def path(self, relative: str) -> Path:
         """Resolve a config path relative to the project root."""

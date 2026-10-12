@@ -1,0 +1,3 @@
+level,predicted,truth,tp,fp,fn,precision,recall
+pairwise,546,546,546,0,0,1.0,1.0
+cluster,364,364,364,0,0,1.0,1.0

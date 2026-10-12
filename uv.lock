@@ -22,6 +22,7 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "rapidfuzz" },
+    { name = "splink" },
     { name = "typer" },
 ]
 
@@ -43,6 +44,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.2.4" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "rapidfuzz", specifier = ">=3.9" },
+    { name = "splink", specifier = ">=5.0,<6" },
     { name = "typer", specifier = ">=0.12" },
 ]
 
@@ -532,6 +534,29 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
+]
+
+[[package]]
+name = "splink"
+version = "5.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "duckdb" },
+    { name = "pyarrow" },
+    { name = "sqlglot" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/02/06/2d08a2091a559ff31d0ec36e194fbbeb84cadc934e3b35a3bf27ef2186d2/splink-5.0.0.tar.gz", hash = "sha256:389dfc2669b08889324571d5ef19a068bc8901e3a6ea1cc5c23af95fbe021177", size = 2102971, upload-time = "2026-09-28T14:24:19.446Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bb/a3/65b2a7aeec049a4b5657c238d7e8e29e11e3803bb8ffae4a5ae538e6aa3e/splink-5.0.0-py3-none-any.whl", hash = "sha256:4b4b99a9d9d59f313a6bee766832d5632d33ff39083d153f5e9a5ab505325a1c", size = 2192907, upload-time = "2026-09-28T14:24:17.751Z" },
+]
+
+[[package]]
+name = "sqlglot"
+version = "30.22.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/94/e0/db58fbf2527426758dc1e862ce538736978e100e4e78fc9657e9661826ee/sqlglot-30.22.0.tar.gz", hash = "sha256:ec4b83ca8236ea8867f574a382dc15ce35b071c977fecfcc66482d9a3f500661", size = 6088770, upload-time = "2026-10-09T16:09:01.04Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b4/4c/b8474b02b572d9c7a2903e364335d566d52b6128b834b92a7cdfe5597823/sqlglot-30.22.0-py3-none-any.whl", hash = "sha256:90aa461490fcd95d14ec3842a97506ae20f6d3e9313307ad31be793d479cca65", size = 777816, upload-time = "2026-10-09T16:08:59.07Z" },
 ]
 
 [[package]]
