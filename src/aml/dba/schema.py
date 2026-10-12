@@ -20,6 +20,7 @@ SCHEMA_SCRIPTS: dict[str, tuple[str, ...]] = {
         "ddl/090_screening_state.sql",
         "ddl/100_entity_resolution.sql",
         "ddl/110_monitoring.sql",
+        "ddl/120_property_graph.sql",
         "ddl/050_security_objects.sql",  # security objects are applied last
     ),
     "duckdb": (

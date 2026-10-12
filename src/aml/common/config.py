@@ -226,6 +226,28 @@ class MonitoringConfig(BaseModel):
         return self
 
 
+class TraceConfig(BaseModel):
+    default_hops: int  # N when the caller gives none
+    default_hours: int  # T when the caller gives none
+    max_hops: int  # ceiling of N; pgq.sql has 6 blocks, so it cannot exceed 6
+    max_hours: int  # ceiling of T (bounds the number of paths)
+    max_paths: int  # more rows than this -> TraceError, never a silent cut
+    edge_min_amount_vnd: int  # cte_edge: drop daily edges whose total_amount is below this
+    edge_top_k: int  # cte_edge: daily edges followed at each step; 0 = unlimited
+
+    @model_validator(mode="after")
+    def _limits_in_range(self) -> TraceConfig:
+        if not 1 <= self.max_hops <= 6:
+            raise ValueError("trace max_hops must be between 1 and 6")
+        if not 1 <= self.default_hops <= self.max_hops:
+            raise ValueError("trace default_hops must be between 1 and max_hops")
+        if not 1 <= self.default_hours <= self.max_hours:
+            raise ValueError("trace default_hours must be between 1 and max_hours")
+        if self.max_paths < 1 or self.edge_min_amount_vnd < 0 or self.edge_top_k < 0:
+            raise ValueError("trace max_paths must be >= 1; edge_min_amount_vnd, edge_top_k >= 0")
+        return self
+
+
 class Settings(BaseModel):
     seed: int
     db: DbConfig
@@ -239,6 +261,7 @@ class Settings(BaseModel):
     screening: ScreeningConfig
     entity_resolution: EntityResolutionConfig
     monitoring: MonitoringConfig
+    trace: TraceConfig
 
     def path(self, relative: str) -> Path:
         """Resolve a config path relative to the project root."""

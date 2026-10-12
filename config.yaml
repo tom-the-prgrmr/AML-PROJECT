@@ -107,3 +107,12 @@ monitoring:                  # Phase 5a; thresholds.large_cash_vnd / structuring
   high_velocity: {window_hours: 24, min_txns: 8, min_total_vnd: 100000000}
   fan_in_out: {window_days: 7, min_counterparties: 8, min_total_vnd: 100000000}
   dormant_reactivation: {dormant_days: 90, window_hours: 24, min_amount_vnd: 100000000}
+
+trace:                       # Phase 5b fund-flow tracing (aml trace)
+  default_hops: 3            # N when the caller gives none
+  default_hours: 72          # T when the caller gives none
+  max_hops: 6                # ceiling of N; must not exceed 6 (blocks of pgq.sql, width of the path column)
+  max_hours: 720             # ceiling of T (bounds the number of paths)
+  max_paths: 100000          # more rows than this -> TraceError, never a silent cut
+  edge_min_amount_vnd: 10000000   # cte_edge: drop daily edges whose total_amount is below this
+  edge_top_k: 5              # cte_edge: biggest daily edges followed at each step; 0 = unlimited

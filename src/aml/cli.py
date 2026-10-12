@@ -28,6 +28,8 @@ from aml.dba.tuning import has_cursor_stats_access, median_ms, render_evidence, 
 from aml.dq.runner import label_agreement, run_dq
 from aml.entity_resolution.evaluate import evaluate_er
 from aml.entity_resolution.runner import ErError, explain_cluster, run_er
+from aml.graph.trace import METHODS, TraceError, TraceResult
+from aml.graph.trace import trace as run_trace
 from aml.monitoring.evaluate import evaluate_rules, typology_coverage
 from aml.monitoring.runner import MonitoringError, run_monitoring
 from aml.screening.evaluate import evaluate, truth_pairs
@@ -462,6 +464,74 @@ def monitor(
         if eval_out is not None:
             eval_out.parent.mkdir(parents=True, exist_ok=True)
             table.to_csv(eval_out, index=False, encoding="utf-8")
+
+
+def _echo_trace(result: TraceResult, limit: int) -> None:
+    r = result.request
+    typer.echo(
+        f"method={result.method} backend={result.backend} account={r.account_id} "
+        f"hops={r.hops} hours={r.hours} paths={result.n_paths} accounts={result.n_accounts} "
+        f"cycles={result.n_cycles} seconds={result.seconds:.3f} query_lines={result.query_lines}"
+    )
+    for row in result.paths.head(limit).itertuples():
+        flag = " CYCLE" if row.is_cycle else ""
+        typer.echo(
+            f"  hop={row.hop} {row.path} step_path={row.step_path} last_ts={row.last_ts} "
+            f"amount_vnd={row.amount_vnd}{flag}"
+        )
+    if result.n_paths > limit:
+        typer.echo(f"  ... {result.n_paths - limit} more path(s) not shown (--limit {limit})")
+
+
+@app.command()
+def trace(
+    account: Annotated[str, typer.Option(help="Account id to trace money out of.")],
+    hops: Annotated[
+        int | None, typer.Option(help="Hops to follow (default: trace.default_hops).")
+    ] = None,
+    hours: Annotated[
+        int | None, typer.Option(help="Hours from the first hop (default: trace.default_hours).")
+    ] = None,
+    method: Annotated[str, typer.Option(help="cte_raw, cte_edge, pgq or all.")] = "cte_raw",
+    since: Annotated[
+        datetime | None,
+        typer.Option(
+            formats=["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"],
+            help="The first hop must be at or after this time.",
+        ),
+    ] = None,
+    min_amount: Annotated[
+        int | None, typer.Option(help="cte_edge: ignore daily edges below this VND amount.")
+    ] = None,
+    top_k: Annotated[
+        int | None, typer.Option(help="cte_edge: keep the k largest edges per account (0 = all).")
+    ] = None,
+    limit: Annotated[int, typer.Option(min=0, help="Path lines to print per method.")] = 20,
+) -> None:
+    """Trace money out of one account N hops within T hours with the chosen method(s)."""
+    s = get_settings()
+    with get_db(s) as db:
+        names = list(METHODS) if method == "all" else [method]
+        try:
+            for name in names:
+                if method == "all" and db.backend not in METHODS[name].backends:
+                    typer.echo(f"method={name} skipped: Oracle only")
+                    continue
+                result = run_trace(
+                    db,
+                    s,
+                    account,
+                    method=name,
+                    hops=hops,
+                    hours=hours,
+                    since=since,
+                    min_amount_vnd=min_amount,
+                    top_k=top_k,
+                )
+                _echo_trace(result, limit)
+        except TraceError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=2) from exc
 
 
 def _not_yet(phase: int) -> None:

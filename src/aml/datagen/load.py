@@ -15,6 +15,7 @@ from aml.datagen.pipeline import TABLES
 from aml.dba.edges import refresh_acct_edge_daily
 from aml.dba.schema import apply_schema
 from aml.dba.stats import gather_stats
+from aml.graph.schema import refresh_account_nodes
 
 log = logging.getLogger(__name__)
 
@@ -93,5 +94,6 @@ def load_parquet(db: Database, src_dir: Path) -> dict[str, int]:
         details={"tables": counts},
     )
     refresh_acct_edge_daily(db)
+    refresh_account_nodes(db)
     gather_stats(db)
     return counts
