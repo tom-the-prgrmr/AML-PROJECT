@@ -20,6 +20,7 @@ neo4j:
   user: neo4j
   password: ""                # set NEO4J_PASSWORD in .env
   database: neo4j
+  read_timeout_seconds: 60    # server-side timeout of every read-path query; > 0
   # Procedures the read path may CALL (fnmatch patterns); everything else is rejected by the guard.
   read_procedures: [db.labels, db.relationshipTypes, db.propertyKeys, db.schema.visualization, db.schema.nodeTypeProperties, db.schema.relTypeProperties, dbms.components]
   # Neo4j Community has no RBAC, so a separate read-only user is impossible.
@@ -140,3 +141,6 @@ graph_sync:                  # Phase 6a Oracle -> Neo4j projection (aml graph sy
   oracle_user: aml_graph_sync_usr   # read-only demo user; password = ORACLE_DEMO_PASSWORD
   batch_size: 5000           # rows per UNWIND = one Neo4j transaction; 1..50000
   overlap_minutes: 60        # incremental re-reads from watermark - overlap; >= 0
+
+graph_queries:                # Phase 6b investigation queries on Neo4j (aml graph query)
+  max_rows: 10000            # more rows than this is an error, never a silent cut; >= 1

@@ -21,6 +21,7 @@ from aml.graph.model import (
     TraceRequest,
     TraceResult,
 )
+from aml.graph.neo4j.trace import NEO4J_METHOD
 from aml.graph.queries import count_query_lines, pgq_query_text, pgq_run, sql_method
 
 __all__ = [
@@ -55,6 +56,7 @@ register_method(
         query_text=pgq_query_text,
     )
 )
+register_method(NEO4J_METHOD)
 
 
 def _resolve(
@@ -112,6 +114,9 @@ def trace(
     chosen, request = _resolve(
         db, settings, account_id, method, hops, hours, since, min_amount_vnd, top_k
     )
+    chosen = METHODS[chosen.name]  # looked up now, so a test can swap a method in
+    if chosen.prepare is not None:
+        chosen.prepare(db, settings)  # connection / freshness checks stay out of the timing
     started = time.perf_counter()
     paths = chosen.run(db, settings, request)
     seconds = time.perf_counter() - started

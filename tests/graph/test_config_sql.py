@@ -53,12 +53,14 @@ def test_ac1_ddl_120_content() -> None:
 def test_ac1_methods_registry() -> None:
     trace = mod("aml.graph.trace")
     methods = trace.METHODS
-    assert list(methods) == ["cte_raw", "cte_edge", "pgq"]
-    assert [methods[n].name for n in methods] == ["cte_raw", "cte_edge", "pgq"]
+    # Phase 6b-i (specs/neo4j-queries.md AC1) registers `neo4j` as the fourth method.
+    assert list(methods) == ["cte_raw", "cte_edge", "pgq", "neo4j"]
+    assert [methods[n].name for n in methods] == ["cte_raw", "cte_edge", "pgq", "neo4j"]
     assert methods["cte_raw"].backends == frozenset({"oracle", "duckdb"})
     assert methods["cte_edge"].backends == frozenset({"oracle", "duckdb"})
     assert methods["pgq"].backends == frozenset({"oracle"})
-    assert [methods[n].exact for n in methods] == [True, False, True]
+    assert methods["neo4j"].backends == frozenset({"oracle", "duckdb"})
+    assert [methods[n].exact for n in methods] == [True, False, True, True]
     assert trace.PATH_COLUMNS == PATH_COLUMNS
     assert trace.PATH_SEPARATOR == ">"
 

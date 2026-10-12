@@ -28,6 +28,10 @@ class TraceError(RuntimeError):
     """The trace request is invalid or its answer is too large."""
 
 
+class TraceUnavailableError(TraceError):
+    """The method's service is down or its data is out of sync with the database."""
+
+
 @dataclass(frozen=True)
 class TraceRequest:
     account_id: str
@@ -46,6 +50,7 @@ class TraceMethod:
     run: Callable[[Database, Settings, TraceRequest], pd.DataFrame]  # returns PATH_COLUMNS
     query_text: Callable[[str, TraceRequest], str]  # (backend, request) -> query that runs
     uses_filters: bool = False  # honours min_amount_vnd / top_k
+    prepare: Callable[[Database, Settings], None] | None = None  # runs before `seconds` is timed
 
 
 @dataclass(frozen=True)

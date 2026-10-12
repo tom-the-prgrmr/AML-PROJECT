@@ -15,7 +15,7 @@ import pandas as pd
 import typer
 
 from aml.common.audit import audit
-from aml.common.config import get_settings
+from aml.common.config import Settings, get_settings
 from aml.common.db import Database, ServiceUnavailableError, get_db
 from aml.common.services import all_statuses
 from aml.datagen.load import LoadError, load_parquet, read_manifest
@@ -28,10 +28,13 @@ from aml.dba.tuning import has_cursor_stats_access, median_ms, render_evidence, 
 from aml.dq.runner import label_agreement, run_dq
 from aml.entity_resolution.evaluate import evaluate_er
 from aml.entity_resolution.runner import ErError, explain_cluster, run_er
+from aml.graph.model import TraceUnavailableError
 from aml.graph.neo4j import client
 from aml.graph.neo4j.client import open_driver
 from aml.graph.neo4j.extract import NODE_LABELS, REL_TYPES, SyncError
 from aml.graph.neo4j.guard import GraphError
+from aml.graph.neo4j.queries import QUERY_NAMES, QueryError
+from aml.graph.neo4j.queries import run_query as run_graph_query
 from aml.graph.neo4j.sync import graph_counts, read_state, run_sync, source_stats
 from aml.graph.network.evaluate import evaluate_network, network_coverage
 from aml.graph.network.runner import NetworkError, run_network
@@ -556,7 +559,7 @@ def trace(
     hours: Annotated[
         int | None, typer.Option(help="Hours from the first hop (default: trace.default_hours).")
     ] = None,
-    method: Annotated[str, typer.Option(help="cte_raw, cte_edge, pgq or all.")] = "cte_raw",
+    method: Annotated[str, typer.Option(help="cte_raw, cte_edge, pgq, neo4j or all.")] = "cte_raw",
     since: Annotated[
         datetime | None,
         typer.Option(
@@ -581,17 +584,23 @@ def trace(
                 if method == "all" and db.backend not in METHODS[name].backends:
                     typer.echo(f"method={name} skipped: Oracle only")
                     continue
-                result = run_trace(
-                    db,
-                    s,
-                    account,
-                    method=name,
-                    hops=hops,
-                    hours=hours,
-                    since=since,
-                    min_amount_vnd=min_amount,
-                    top_k=top_k,
-                )
+                try:
+                    result = run_trace(
+                        db,
+                        s,
+                        account,
+                        method=name,
+                        hops=hops,
+                        hours=hours,
+                        since=since,
+                        min_amount_vnd=min_amount,
+                        top_k=top_k,
+                    )
+                except TraceUnavailableError as exc:
+                    if method != "all":
+                        raise
+                    typer.echo(f"method={name} skipped: {exc}")
+                    continue
                 _echo_trace(result, limit)
         except TraceError as exc:
             typer.echo(str(exc), err=True)
@@ -610,6 +619,15 @@ def _int_or_dash(value: int | None) -> str:
     return "-" if value is None else str(value)
 
 
+def _source_db(s: Settings) -> Database:
+    """Open the source database; an outage there must not be reported as a Neo4j outage."""
+    try:
+        return get_db(s)
+    except ServiceUnavailableError as exc:
+        typer.echo(f"source database not available: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+
 @graph_app.command("sync")
 def graph_sync(
     full: Annotated[bool, typer.Option("--full", help="Wipe and rebuild the whole graph.")] = False,
@@ -617,12 +635,7 @@ def graph_sync(
     """Sync the Neo4j projection from the system of record (incremental unless --full)."""
     s = get_settings()
     try:
-        db = get_db(s)
-    except ServiceUnavailableError as exc:
-        typer.echo(f"source database not available: {exc}", err=True)
-        raise typer.Exit(code=1) from exc
-    try:
-        with db:
+        with _source_db(s) as db:
             run = run_sync(db, s, full=full, actor="cli")
     except (SyncError, GraphError) as exc:
         typer.echo(str(exc), err=True)
@@ -674,6 +687,63 @@ def graph_status() -> None:
     )
     for key in (*NODE_LABELS, *REL_TYPES):
         typer.echo(f"{key} {counts[key]}")
+
+
+def _cell(value: object) -> str:
+    if isinstance(value, list | tuple):
+        return ",".join(str(v) for v in value)
+    if hasattr(value, "tolist") and not isinstance(value, str):
+        return _cell(value.tolist())
+    return str(value)
+
+
+@graph_app.command("query")
+def graph_query(
+    name: Annotated[str, typer.Argument(help=f"One of: {', '.join(QUERY_NAMES)}.")],
+    account: Annotated[
+        str | None, typer.Option(help="cycles, fan_in, fan_out: one account.")
+    ] = None,
+    customer: Annotated[
+        str | None, typer.Option(help="shared_attributes, shared_cluster: a golden customer id.")
+    ] = None,
+    as_of: Annotated[
+        datetime | None,
+        typer.Option(
+            formats=["%Y-%m-%d"],
+            help="Only transfers up to this day (default: data.reference_date).",
+        ),
+    ] = None,
+    limit: Annotated[int, typer.Option(min=0, help="Result rows to print.")] = 20,
+) -> None:
+    """Run one investigation query on the Neo4j projection (read-only; raises no alert)."""
+    s = get_settings()
+    try:
+        with _source_db(s) as db:
+            result = run_graph_query(
+                db,
+                s,
+                name,
+                account=account,
+                customer=customer,
+                as_of=as_of.date() if as_of else None,
+                actor="cli",
+            )
+    except QueryError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=2) from exc
+    except ServiceUnavailableError as exc:
+        typer.echo(f"neo4j not available: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except GraphError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(
+        f"query={result.name} rows={result.n_rows} seconds={result.seconds:.3f} "
+        f"query_lines={result.query_lines}"
+    )
+    typer.echo("  ".join(result.rows.columns))
+    for row in result.rows.head(limit).itertuples(index=False):
+        typer.echo("  ".join(_cell(v) for v in row))
 
 
 def _graph_lag(watermark: datetime | None) -> str:

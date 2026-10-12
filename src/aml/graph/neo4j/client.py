@@ -29,6 +29,10 @@ COUNTERS = (
 QUERY_AUDIT_LIMIT = 2000
 
 
+class QueryTimeoutError(GraphError):
+    """A read query ran past ``neo4j.read_timeout_seconds`` and the server stopped it."""
+
+
 # ---------------------------------------------------------------- .cypher files
 def cypher_file(name: str) -> Path:
     path = (CYPHER_ROOT / name).resolve()
@@ -120,18 +124,33 @@ def run_read(
     *,
     audit_db: Database | None = None,
     actor: str | None = None,
+    timeout: float | None = None,
 ) -> pd.DataFrame:
-    """Guard the query, run it in a READ session; columns are the RETURN keys (even with 0 rows)."""
+    """Guard the query, run it in a READ session; columns are the RETURN keys (even with 0 rows).
+
+    ``timeout`` (seconds; None = ``neo4j.read_timeout_seconds``) is enforced by the server, which
+    rolls the transaction back; it surfaces as `QueryTimeoutError` and is not retried.
+    """
     try:
         assert_read_only(cypher, allowed_procedures=settings.neo4j.read_procedures)
     except WriteBlockedError as exc:
         if audit_db is not None:
             _audit_blocked(audit_db, cypher, exc, actor)
         raise
-    with driver.session(
-        database=settings.neo4j.database, default_access_mode=neo4j.READ_ACCESS
-    ) as session:
-        return session.execute_read(_fetch, cypher, params or {})
+    seconds = settings.neo4j.read_timeout_seconds if timeout is None else timeout
+    work = neo4j.unit_of_work(timeout=seconds)(_fetch)
+    try:
+        with driver.session(
+            database=settings.neo4j.database, default_access_mode=neo4j.READ_ACCESS
+        ) as session:
+            return session.execute_read(work, cypher, params or {})
+    except neo4j.exceptions.Neo4jError as exc:
+        if "TransactionTimedOut" in (exc.code or ""):
+            raise QueryTimeoutError(f"query exceeded {seconds:g} s") from exc
+        raise
+    except (neo4j.exceptions.ServiceUnavailable, neo4j.exceptions.SessionExpired) as exc:
+        # the cached driver outlived the server: report it like a failed connect
+        raise ServiceUnavailableError(f"lost the connection to Neo4j: {exc}") from exc
 
 
 def run_read_file(
@@ -139,11 +158,13 @@ def run_read_file(
     settings: Settings,
     name: str,
     params: Mapping[str, Any] | None = None,
+    *,
+    timeout: float | None = None,
 ) -> pd.DataFrame:
     statements = load_statements(name)
     if len(statements) != 1:
         raise GraphError(f"{name} must hold exactly one statement, found {len(statements)}")
-    return run_read(driver, settings, statements[0], params)
+    return run_read(driver, settings, statements[0], params, timeout=timeout)
 
 
 # ---------------------------------------------------------------- writes

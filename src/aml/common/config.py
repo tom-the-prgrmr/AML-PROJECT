@@ -67,6 +67,13 @@ class Neo4jConfig(BaseModel):
     password: str
     database: str = "neo4j"
     read_procedures: list[str] = []  # fnmatch patterns of procedures the read path may CALL
+    read_timeout_seconds: float  # server-side timeout of every read-path query
+
+    @model_validator(mode="after")
+    def _timeout_positive(self) -> Neo4jConfig:
+        if self.read_timeout_seconds <= 0:
+            raise ValueError("neo4j read_timeout_seconds must be > 0")
+        return self
 
 
 class OllamaConfig(BaseModel):
@@ -329,6 +336,16 @@ class GraphSyncConfig(BaseModel):
         return self
 
 
+class GraphQueryConfig(BaseModel):
+    max_rows: int  # run_query: more rows than this is an error, never a silent cut
+
+    @model_validator(mode="after")
+    def _in_range(self) -> GraphQueryConfig:
+        if self.max_rows < 1:
+            raise ValueError("graph_queries max_rows must be >= 1")
+        return self
+
+
 class Settings(BaseModel):
     seed: int
     db: DbConfig
@@ -345,6 +362,7 @@ class Settings(BaseModel):
     trace: TraceConfig
     network: NetworkConfig
     graph_sync: GraphSyncConfig
+    graph_queries: GraphQueryConfig
 
     def path(self, relative: str) -> Path:
         """Resolve a config path relative to the project root."""
