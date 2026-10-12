@@ -248,6 +248,68 @@ class TraceConfig(BaseModel):
         return self
 
 
+class SharedAttributeConfig(BaseModel):
+    min_customers: int  # a cluster needs this many golden customers to raise an alert
+    max_customers_per_value: int  # a value shared by more customers than this is ignored
+
+    @model_validator(mode="after")
+    def _in_range(self) -> SharedAttributeConfig:
+        if self.min_customers < 2:
+            raise ValueError("network shared_attributes min_customers must be >= 2")
+        if self.max_customers_per_value < 2:
+            raise ValueError("network shared_attributes max_customers_per_value must be >= 2")
+        return self
+
+
+class CycleConfig(BaseModel):
+    min_length: int  # fewest hops in a cycle
+    max_length: int  # most hops in a cycle (the search is exponential beyond 6)
+    window_hours: int  # the last hop must happen before first hop + window
+    min_amount_vnd: int  # transfers below this are ignored
+    min_amount_ratio: float  # smallest / largest transfer of a cycle must reach this
+    max_search_steps: int  # more steps than this -> NetworkError, never a silent cut
+
+    @model_validator(mode="after")
+    def _in_range(self) -> CycleConfig:
+        if self.min_length < 3:
+            raise ValueError("network cycles min_length must be >= 3")
+        if self.max_length < self.min_length:
+            raise ValueError("network cycles max_length must be >= min_length")
+        if self.max_length > 6:
+            raise ValueError("network cycles max_length must be <= 6")
+        if not 0 <= self.min_amount_ratio <= 1:
+            raise ValueError("network cycles min_amount_ratio must be in [0, 1]")
+        if self.window_hours < 1 or self.min_amount_vnd < 0 or self.max_search_steps < 1:
+            raise ValueError(
+                "network cycles window_hours, max_search_steps must be >= 1; min_amount_vnd >= 0"
+            )
+        return self
+
+
+class HubConfig(BaseModel):
+    lookback_days: int  # graph built from transfers in this many days before the cutoff
+    min_in_degree: int
+    min_pagerank_ratio: float  # pagerank * number of accounts with an edge
+    min_inflow_vnd: int
+    pagerank_alpha: float
+
+    @model_validator(mode="after")
+    def _in_range(self) -> HubConfig:
+        if self.lookback_days < 1 or self.min_in_degree < 1:
+            raise ValueError("network hubs lookback_days, min_in_degree must be >= 1")
+        if not 0 < self.pagerank_alpha < 1:
+            raise ValueError("network hubs pagerank_alpha must be in (0, 1)")
+        if self.min_pagerank_ratio < 0 or self.min_inflow_vnd < 0:
+            raise ValueError("network hubs min_pagerank_ratio, min_inflow_vnd must be >= 0")
+        return self
+
+
+class NetworkConfig(BaseModel):
+    shared_attributes: SharedAttributeConfig
+    cycles: CycleConfig
+    hubs: HubConfig
+
+
 class Settings(BaseModel):
     seed: int
     db: DbConfig
@@ -262,6 +324,7 @@ class Settings(BaseModel):
     entity_resolution: EntityResolutionConfig
     monitoring: MonitoringConfig
     trace: TraceConfig
+    network: NetworkConfig
 
     def path(self, relative: str) -> Path:
         """Resolve a config path relative to the project root."""

@@ -28,6 +28,8 @@ from aml.dba.tuning import has_cursor_stats_access, median_ms, render_evidence, 
 from aml.dq.runner import label_agreement, run_dq
 from aml.entity_resolution.evaluate import evaluate_er
 from aml.entity_resolution.runner import ErError, explain_cluster, run_er
+from aml.graph.network.evaluate import evaluate_network, network_coverage
+from aml.graph.network.runner import NetworkError, run_network
 from aml.graph.trace import METHODS, TraceError, TraceResult
 from aml.graph.trace import trace as run_trace
 from aml.monitoring.evaluate import evaluate_rules, typology_coverage
@@ -460,6 +462,63 @@ def monitor(
             typer.echo(
                 f"{c.typology:<16} scenarios={c.scenarios} flagged={c.flagged} "
                 f"rate={c.rate:.2f} rules={c.rules or '-'}"
+            )
+        if eval_out is not None:
+            eval_out.parent.mkdir(parents=True, exist_ok=True)
+            table.to_csv(eval_out, index=False, encoding="utf-8")
+
+
+@app.command()
+def network(
+    as_of: Annotated[
+        datetime | None,
+        typer.Option(formats=["%Y-%m-%d"], help="Reference date (default: data.reference_date)."),
+    ] = None,
+    eval_out: Annotated[
+        Path | None, typer.Option(help="Write the evaluation table to this CSV file.")
+    ] = None,
+) -> None:
+    """Run the network detections (shared attributes, cycles, hubs), store alerts and evaluate."""
+    s = get_settings()
+    with get_db(s) as db:
+        try:
+            run = run_network(db, s, as_of=as_of.date() if as_of else None)
+            evidence = db.query_df(
+                f"SELECT rule_id, evidence FROM monitoring_runs WHERE run_id = {run.run_id}"
+            )
+            evidence_of = {
+                str(r): int(e)
+                for r, e in zip(evidence.iloc[:, 0], evidence.iloc[:, 1], strict=True)
+            }
+            for rule_id, alerts in run.by_rule.items():
+                typer.echo(f"{rule_id:<22} alerts={alerts} evidence={evidence_of.get(rule_id, 0)}")
+            typer.echo(
+                f"run_id={run.run_id} as_of={run.as_of} alerts={run.alerts} "
+                f"evidence={run.evidence} accounts={run.accounts} "
+                f"active_accounts={run.active_accounts} "
+                f"cycle_search_steps={run.cycle_search_steps}"
+            )
+            if int(db.query_df("SELECT COUNT(*) AS n FROM ground_truth")["n"].iloc[0]) == 0:
+                return
+            table = evaluate_network(db)
+            coverage = network_coverage(db)
+        except NetworkError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+        for r in table.itertuples():
+            typer.echo(
+                f"{r.rule_id:<22} target_hits={_count(r.target_hits)} "
+                f"other_suspicious={r.other_suspicious} benign={r.benign} "
+                f"precision={_fmt(r.precision)} recall={_fmt(r.recall)} "
+                f"precision_suspicious={_fmt(r.precision_suspicious)}"
+            )
+        for c in coverage.itertuples():
+            typer.echo(
+                f"{c.typology:<16} scenarios={c.scenarios} rule={c.flagged_rule} "
+                f"network={c.flagged_network} any={c.flagged_any} new={c.new_by_network} "
+                f"accounts={c.accounts} accounts_rule={c.accounts_rule} "
+                f"accounts_network={c.accounts_network} accounts_any={c.accounts_any} "
+                f"accounts_new={c.accounts_new} rules={c.rules or '-'}"
             )
         if eval_out is not None:
             eval_out.parent.mkdir(parents=True, exist_ok=True)

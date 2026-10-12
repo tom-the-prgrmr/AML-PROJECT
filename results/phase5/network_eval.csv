@@ -1,0 +1,4 @@
+rule_id,target_typology,alerts,target_hits,other_suspicious,benign,unlabelled,precision,precision_suspicious,scenarios,detected,recall
+NET_SHARED_ATTRIBUTE,mule_ring,5,5,0,0,0,1.0,1.0,5,5,1.0
+NET_CYCLE,round_tripping,15,15,0,0,0,1.0,1.0,15,15,1.0
+NET_HUB,mule_ring,5,5,0,0,0,1.0,1.0,5,5,1.0

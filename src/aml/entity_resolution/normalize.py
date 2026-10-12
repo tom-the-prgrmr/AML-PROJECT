@@ -86,6 +86,24 @@ def to_new_admin_unit(
     return _to_new(_str(ward), _str(district), _str(province), _admin_lookup(mapping))
 
 
+def addr_key(street: object, new_ward: str | None, new_province: str | None) -> str | None:
+    """``STREET|WARD|PROVINCE`` (folded, upper-case) from a street and the new admin unit."""
+    folded = _text(street)
+    if not folded:
+        return None
+    return "|".join([folded, _text(new_ward) or "", _text(new_province) or ""])
+
+
+def address_keys(customers: pd.DataFrame, mapping: pd.DataFrame) -> list[str | None]:
+    """The ``addr_key`` of every customer row, in row order (old units mapped to new ones)."""
+    lookup = _admin_lookup(mapping)
+    keys: list[str | None] = []
+    for r in customers.itertuples():
+        ward, province = _to_new(_str(r.ward), _str(r.district), _str(r.province), lookup)
+        keys.append(addr_key(r.street, ward, province))
+    return keys
+
+
 def _dob(value: object, as_of: date) -> str | None:
     """ISO date string, or None when missing or after ``as_of``."""
     if value is None or pd.isna(value):
@@ -102,7 +120,6 @@ def prepare_records(
     rows = []
     for r in customers.itertuples():
         ward, province = _to_new(_str(r.ward), _str(r.district), _str(r.province), lookup)
-        street = _text(r.street)
         id_pair = normalize_id(r.id_type, r.id_number)
         email = (_str(r.email) or "").strip().lower()
         rows.append(
@@ -115,9 +132,7 @@ def prepare_records(
                 "id_norm": id_pair[1] if id_pair else None,
                 "email_norm": email or None,
                 "province_new": _text(province),
-                "addr_key": (
-                    "|".join([street, _text(ward) or "", _text(province) or ""]) if street else None
-                ),
+                "addr_key": addr_key(r.street, ward, province),
             }
         )
     frame = pd.DataFrame(rows, columns=RECORD_COLUMNS)

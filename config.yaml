@@ -116,3 +116,19 @@ trace:                       # Phase 5b fund-flow tracing (aml trace)
   max_paths: 100000          # more rows than this -> TraceError, never a silent cut
   edge_min_amount_vnd: 10000000   # cte_edge: drop daily edges whose total_amount is below this
   edge_top_k: 5              # cte_edge: biggest daily edges followed at each step; 0 = unlimited
+
+network:                     # Phase 5c network detections (aml network); NetworkX on three DataFrames
+  shared_attributes: {min_customers: 5, max_customers_per_value: 50}   # NET_SHARED_ATTRIBUTE
+  cycles:                    # NET_CYCLE
+    min_length: 3
+    max_length: 5            # must not exceed 6
+    window_hours: 168        # last hop before first hop + window
+    min_amount_vnd: 50000000   # smaller transfers are ignored
+    min_amount_ratio: 0.70   # smallest / largest transfer of the cycle
+    max_search_steps: 1000000   # more steps -> NetworkError, never a silent cut
+  hubs:                      # NET_HUB
+    lookback_days: 365
+    min_in_degree: 10
+    min_pagerank_ratio: 1.8  # pagerank * accounts with an edge
+    min_inflow_vnd: 100000000
+    pagerank_alpha: 0.85
