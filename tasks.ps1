@@ -13,11 +13,17 @@ function Invoke-Step([string]$exe, [string[]]$argv) {
     if ($LASTEXITCODE -ne 0) { throw "'$exe $($argv -join ' ')' failed with exit code $LASTEXITCODE" }
 }
 
-$amlCommands = @("status", "retention", "data", "load", "screen", "er", "monitor", "graph", "bench", "score", "rag", "ui")
+$amlCommands = @("status", "retention", "data", "load", "screen", "er", "monitor", "graph", "bench", "score", "rag")
 
 switch ($Target) {
     "up"   { Invoke-Step docker @("compose", "--profile", $ComposeProfile, "up", "-d") }
     "down" { Invoke-Step docker @("compose", "--profile", "full", "down") }
+    "ui" {
+        Invoke-Step npm @("--prefix", "web", "install")
+        Invoke-Step npm @("--prefix", "web", "run", "build")
+        Invoke-Step uv @("run", "aml", "ui")
+    }
+    "ui-api" { Invoke-Step uv @("run", "aml", "ui", "--api-only") }
     "init" { Invoke-Step uv @("run", "aml", "init-db") }
     "test" { Invoke-Step uv @("run", "pytest") }
     "lint" {

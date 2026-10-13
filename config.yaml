@@ -188,3 +188,14 @@ bench:                       # Phase 6c trace benchmark (aml bench); measures th
   accounts: []               # empty -> the account(s) with most time-ordered 2-hop paths in max(hours)
   top_accounts: 1            # how many accounts pick_accounts chooses; 1..10
   results_dir: results/phase6   # bench_<profile>_<backend>.json, bench_report.md, bench_chart.svg
+
+ui:                          # Phase 9a investigator UI (aml ui); FastAPI serves the API and the built SPA
+  host: 127.0.0.1            # no real authentication, so keep it on the local machine
+  port: 8000                 # 1..65535
+  dist_dir: web/dist         # the built SPA (npm --prefix web run build)
+  users: {analyst01: analyst, supervisor01: supervisor}   # actor -> role (analyst | supervisor); not empty
+  default_user: analyst01    # actor of a request without X-AML-User; null = the header is required
+  page_size: 50              # default page size of list endpoints; 1..max_page_size
+  max_page_size: 200
+  mock:                      # one flag per sample-data feature; true = the endpoint returns a labelled fixture
+    sample: true

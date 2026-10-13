@@ -23,7 +23,7 @@ from typing import Any, Literal
 
 import yaml
 from dotenv import dotenv_values
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config.yaml"
@@ -497,6 +497,39 @@ class CasesConfig(BaseModel):
         return self
 
 
+class MockConfig(BaseModel):
+    """One bool per mock feature (``ui.mock.<name>``); ``aml.api.mock`` pairs it with a fixture."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    sample: bool  # the neutral GET /api/v1/sample feature that proves the mechanism
+
+
+class UiConfig(BaseModel):
+    host: str  # 127.0.0.1: there is no real authentication, so do not expose it
+    port: int
+    dist_dir: str  # the built SPA (npm --prefix web run build)
+    users: dict[str, Literal["analyst", "supervisor"]]  # actor -> role
+    default_user: (
+        str | None
+    )  # actor when a request has no X-AML-User header; None = header required
+    page_size: int  # default page size of list endpoints
+    max_page_size: int
+    mock: MockConfig
+
+    @model_validator(mode="after")
+    def _in_range(self) -> UiConfig:
+        if not 1 <= self.port <= 65535:
+            raise ValueError("ui port must be between 1 and 65535")
+        if not self.users:
+            raise ValueError("ui users must not be empty")
+        if self.default_user is not None and self.default_user not in self.users:
+            raise ValueError("ui default_user must be one of ui users")
+        if not 1 <= self.page_size <= self.max_page_size:
+            raise ValueError("ui page_size must be between 1 and max_page_size")
+        return self
+
+
 class Settings(BaseModel):
     seed: int
     db: DbConfig
@@ -517,6 +550,7 @@ class Settings(BaseModel):
     gds: GdsConfig
     cases: CasesConfig
     bench: BenchConfig
+    ui: UiConfig
 
     @model_validator(mode="after")
     def _bench_within_trace(self) -> Settings:
@@ -531,6 +565,12 @@ class Settings(BaseModel):
     def _simulated_actor_is_not_the_system(self) -> Settings:
         if self.cases.prioritization.simulated_actor == self.audit.system_actor:
             raise ValueError("simulated_actor must differ from audit.system_actor")
+        return self
+
+    @model_validator(mode="after")
+    def _ui_users_are_not_the_system(self) -> Settings:
+        if self.audit.system_actor in self.ui.users:
+            raise ValueError("ui users must not contain audit.system_actor")
         return self
 
     def path(self, relative: str) -> Path:

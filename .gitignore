@@ -31,3 +31,5 @@ Thumbs.db
 
 # Neo4j GDS jar (downloaded by hand, see docs/neo4j-gds.md)
 docker/neo4j/plugins/*.jar
+web/node_modules/
+web/dist/

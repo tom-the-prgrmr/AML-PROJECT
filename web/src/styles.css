@@ -1,0 +1,19 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, "Segoe UI", sans-serif; color: #1f2933; background: #f5f7fa; }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; background: #102a43; color: #fff; }
+.header h1 { margin: 0; font-size: 1.2rem; }
+.user-switch { display: flex; gap: 12px; align-items: center; }
+.menu { display: flex; gap: 4px; padding: 0 24px; background: #fff; border-bottom: 1px solid #d9e2ec; }
+.menu a { padding: 10px 14px; color: #334e68; text-decoration: none; border-bottom: 3px solid transparent; }
+.menu a.active { color: #102a43; border-bottom-color: #2680c2; font-weight: 600; }
+.content { padding: 24px; }
+.panel { background: #fff; border: 1px solid #d9e2ec; border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+.panel h2 { margin-top: 0; font-size: 1.05rem; }
+.badge-mock { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 4px; background: #fcefc7; color: #8d2b0b; font-size: 0.8rem; font-weight: 600; }
+.muted { color: #627d98; }
+.empty { color: #8d2b0b; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e4e7eb; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; }
+dt { font-weight: 600; }
+dd { margin: 0; }

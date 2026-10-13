@@ -3,7 +3,7 @@
 PROFILE ?= oracle
 AML := uv run aml
 
-.PHONY: up down status init retention data load screen er monitor graph bench score rag ui test lint all
+.PHONY: up down status init retention data load screen er monitor graph bench score rag ui ui-api test lint all
 
 up:      ; docker compose --profile $(PROFILE) up -d
 down:    ; docker compose --profile full down
@@ -19,7 +19,8 @@ graph:   ; $(AML) graph
 bench:   ; $(AML) bench
 score:   ; $(AML) score
 rag:     ; $(AML) rag
-ui:      ; $(AML) ui
+ui:      ; npm --prefix web install && npm --prefix web run build && $(AML) ui
+ui-api:  ; $(AML) ui --api-only
 test:    ; uv run pytest
 lint:    ; uv run ruff check . && uv run ruff format --check .
 all: data load screen er monitor graph score rag

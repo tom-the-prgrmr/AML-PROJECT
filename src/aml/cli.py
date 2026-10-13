@@ -1094,9 +1094,41 @@ def _not_yet(phase: int) -> None:
 
 
 for _name, _phase in {
-    "rag": 8, "ui": 9,
+    "rag": 8,
 }.items():  # fmt: skip
     app.command(_name, help=f"(Phase {_phase})")(lambda p=_phase: _not_yet(p))
+
+
+@app.command()
+def ui(
+    host: Annotated[str | None, typer.Option(help="Interface to bind (default: ui.host).")] = None,
+    port: Annotated[int | None, typer.Option(help="Port to listen on (default: ui.port).")] = None,
+    api_only: Annotated[
+        bool, typer.Option("--api-only", help="Serve the API without the built web UI.")
+    ] = False,
+) -> None:
+    """Serve the investigator UI: the JSON API and the built web app (never runs npm)."""
+    import uvicorn
+
+    from aml.api.app import create_app
+    from aml.api.static import dist_dir
+
+    s = get_settings()
+    dist = dist_dir(s)
+    if dist is None and not api_only:
+        typer.echo(
+            "The web UI is not built: run `npm --prefix web run build`, "
+            "or start the API alone with `aml ui --api-only`.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    host, port = host or s.ui.host, port or s.ui.port
+    flags = [name for name, on in s.ui.mock.model_dump().items() if on]
+    typer.echo(
+        f"ui http://{host}:{port} backend={s.db.backend} "
+        f"dist={dist if dist else 'none'} mock={','.join(flags) or 'none'}"
+    )
+    uvicorn.run(create_app(s), host=host, port=port)
 
 
 if __name__ == "__main__":
