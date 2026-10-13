@@ -18,6 +18,7 @@ dependencies = [
     "splink>=5.0,<6",
     "networkx>=3.4,<4",
     "scipy>=1.13",
+    "matplotlib>=3.11.2",
 ]
 
 [project.scripts]

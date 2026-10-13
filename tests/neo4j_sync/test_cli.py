@@ -69,15 +69,12 @@ def test_ac9_without_neo4j_sync_and_status_fail_cleanly(
     assert "neo4j not available" in status.stderr
 
 
-def test_ac9_graph_help_lists_commands_and_bench_stays_a_stub() -> None:
+def test_ac9_graph_help_lists_commands() -> None:
     result = _cli("graph", "--help")
     assert result.exit_code == 0, result.output
     assert "sync" in result.stdout
     assert "status" in result.stdout
     assert "Phase 6" not in result.stdout
-    bench = _cli("bench")
-    assert bench.exit_code == 1
-    assert "Phase 6" in bench.stderr
 
 
 def test_ac9_sync_without_load_fails_cleanly(

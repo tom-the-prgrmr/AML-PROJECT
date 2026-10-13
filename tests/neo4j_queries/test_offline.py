@@ -111,11 +111,8 @@ def test_ac2_cli_graph_query_failures(cli_offline: Path) -> None:
     assert "customer" in result.stderr
 
 
-def test_ac2_cli_graph_help_and_bench_stub() -> None:
+def test_ac2_cli_graph_help() -> None:
     result = cli("graph", "--help")
     assert result.exit_code == 0, result.output
     for word in ("sync", "status", "query"):
         assert word in result.stdout
-    bench = cli("bench")
-    assert bench.exit_code == 1
-    assert "Phase 6" in bench.stderr

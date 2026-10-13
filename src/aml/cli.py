@@ -7,6 +7,7 @@ runs the same way on Linux/macOS and on Windows without ``make``.
 from __future__ import annotations
 
 import logging
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated
@@ -28,6 +29,9 @@ from aml.dba.tuning import has_cursor_stats_access, median_ms, render_evidence, 
 from aml.dq.runner import label_agreement, run_dq
 from aml.entity_resolution.evaluate import evaluate_er
 from aml.entity_resolution.runner import ErError, explain_cluster, run_er
+from aml.graph.bench.model import STATUS_OK, BenchError
+from aml.graph.bench.report import path_mismatches, write_report, write_result
+from aml.graph.bench.runner import run_bench
 from aml.graph.model import TraceUnavailableError
 from aml.graph.neo4j import client
 from aml.graph.neo4j.client import open_driver
@@ -791,13 +795,64 @@ def _graph_lag(watermark: datetime | None) -> str:
     return str(max(0, int((latest - watermark).total_seconds())))
 
 
+@app.command()
+def bench(
+    profile: Annotated[
+        str | None,
+        typer.Option(help="Label of the data (default: from the newest LOADED audit row)."),
+    ] = None,
+    report_only: Annotated[
+        bool,
+        typer.Option("--report-only", help="Only rebuild the report and chart from result files."),
+    ] = False,
+) -> None:
+    """Time the four fund-flow traces on the data as it is; write the result file and report."""
+    s = get_settings()
+    out = s.path(s.bench.results_dir)
+    try:
+        if report_only:
+            for path in write_report(out):
+                typer.echo(f"wrote {path}")
+            return
+        out.mkdir(parents=True, exist_ok=True)
+        with _source_db(s) as db:
+            result = run_bench(db, s, profile=profile, command=_command_line(), actor="cli")
+        written = write_result(result, out)
+        report, chart = write_report(out)
+    except BenchError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    meta, cells = result.meta, result.cells
+    counts = {k: sum(c.status == k for c in cells) for k in ("ok", "skipped", "error")}
+    typer.echo(
+        f"bench profile={meta['profile']} backend={meta['backend']} "
+        f"accounts={','.join(meta['params']['accounts'])} cells={len(cells)} "
+        f"ok={counts['ok']} skipped={counts['skipped']} error={counts['error']} "
+        f"seconds={meta['total_seconds']}"
+    )
+    shown: set[tuple[str, str]] = set()
+    for cell in cells:
+        if cell.status != STATUS_OK and (cell.method, cell.status) not in shown:
+            shown.add((cell.method, cell.status))
+            typer.echo(f"method={cell.method} {cell.status}: {cell.reason}")
+    for mismatch in path_mismatches(result):
+        typer.echo(f"warning: the exact methods disagree on the paths ({mismatch})", err=True)
+    for path in (written, report, chart):
+        typer.echo(f"wrote {path}")
+
+
+def _command_line() -> str:
+    """The command as the user typed it, for the provenance block of a result file."""
+    return " ".join(["aml", *sys.argv[1:]]) if sys.argv[1:2] == ["bench"] else "aml bench"
+
+
 def _not_yet(phase: int) -> None:
     typer.echo(f"Not implemented yet - arrives in Phase {phase}.", err=True)
     raise typer.Exit(code=1)
 
 
 for _name, _phase in {
-    "bench": 6, "score": 7, "rag": 8, "ui": 9,
+    "score": 7, "rag": 8, "ui": 9,
 }.items():  # fmt: skip
     app.command(_name, help=f"(Phase {_phase})")(lambda p=_phase: _not_yet(p))
 

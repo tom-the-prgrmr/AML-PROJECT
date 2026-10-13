@@ -155,3 +155,12 @@ gds:                          # Phase 6b-ii Neo4j Graph Data Science features (a
   louvain_max_levels: 10        # >= 1
   louvain_max_iterations: 10    # >= 1
   louvain_tolerance: 0.0001     # >= 0
+
+bench:                       # Phase 6c trace benchmark (aml bench); measures the state a backend is in
+  hops: [2, 4, 6]            # increasing, each 1..trace.max_hops
+  hours: [72, 720]           # window T; increasing, each 1..trace.max_hours (72 = aml trace default, 720 = ceiling)
+  runs: 10                   # timed runs per cell; >= 5
+  warmup_runs: 1             # runs thrown away before the timed ones; >= 0
+  accounts: []               # empty -> the account(s) with most time-ordered 2-hop paths in max(hours)
+  top_accounts: 1            # how many accounts pick_accounts chooses; 1..10
+  results_dir: results/phase6   # bench_<profile>_<backend>.json, bench_report.md, bench_chart.svg

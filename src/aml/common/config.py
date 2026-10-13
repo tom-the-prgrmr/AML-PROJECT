@@ -17,6 +17,7 @@ import os
 import re
 from datetime import date
 from functools import lru_cache
+from itertools import pairwise
 from pathlib import Path
 from typing import Any, Literal
 
@@ -258,6 +259,32 @@ class TraceConfig(BaseModel):
         return self
 
 
+class BenchConfig(BaseModel):
+    hops: list[int]  # not empty, increasing, each 1..trace.max_hops
+    hours: list[int]  # not empty, increasing, each 1..trace.max_hours
+    runs: int  # timed runs per cell; >= 5
+    warmup_runs: int  # runs thrown away before the timed ones; >= 0
+    accounts: list[str]  # empty -> pick_accounts chooses
+    top_accounts: int  # how many accounts pick_accounts chooses; 1..10
+    results_dir: str
+
+    @model_validator(mode="after")
+    def _in_range(self) -> BenchConfig:
+        for name in ("hops", "hours"):
+            values = getattr(self, name)
+            if not values:
+                raise ValueError(f"bench {name} must not be empty")
+            if any(a >= b for a, b in pairwise(values)):
+                raise ValueError(f"bench {name} must be increasing")
+        if self.runs < 5:
+            raise ValueError("bench runs must be >= 5")
+        if self.warmup_runs < 0:
+            raise ValueError("bench warmup_runs must be >= 0")
+        if not 1 <= self.top_accounts <= 10:
+            raise ValueError("bench top_accounts must be between 1 and 10")
+        return self
+
+
 class SharedAttributeConfig(BaseModel):
     min_customers: int  # a cluster needs this many golden customers to raise an alert
     max_customers_per_value: int  # a value shared by more customers than this is ignored
@@ -392,6 +419,16 @@ class Settings(BaseModel):
     graph_sync: GraphSyncConfig
     graph_queries: GraphQueryConfig
     gds: GdsConfig
+    bench: BenchConfig
+
+    @model_validator(mode="after")
+    def _bench_within_trace(self) -> Settings:
+        """The benchmark may only ask trace() for values it accepts."""
+        if any(not 1 <= h <= self.trace.max_hops for h in self.bench.hops):
+            raise ValueError(f"bench hops must be between 1 and {self.trace.max_hops}")
+        if any(not 1 <= h <= self.trace.max_hours for h in self.bench.hours):
+            raise ValueError(f"bench hours must be between 1 and {self.trace.max_hours}")
+        return self
 
     def path(self, relative: str) -> Path:
         """Resolve a config path relative to the project root."""
