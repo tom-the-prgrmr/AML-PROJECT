@@ -20,6 +20,7 @@ from aml.cases.chain import ACTOR, NOTE, label_line, run_chain, train_line
 from aml.cases.dispositions import DISPOSITIONS, record_disposition
 from aml.cases.labels import simulate_dispositions
 from aml.cases.model import PrioritizationError
+from aml.cases.narrative import NarrativeError, as_file_bytes, summarize, write_summaries
 from aml.cases.prioritize import KINDS, train
 from aml.cases.runner import CaseError, run_cases
 from aml.cases.view import list_suppressed, load_case
@@ -871,6 +872,44 @@ def cases_show(
         )
     for section, content in view.enrichment.items():
         typer.echo(f"{section} {json.dumps(content, ensure_ascii=True)}")
+
+
+@cases_app.command("summary")
+def cases_summary(
+    case_id: Annotated[str | None, typer.Argument(help="Case to summarise.")] = None,
+    out: Annotated[
+        Path | None, typer.Option(help="Write the markdown to this file instead of stdout.")
+    ] = None,
+    all_cases: Annotated[
+        bool, typer.Option("--all", help="Summarise every case of the current run.")
+    ] = False,
+    out_dir: Annotated[
+        Path | None, typer.Option(help="Directory for --all: one <case_id>.md per case.")
+    ] = None,
+) -> None:
+    """Templated markdown summary of a case (no LLM). Reads only: nothing is stored or audited."""
+    if all_cases == (case_id is not None) or (all_cases and out_dir is None):
+        typer.echo("give a CASE_ID, or --all together with --out-dir", err=True)
+        raise typer.Exit(code=2)
+    s = get_settings()
+    with get_db(s) as db:
+        try:
+            if all_cases and out_dir is not None:
+                written = write_summaries(db, s, out_dir)
+                typer.echo(f"wrote {written} summaries to {out_dir}")
+                return
+            data = as_file_bytes(summarize(db, s, str(case_id)).markdown)
+        except (CaseError, NarrativeError) as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+    if out is not None:
+        out.write_bytes(data)
+        typer.echo(f"wrote {out}")
+        return
+    # bytes, not text: a Windows console code page cannot encode Vietnamese names
+    sys.stdout.flush()
+    sys.stdout.buffer.write(data)
+    sys.stdout.buffer.flush()
 
 
 def _check_disposition(value: str) -> str:

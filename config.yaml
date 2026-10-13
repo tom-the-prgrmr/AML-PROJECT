@@ -176,6 +176,9 @@ cases:                       # Phase 7a alert consolidation into cases (aml case
     top_fractions: [0.1, 0.2, 0.5]   # each in (0, 1]; head / tail shares of the queue for the metrics
     logreg: {c: 1.0, max_iter: 1000}
     lightgbm: {n_estimators: 100, num_leaves: 15, learning_rate: 0.1, min_child_samples: 5}
+  summary:                   # Phase 7d case summary (aml cases summary); read-only, nothing stored
+    generator: template      # registered NarrativeGenerator; "template" uses no LLM
+    language: en             # the template generator is English only
 
 bench:                       # Phase 6c trace benchmark (aml bench); measures the state a backend is in
   hops: [2, 4, 6]            # increasing, each 1..trace.max_hops

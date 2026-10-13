@@ -472,6 +472,11 @@ class PrioritizationConfig(BaseModel):
         return self
 
 
+class SummaryConfig(BaseModel):
+    generator: str  # registered NarrativeGenerator name; Phase 8 adds an LLM-backed one
+    language: str  # the template generator only knows "en"
+
+
 class CasesConfig(BaseModel):
     window_days: int  # a case window is anchored on its first alert and spans this many days
     txn_summary_days: int  # transaction summary ends on the day of the case's last alert
@@ -479,6 +484,7 @@ class CasesConfig(BaseModel):
     graph_features: Literal["auto", "networkx", "gds"]  # which account feature table to read
     suppression: SuppressionConfig
     prioritization: PrioritizationConfig
+    summary: SummaryConfig
 
     @model_validator(mode="after")
     def _in_range(self) -> CasesConfig:
