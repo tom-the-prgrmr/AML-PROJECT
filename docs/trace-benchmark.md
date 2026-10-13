@@ -98,6 +98,89 @@ Do not run `aml graph sync`, `aml load` or other heavy work while a benchmark is
 
 ## Results
 
-The measured table and chart are in `results/phase6/bench_report.md` and `results/phase6/bench_chart.svg`. They
-are filled in after the real runs on `small` and `dense`; no number or conclusion is copied into this file until
-then.
+Everything below is copied from `results/phase6/bench_report.md`, which `aml bench` built from four runs on
+2026-10-13 (commit `ab5536f`, one dev machine with 12 logical CPUs, Oracle 23.26.3 and Neo4j 5.26.31 Community in
+local Docker containers, 1 warm-up and 10 timed runs per cell). Both profiles hold 306,000 transactions; the
+account was picked automatically as the heaviest case of its profile. The chart is
+`results/phase6/bench_chart.svg`.
+
+The four runs, each after `aml graph sync --full` and one `aml graph sync` from the backend being measured:
+
+```powershell
+$env:DB_BACKEND = "oracle"; uv run aml bench --profile small    # and again with the dense profile loaded
+$env:DB_BACKEND = "duckdb"; uv run aml bench --profile small    # and again on a DuckDB file holding dense
+```
+
+Median ms on **Oracle** (all four methods on the same data; the graph was synced from Oracle):
+
+| profile, account | T (h) | hops | paths | `cte_raw` | `pgq` | `neo4j` | `cte_edge` (approximate) |
+|---|---|---|---|---|---|---|---|
+| small, `A5461833942` | 72 | 2 | 632 | 13.7 | 25.2 | 43.5 | 4.6 |
+| small | 72 | 4 | 658 | 15.3 | 182.8 | 45.2 | 4.5 |
+| small | 72 | 6 | 658 | 16.2 | 7537.7 | 44.5 | 5.0 |
+| small | 720 | 2 | 4,289 | 43.6 | 48.6 | 226.0 | 4.9 |
+| small | 720 | 4 | 10,955 | 160.7 | 262.8 | 577.6 | 4.6 |
+| small | 720 | 6 | 22,394 | 405.3 | 7588.8 | 1184.1 | 4.8 |
+| dense, `A4173555232` | 72 | 2 | 94 | 6.0 | 5.3 | 18.4 | 4.9 |
+| dense | 72 | 4 | 112 | 7.2 | 146.1 | 17.7 | 4.5 |
+| dense | 72 | 6 | 112 | 6.9 | 4375.1 | 18.0 | 4.2 |
+| dense | 720 | 2 | 435 | 9.2 | 8.2 | 32.5 | 4.5 |
+| dense | 720 | 4 | 4,098 | 73.4 | 174.7 | 226.3 | 4.4 |
+| dense | 720 | 6 | 12,366 | 283.4 | 4542.9 | 663.8 | 4.4 |
+
+Query lines: `cte_raw` 30, `cte_edge` 38, `pgq` 19 / 49 / 99 at 2 / 4 / 6 hops, `neo4j` 58 at every hop count.
+The three exact methods returned the same number of paths in all 12 cells. p95 values, the two DuckDB runs
+(`cte_raw` 19 to 141 ms, `neo4j` 15 to 1206 ms, `pgq` skipped) and every raw time are in the report and the JSON
+files.
+
+What the numbers say:
+
+- **The recursive CTE on Oracle is the fastest exact method in 10 of the 12 cells** and within 1 ms of `pgq` in
+  the other two (dense at 2 hops). It answers a 6-hop trace over a 30-day window in 283 to 405 ms for 12,366 to
+  22,394 paths, and in 7 to 16 ms over the default 72-hour window.
+- **`pgq` matches the CTE at 2 hops and falls behind as hops are added**: 146 to 263 ms at 4 hops and 4.4 to 7.6 s
+  at 6 hops. The time follows the query, not the answer: 112 paths took 4.4 s. The query is one fixed-length
+  `GRAPH_TABLE` block per hop count joined by `UNION ALL` (99 lines at 6 hops), and it was not tuned.
+- **`neo4j` is 2.3 to 5.2 times slower than the CTE on Oracle** in every cell, but its time follows the size of
+  the answer and not the hop count: flat at about 18 ms (dense) and 45 ms (small) over 72 hours, 0.66 to 1.18 s
+  for the largest answers. At 6 hops it is 6 to 240 times faster than `pgq`.
+- **`cte_edge` stays at 4 to 5 ms everywhere**, but it reads daily aggregates with a top-K cut and returns 5 to
+  27 paths, so it is a triage view, not the same answer.
+- **The `dense` profile did not make the trace harder.** Its heaviest account produced fewer paths than the one
+  of `small` at every setting.
+
+What it costs to run the graph projection (same runs):
+
+| | small | dense |
+|---|---|---|
+| `aml graph sync --full` from Oracle | 42.11 s | 50.65 s |
+| `aml graph sync` with nothing new, from Oracle | 2.12 s | 2.24 s |
+| Projection size | 28,914 nodes, 443,051 relationships | 28,914 nodes, 474,737 relationships |
+
+The Neo4j container used about 1.8 GiB of its 2.44 GiB limit after the runs (`docker stats`, one reading). The
+other costs are facts about the product and this design, not measurements: Neo4j Community has no role-based
+access control, no clustering and no online backup, so read-only access rests on READ sessions plus the
+application guard; the projection is only as fresh as its last sync; and it is one more service to patch,
+secure, monitor and audit.
+
+## Conclusion
+
+- **SQL is enough for fund-flow tracing at this scale.** A bounded, time-ordered trace out of one account is what
+  a recursive CTE with a `CYCLE` clause does well: fastest in the benchmark, 30 lines, in the system of record,
+  under its roles and audit policies, with no sync lag. Nothing in these numbers argues for moving the trace.
+- **The in-database property graph helps with short, fixed-length patterns.** At 2 hops `pgq` was as fast as the
+  CTE and the shortest query to read (19 lines), with no second system to run. For deeper or variable-length
+  traces it was the slowest method here, so it is not a replacement for the CTE as written.
+- **A separate graph database is not justified by trace speed.** It was slower than Oracle on every cell and
+  costs a 42 to 51 s full sync, a second service and weaker access control. What it adds lies outside this
+  benchmark: one Cypher file for any hop count, variable-length pattern queries such as cycles and
+  shared-attribute clusters ([neo4j-queries.md](neo4j-queries.md)), and graph algorithms
+  ([neo4j-gds.md](neo4j-gds.md)). At this data size even those have an in-process alternative (the NetworkX
+  detections of Phase 5c produce the same degree and PageRank features), so the case for Neo4j here is
+  interactive investigation, not capacity.
+- **So the architecture stays as planned:** Oracle is the system of record for rules, traces and reporting, and
+  the graph layer is an optional read-only projection for investigators.
+
+Limits of this evidence: one machine, local containers, 306,000 transactions, one (heaviest) account per profile,
+10 timed runs, and an untuned `pgq` query. A larger or much deeper graph could change the ranking; the benchmark
+is one command to re-run when it does.
