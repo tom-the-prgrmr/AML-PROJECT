@@ -156,6 +156,12 @@ gds:                          # Phase 6b-ii Neo4j Graph Data Science features (a
   louvain_max_iterations: 10    # >= 1
   louvain_tolerance: 0.0001     # >= 0
 
+cases:                       # Phase 7a alert consolidation into cases (aml cases build)
+  window_days: 90            # >= 1; a case window is anchored on its first alert
+  txn_summary_days: 90       # >= 1; transaction summary ends on the day of the last alert
+  top_counterparties: 5      # >= 0; largest counterparties kept in the network enrichment
+  graph_features: auto       # auto | networkx | gds; auto prefers GDS when it is from the same as_of
+
 bench:                       # Phase 6c trace benchmark (aml bench); measures the state a backend is in
   hops: [2, 4, 6]            # increasing, each 1..trace.max_hops
   hours: [72, 720]           # window T; increasing, each 1..trace.max_hours (72 = aml trace default, 720 = ceiling)

@@ -45,7 +45,9 @@ class SuppressionConfig(BaseModel):
     good_guy_days: int  # >= 1; hạn của một dòng good-guy tính từ ngày clear
     hibernation_days: int  # >= 1; số ngày "ngủ" tính từ lần clear gần nhất của pattern
     hibernation_min_false_positives: int  # >= 1; số alert false positive của pattern để bắt đầu ngủ
-    material_change_ratio: float  # >= 1.0; amount_vnd > ratio * alert đã clear lớn nhất -> không suppress
+    material_change_ratio: (
+        float  # >= 1.0; amount_vnd > ratio * alert đã clear lớn nhất -> không suppress
+    )
 
 
 class CasesConfig(BaseModel):
@@ -113,12 +115,16 @@ def hibernation_verdict(
 def evaluate_suppression(
     db: Database, settings: Settings, items: pd.DataFrame, *, as_of: date
 ) -> pd.DataFrame: ...
+
+
 # không ghi gì; trả items + cột status, suppression_rule, suppression_reason, retriggered, lifted
 
 
 def add_good_guys(
     db: Database, settings: Settings, case_id: str, disposition_id: int
-) -> int: ...  # số dòng good_guy_list đã thêm; record_disposition gọi khi disposition = FALSE_POSITIVE
+) -> (
+    int
+): ...  # số dòng good_guy_list đã thêm; record_disposition gọi khi disposition = FALSE_POSITIVE
 ```
 - `config.yaml`: `cases.suppression: {good_guy_days: 365, hibernation_days: 90, hibernation_min_false_positives: 2,
   material_change_ratio: 1.5}`.

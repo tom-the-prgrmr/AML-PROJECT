@@ -55,7 +55,13 @@ TEMPLATE_WATERMARK = (
     "It is not a disposition."
 )
 SECTION_TITLES = (
-    "Subject", "Alerts", "Priority factors", "Activity", "Network", "Data quality", "History",
+    "Subject",
+    "Alerts",
+    "Priority factors",
+    "Activity",
+    "Network",
+    "Data quality",
+    "History",
 )
 
 

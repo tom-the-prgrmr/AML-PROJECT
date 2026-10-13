@@ -54,6 +54,43 @@ def _load_check_sql(db: Database, name: str, as_of: date, max_lag_days: int) -> 
     )
 
 
+def _failing(db: Database, check_sql: str, as_of: date, max_lag_days: int) -> frozenset[str]:
+    """Run one rule file; its first column lists the failing entity ids."""
+    sql = _load_check_sql(db, check_sql, as_of, max_lag_days)
+    return frozenset(str(x) for x in db.query_df(sql).iloc[:, 0])
+
+
+def failing_ids(
+    db: Database, settings: Settings, *, as_of: date, table_name: str
+) -> dict[str, frozenset[str]]:
+    """Read-only: rule_id -> every failing id, for the enabled ROW rules of one table.
+
+    A rule found in ``dq_rules`` is taken as stored (an operator may have disabled it); a
+    catalogue rule not synced yet counts as enabled, so this works before `aml dq run`. It never
+    writes (no ``sync_rules``) and an empty table gives ``{}``.
+    """
+    if table_name not in TABLES:
+        raise ValueError(f"unsupported table {table_name!r}")
+    rules = {r.rule_id: (r.table_name, r.scope, r.check_sql, r.enabled) for r in RULES}
+    stored = db.query_df("SELECT rule_id, table_name, scope, check_sql, enabled FROM dq_rules")
+    stored.columns = [str(c).lower() for c in stored.columns]
+    for row in stored.itertuples(index=False):
+        rules[str(row.rule_id)] = (
+            str(row.table_name),
+            str(row.scope),
+            str(row.check_sql),
+            bool(row.enabled),
+        )
+    if _scalar(db, f"SELECT COUNT(*) FROM {table_name}") == 0:
+        return {}
+    max_lag = settings.dq.max_feed_lag_days
+    return {
+        rule_id: _failing(db, check_sql, as_of, max_lag)
+        for rule_id, (table, scope, check_sql, enabled) in rules.items()
+        if table == table_name and scope == "ROW" and enabled
+    }
+
+
 def _evaluate(
     db: Database, row: pd.Series, table_rows: dict[str, int], as_of: date, max_lag: int
 ) -> DqRuleResult:
@@ -62,8 +99,7 @@ def _evaluate(
         raise ValueError(f"{rule_id}: unsupported table {table!r}")
     if table_rows[table] == 0:
         return DqRuleResult(rule_id, 0, 0, None, "NO_DATA", frozenset())
-    sql = _load_check_sql(db, str(row["check_sql"]), as_of, max_lag)
-    failed_ids = frozenset(str(x) for x in db.query_df(sql).iloc[:, 0])
+    failed_ids = _failing(db, str(row["check_sql"]), as_of, max_lag)
     total = table_rows[table] if row["scope"] == "ROW" else 1
     fail_rate = round(len(failed_ids) / total, 6)
     status = "FAIL" if fail_rate > float(row["max_fail_rate"]) else "PASS"

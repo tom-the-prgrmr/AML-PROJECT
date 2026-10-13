@@ -6,6 +6,7 @@ runs the same way on Linux/macOS and on Windows without ``make``.
 
 from __future__ import annotations
 
+import json
 import logging
 import sys
 from datetime import datetime
@@ -15,6 +16,9 @@ from typing import Annotated
 import pandas as pd
 import typer
 
+from aml.cases.dispositions import DISPOSITIONS, record_disposition
+from aml.cases.runner import CaseError, run_cases
+from aml.cases.view import load_case
 from aml.common.audit import audit
 from aml.common.config import Settings, get_settings
 from aml.common.db import Database, ServiceUnavailableError, get_db
@@ -793,6 +797,99 @@ def _graph_lag(watermark: datetime | None) -> str:
     if latest is None or watermark is None:
         return "-"
     return str(max(0, int((latest - watermark).total_seconds())))
+
+
+cases_app = typer.Typer(add_completion=False, help="Case consolidation and decisions.")
+app.add_typer(cases_app, name="cases")
+
+
+@cases_app.command("build")
+def cases_build(
+    as_of: Annotated[
+        datetime | None,
+        typer.Option(formats=["%Y-%m-%d"], help="Reference date (default: data.reference_date)."),
+    ] = None,
+) -> None:
+    """Group the alerts into cases per golden customer, enrich them and store a new run."""
+    s = get_settings()
+    with get_db(s) as db:
+        try:
+            run = run_cases(db, s, as_of=as_of.date() if as_of else None, actor="cli")
+        except CaseError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+    typer.echo(
+        f"run_id={run.run_id} as_of={run.as_of} items={run.items} alerts={run.alerts} "
+        f"suppressed={run.suppressed} active={run.active} cases={run.cases} opened={run.opened} "
+        f"reopened={run.reopened} closed={run.closed} graph_features={run.graph_source}"
+    )
+
+
+@cases_app.command("show")
+def cases_show(
+    case_id: Annotated[str, typer.Argument(help="Case id, e.g. C-CIF00000189-20260413.")],
+) -> None:
+    """Show one case of the latest run: alerts first, then one JSON line per enrichment block."""
+    s = get_settings()
+    with get_db(s) as db:
+        try:
+            view = load_case(db, case_id)
+        except CaseError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+    typer.echo(f"{view.case_id} {view.status} {view.golden_customer_id} alerts={len(view.alerts)}")
+    if view.disposition is not None:
+        d = view.disposition
+        typer.echo(f"disposition={d.disposition} actor={d.actor} decided_on={d.decided_on}")
+    for a in view.alerts:
+        typer.echo(
+            f"  {a.event_ts:%Y-%m-%d %H:%M:%S} {a.source} {a.rule_id} cif={a.cif} "
+            f"amount_vnd={a.amount_vnd} {a.item_key}"
+        )
+    for section, content in view.enrichment.items():
+        typer.echo(f"{section} {json.dumps(content, ensure_ascii=True)}")
+
+
+def _check_disposition(value: str) -> str:
+    if value not in DISPOSITIONS:
+        raise typer.BadParameter(f"must be one of {', '.join(DISPOSITIONS)}")
+    return value
+
+
+@cases_app.command("dispose")
+def cases_dispose(
+    case_id: Annotated[str, typer.Argument(help="Case id to decide on.")],
+    disposition: Annotated[
+        str,
+        typer.Option(help=f"One of {', '.join(DISPOSITIONS)}.", callback=_check_disposition),
+    ],
+    reason: Annotated[str, typer.Option(help="Why (required).")],
+    actor: Annotated[str, typer.Option(help="The person who decides (not the system actor).")],
+    decided_on: Annotated[
+        datetime | None,
+        typer.Option(formats=["%Y-%m-%d"], help="Decision date (default: data.reference_date)."),
+    ] = None,
+) -> None:
+    """Record a human decision on a case; the next `aml cases build` sets the case status."""
+    s = get_settings()
+    with get_db(s) as db:
+        try:
+            disposition_id = record_disposition(
+                db,
+                s,
+                case_id,
+                disposition,
+                reason=reason,
+                actor=actor,
+                decided_on=decided_on.date() if decided_on else None,
+            )
+        except CaseError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+        except ValueError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=2) from exc
+    typer.echo(f"disposition_id={disposition_id} case_id={case_id} disposition={disposition}")
 
 
 @app.command()

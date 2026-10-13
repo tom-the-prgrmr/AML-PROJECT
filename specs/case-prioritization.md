@@ -64,7 +64,9 @@ class PrioritizationConfig(BaseModel):
     simulated_actor: str  # actor của disposition mô phỏng; khác audit.system_actor
     cv_folds: int  # >= 2
     top_features: int  # >= 1; số feature đóng góp ghi cho mỗi case
-    top_fractions: list[float]  # mỗi giá trị trong (0, 1]; phần đầu hàng đợi để tính precision / recall
+    top_fractions: list[
+        float
+    ]  # mỗi giá trị trong (0, 1]; phần đầu hàng đợi để tính precision / recall
     logreg: LogRegConfig  # c, max_iter
     lightgbm: LightGbmConfig  # n_estimators, num_leaves, learning_rate, min_child_samples
 
@@ -75,7 +77,9 @@ FEATURES: tuple[str, ...]  # 35 tên, đúng thứ tự mục Thiết kế
 
 
 def case_features(view: CaseView) -> dict[str, float]: ...  # thuần; đủ khoá FEATURES, không NaN
-def write_features(db: Database, run_id: int) -> int: ...  # ghi nếu run đó chưa có; trả số dòng đã ghi
+def write_features(
+    db: Database, run_id: int
+) -> int: ...  # ghi nếu run đó chưa có; trả số dòng đã ghi
 def read_features(db: Database, run_id: int) -> pd.DataFrame: ...  # index case_id, cột FEATURES
 
 
@@ -115,19 +119,28 @@ class PrioritizationError(RuntimeError): ...
 class TrainedModel:
     kind: str  # "logreg" | "lightgbm"
     features: tuple[str, ...]
-    artifact: str  # logreg: JSON {features, mean, scale, coef, intercept}; lightgbm: model_to_string()
+    artifact: (
+        str  # logreg: JSON {features, mean, scale, coef, intercept}; lightgbm: model_to_string()
+    )
     params: dict[str, Any]
     metrics: dict[str, Any]
     data_hash: str  # 16 ký tự hex
 
 
 def fit_model(
-    X: pd.DataFrame, y: pd.Series, groups: pd.Series, cfg: PrioritizationConfig, *, seed: int,
+    X: pd.DataFrame,
+    y: pd.Series,
+    groups: pd.Series,
+    cfg: PrioritizationConfig,
+    *,
+    seed: int,
     kind: str | None = None,
 ) -> TrainedModel: ...
 def predict(model: TrainedModel, X: pd.DataFrame) -> pd.DataFrame: ...
 # index như X; cột score (0..1) và contributions (dict feature -> đóng góp trên thang log-odds)
-def ranking_metrics(y: pd.Series, score: pd.Series, fractions: Sequence[float]) -> dict[str, Any]: ...
+def ranking_metrics(
+    y: pd.Series, score: pd.Series, fractions: Sequence[float]
+) -> dict[str, Any]: ...
 
 
 # src/aml/cases/prioritize.py
@@ -150,7 +163,9 @@ class ScoringRun:
     version: str
     cases: int
     queue: int  # case OPEN / REOPENED được xếp hạng
-    holdout: dict[str, Any]  # metric trên case OPEN so với ground truth; {} khi không có ground truth
+    holdout: dict[
+        str, Any
+    ]  # metric trên case OPEN so với ground truth; {} khi không có ground truth
 
 
 def train(

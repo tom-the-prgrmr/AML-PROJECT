@@ -401,6 +401,23 @@ class GdsConfig(BaseModel):
         return self
 
 
+class CasesConfig(BaseModel):
+    window_days: int  # a case window is anchored on its first alert and spans this many days
+    txn_summary_days: int  # transaction summary ends on the day of the case's last alert
+    top_counterparties: int  # largest counterparties kept in the network enrichment
+    graph_features: Literal["auto", "networkx", "gds"]  # which account feature table to read
+
+    @model_validator(mode="after")
+    def _in_range(self) -> CasesConfig:
+        if self.window_days < 1:
+            raise ValueError("cases window_days must be >= 1")
+        if self.txn_summary_days < 1:
+            raise ValueError("cases txn_summary_days must be >= 1")
+        if self.top_counterparties < 0:
+            raise ValueError("cases top_counterparties must be >= 0")
+        return self
+
+
 class Settings(BaseModel):
     seed: int
     db: DbConfig
@@ -419,6 +436,7 @@ class Settings(BaseModel):
     graph_sync: GraphSyncConfig
     graph_queries: GraphQueryConfig
     gds: GdsConfig
+    cases: CasesConfig
     bench: BenchConfig
 
     @model_validator(mode="after")
