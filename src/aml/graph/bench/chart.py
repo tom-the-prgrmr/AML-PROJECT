@@ -52,8 +52,13 @@ def render_chart(results: Sequence[BenchResult], path: Path) -> Path:
             for method in dict.fromkeys(c.method for c in cells):
                 ok = [c for c in cells if c.method == method and c.status == STATUS_OK]
                 if ok:
+                    exact = ok[0].exact  # an approximate method must not read as the fastest
                     ax.plot(
-                        [c.hops for c in ok], [c.median_ms for c in ok], marker="o", label=method
+                        [c.hops for c in ok],
+                        [c.median_ms for c in ok],
+                        marker="o",
+                        linestyle="-" if exact else "--",
+                        label=method if exact else f"{method} (approximate)",
                     )
             if ax.get_legend_handles_labels()[0]:
                 ax.set_xticks(sorted({c.hops for c in cells}))

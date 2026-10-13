@@ -42,8 +42,8 @@ implemented four ways and timed by `uv run aml bench`. Median ms on Oracle for t
 | 4 | 10,955 | 160.7 | 262.8 | 577.6 |
 | 6 | 22,394 | 405.3 | 7588.8 | 1184.1 |
 
-All three return the same paths. The recursive CTE is the fastest, the property graph matches it at 2 hops and
-falls behind with depth, and Neo4j is 2.3 to 5.2 times slower than the CTE across both profiles while costing a
+All three return the same number of paths in every cell. The recursive CTE is the fastest, the property graph is
+close to it at 2 hops (within 1 ms to 1.8 times slower) and falls far behind with depth, and Neo4j is 2.3 to 5.2 times slower than the CTE across both profiles while costing a
 42 to 51 s full sync and a second service. So Oracle stays the system of record for traces, and Neo4j is an
 optional read-only projection for investigation (pattern queries, graph algorithms). The full tables for
 `small` and `dense`, p95, the method, the limits and the reasoning are in

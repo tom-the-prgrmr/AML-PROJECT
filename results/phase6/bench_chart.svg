@@ -265,7 +265,7 @@ z
     <path d="M 55.910066 215.682609 
 L 199.000511 198.911949 
 L 342.090956 197.697937 
-" clip-path="url(#pedb3daca2b)" style="fill: none; stroke: #ff7f0e; stroke-width: 1.5; stroke-linecap: square"/>
+" clip-path="url(#pedb3daca2b)" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #ff7f0e; stroke-width: 1.5"/>
     <defs>
      <path id="m5b68218b6e" d="M 0 3 
 C 0.795609 3 1.55874 2.683901 2.12132 2.12132 
@@ -335,10 +335,10 @@ L 356.4 15.838834
    <g id="legend_1">
     <g id="patch_7">
      <path d="M 47.201021 58.240709 
-L 109.261021 58.240709 
-Q 110.861021 58.240709 110.861021 56.640709 
-L 110.861021 21.438834 
-Q 110.861021 19.838834 109.261021 19.838834 
+L 168.578521 58.240709 
+Q 170.178521 58.240709 170.178521 56.640709 
+L 170.178521 21.438834 
+Q 170.178521 19.838834 168.578521 19.838834 
 L 47.201021 19.838834 
 Q 45.601021 19.838834 45.601021 21.438834 
 L 45.601021 56.640709 
@@ -362,13 +362,13 @@ L 64.801021 26.317584
      <path d="M 48.801021 38.318209 
 L 56.801021 38.318209 
 L 64.801021 38.318209 
-" style="fill: none; stroke: #ff7f0e; stroke-width: 1.5; stroke-linecap: square"/>
+" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #ff7f0e; stroke-width: 1.5"/>
      <g>
       <use xlink:href="#m5b68218b6e" x="56.801021" y="38.318209" style="fill: #ff7f0e; stroke: #ff7f0e"/>
      </g>
     </g>
     <g id="text_10">
-     <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start" x="71.201021" y="41.118209" transform="rotate(-0 71.201021 41.118209)">cte_edge</text>
+     <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start" x="71.201021" y="41.118209" transform="rotate(-0 71.201021 41.118209)">cte_edge (approximate)</text>
     </g>
     <g id="line2d_27">
      <path d="M 48.801021 50.318834 
@@ -688,7 +688,7 @@ L 702.690716 101.328999
     <path d="M 416.509826 214.789257 
 L 559.600271 215.682609 
 L 702.690716 215.157849 
-" clip-path="url(#p872fc11129)" style="fill: none; stroke: #ff7f0e; stroke-width: 1.5; stroke-linecap: square"/>
+" clip-path="url(#p872fc11129)" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #ff7f0e; stroke-width: 1.5"/>
     <g clip-path="url(#p872fc11129)">
      <use xlink:href="#m5b68218b6e" x="416.509826" y="214.789257" style="fill: #ff7f0e; stroke: #ff7f0e"/>
      <use xlink:href="#m5b68218b6e" x="559.600271" y="215.682609" style="fill: #ff7f0e; stroke: #ff7f0e"/>
@@ -756,10 +756,10 @@ L 716.99976 15.838834
    <g id="legend_2">
     <g id="patch_13">
      <path d="M 407.800781 70.241334 
-L 469.860781 70.241334 
-Q 471.460781 70.241334 471.460781 68.641334 
-L 471.460781 21.438834 
-Q 471.460781 19.838834 469.860781 19.838834 
+L 529.178281 70.241334 
+Q 530.778281 70.241334 530.778281 68.641334 
+L 530.778281 21.438834 
+Q 530.778281 19.838834 529.178281 19.838834 
 L 407.800781 19.838834 
 Q 406.200781 19.838834 406.200781 21.438834 
 L 406.200781 68.641334 
@@ -783,13 +783,13 @@ L 425.400781 26.317584
      <path d="M 409.400781 38.318209 
 L 417.400781 38.318209 
 L 425.400781 38.318209 
-" style="fill: none; stroke: #ff7f0e; stroke-width: 1.5; stroke-linecap: square"/>
+" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #ff7f0e; stroke-width: 1.5"/>
      <g>
       <use xlink:href="#m5b68218b6e" x="417.400781" y="38.318209" style="fill: #ff7f0e; stroke: #ff7f0e"/>
      </g>
     </g>
     <g id="text_22">
-     <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start" x="431.800781" y="41.118209" transform="rotate(-0 431.800781 41.118209)">cte_edge</text>
+     <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start" x="431.800781" y="41.118209" transform="rotate(-0 431.800781 41.118209)">cte_edge (approximate)</text>
     </g>
     <g id="line2d_67">
      <path d="M 409.400781 50.318834 
@@ -1044,7 +1044,7 @@ L 342.090956 373.730321
     <path d="M 55.910066 474.882609 
 L 199.000511 469.7514 
 L 342.090956 469.185577 
-" clip-path="url(#pf39e4616b6)" style="fill: none; stroke: #ff7f0e; stroke-width: 1.5; stroke-linecap: square"/>
+" clip-path="url(#pf39e4616b6)" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #ff7f0e; stroke-width: 1.5"/>
     <g clip-path="url(#pf39e4616b6)">
      <use xlink:href="#m5b68218b6e" x="55.910066" y="474.882609" style="fill: #ff7f0e; stroke: #ff7f0e"/>
      <use xlink:href="#m5b68218b6e" x="199.000511" y="469.7514" style="fill: #ff7f0e; stroke: #ff7f0e"/>
@@ -1088,10 +1088,10 @@ L 356.4 275.038834
    <g id="legend_3">
     <g id="patch_19">
      <path d="M 47.201021 317.440709 
-L 109.261021 317.440709 
-Q 110.861021 317.440709 110.861021 315.840709 
-L 110.861021 280.638834 
-Q 110.861021 279.038834 109.261021 279.038834 
+L 168.578521 317.440709 
+Q 170.178521 317.440709 170.178521 315.840709 
+L 170.178521 280.638834 
+Q 170.178521 279.038834 168.578521 279.038834 
 L 47.201021 279.038834 
 Q 45.601021 279.038834 45.601021 280.638834 
 L 45.601021 315.840709 
@@ -1115,13 +1115,13 @@ L 64.801021 285.517584
      <path d="M 48.801021 297.518209 
 L 56.801021 297.518209 
 L 64.801021 297.518209 
-" style="fill: none; stroke: #ff7f0e; stroke-width: 1.5; stroke-linecap: square"/>
+" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #ff7f0e; stroke-width: 1.5"/>
      <g>
       <use xlink:href="#m5b68218b6e" x="56.801021" y="297.518209" style="fill: #ff7f0e; stroke: #ff7f0e"/>
      </g>
     </g>
     <g id="text_35">
-     <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start" x="71.201021" y="300.318209" transform="rotate(-0 71.201021 300.318209)">cte_edge</text>
+     <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start" x="71.201021" y="300.318209" transform="rotate(-0 71.201021 300.318209)">cte_edge (approximate)</text>
     </g>
     <g id="line2d_96">
      <path d="M 48.801021 309.518834 
@@ -1479,7 +1479,7 @@ L 702.690716 359.914893
     <path d="M 416.509826 473.494549 
 L 559.600271 474.882609 
 L 702.690716 474.08865 
-" clip-path="url(#p42b41e867b)" style="fill: none; stroke: #ff7f0e; stroke-width: 1.5; stroke-linecap: square"/>
+" clip-path="url(#p42b41e867b)" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #ff7f0e; stroke-width: 1.5"/>
     <g clip-path="url(#p42b41e867b)">
      <use xlink:href="#m5b68218b6e" x="416.509826" y="473.494549" style="fill: #ff7f0e; stroke: #ff7f0e"/>
      <use xlink:href="#m5b68218b6e" x="559.600271" y="474.882609" style="fill: #ff7f0e; stroke: #ff7f0e"/>
@@ -1534,10 +1534,10 @@ L 716.99976 275.038834
    <g id="legend_4">
     <g id="patch_25">
      <path d="M 407.800781 329.441334 
-L 469.860781 329.441334 
-Q 471.460781 329.441334 471.460781 327.841334 
-L 471.460781 280.638834 
-Q 471.460781 279.038834 469.860781 279.038834 
+L 529.178281 329.441334 
+Q 530.778281 329.441334 530.778281 327.841334 
+L 530.778281 280.638834 
+Q 530.778281 279.038834 529.178281 279.038834 
 L 407.800781 279.038834 
 Q 406.200781 279.038834 406.200781 280.638834 
 L 406.200781 327.841334 
@@ -1561,13 +1561,13 @@ L 425.400781 285.517584
      <path d="M 409.400781 297.518209 
 L 417.400781 297.518209 
 L 425.400781 297.518209 
-" style="fill: none; stroke: #ff7f0e; stroke-width: 1.5; stroke-linecap: square"/>
+" style="fill: none; stroke-dasharray: 5.55,2.4; stroke-dashoffset: 0; stroke: #ff7f0e; stroke-width: 1.5"/>
      <g>
       <use xlink:href="#m5b68218b6e" x="417.400781" y="297.518209" style="fill: #ff7f0e; stroke: #ff7f0e"/>
      </g>
     </g>
     <g id="text_48">
-     <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start" x="431.800781" y="300.318209" transform="rotate(-0 431.800781 300.318209)">cte_edge</text>
+     <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start" x="431.800781" y="300.318209" transform="rotate(-0 431.800781 300.318209)">cte_edge (approximate)</text>
     </g>
     <g id="line2d_140">
      <path d="M 409.400781 309.518834 

@@ -98,11 +98,11 @@ Do not run `aml graph sync`, `aml load` or other heavy work while a benchmark is
 
 ## Results
 
-Everything below is copied from `results/phase6/bench_report.md`, which `aml bench` built from four runs on
-2026-10-13 (commit `ab5536f`, one dev machine with 12 logical CPUs, Oracle 23.26.3 and Neo4j 5.26.31 Community in
-local Docker containers, 1 warm-up and 10 timed runs per cell). Both profiles hold 306,000 transactions; the
+The timing tables below are copied from `results/phase6/bench_report.md`, which `aml bench` built from four runs on
+2026-10-13 (commit `ab5536f`, one dev machine with 12 logical CPUs, Oracle 23.26.3 and the Neo4j 5.26.31 Community
+image pinned in `docker-compose.yml`, both in local Docker containers, 1 warm-up and 10 timed runs per cell). Both profiles hold 306,000 transactions; the
 account was picked automatically as the heaviest case of its profile. The chart is
-`results/phase6/bench_chart.svg`.
+`results/phase6/bench_chart.svg`; it shows the 720-hour window only.
 
 The four runs, each after `aml graph sync --full` and one `aml graph sync` from the backend being measured:
 
@@ -143,13 +143,14 @@ What the numbers say:
   `GRAPH_TABLE` block per hop count joined by `UNION ALL` (99 lines at 6 hops), and it was not tuned.
 - **`neo4j` is 2.3 to 5.2 times slower than the CTE on Oracle** in every cell, but its time follows the size of
   the answer and not the hop count: flat at about 18 ms (dense) and 45 ms (small) over 72 hours, 0.66 to 1.18 s
-  for the largest answers. At 6 hops it is 6 to 240 times faster than `pgq`.
+  for the largest answers. At 6 hops it is 6 to 244 times faster than `pgq`.
 - **`cte_edge` stays at 4 to 5 ms everywhere**, but it reads daily aggregates with a top-K cut and returns 5 to
   27 paths, so it is a triage view, not the same answer.
-- **The `dense` profile did not make the trace harder.** Its heaviest account produced fewer paths than the one
-  of `small` at every setting.
+- **The `dense` profile did not make the trace harder for the account picked.** Its heaviest account produced
+  fewer paths than the one of `small` at every setting.
 
-What it costs to run the graph projection (same runs):
+What it costs to run the graph projection. The sync times are in the result files (`meta.sync`); the projection
+size is the output of `aml graph sync --full` before each Oracle run, not part of the result files:
 
 | | small | dense |
 |---|---|---|
@@ -166,13 +167,14 @@ secure, monitor and audit.
 ## Conclusion
 
 - **SQL is enough for fund-flow tracing at this scale.** A bounded, time-ordered trace out of one account is what
-  a recursive CTE with a `CYCLE` clause does well: fastest in the benchmark, 30 lines, in the system of record,
+  a recursive CTE with a `CYCLE` clause does well: the fastest exact method, 30 lines, in the system of record,
   under its roles and audit policies, with no sync lag. Nothing in these numbers argues for moving the trace.
-- **The in-database property graph helps with short, fixed-length patterns.** At 2 hops `pgq` was as fast as the
-  CTE and the shortest query to read (19 lines), with no second system to run. For deeper or variable-length
+- **The in-database property graph helps with short, fixed-length patterns.** At 2 hops `pgq` was within 1 ms of
+  the CTE on `dense` and 1.1 to 1.8 times slower on `small`, and it is the shortest query to read (19 lines), with
+  no second system to run. For deeper or variable-length
   traces it was the slowest method here, so it is not a replacement for the CTE as written.
-- **A separate graph database is not justified by trace speed.** It was slower than Oracle on every cell and
-  costs a 42 to 51 s full sync, a second service and weaker access control. What it adds lies outside this
+- **A separate graph database is not justified by trace speed.** It was slower than the Oracle recursive CTE in
+  every cell (2.3 to 5.2 times) and costs a 42 to 51 s full sync, a second service and weaker access control. What it adds lies outside this
   benchmark: one Cypher file for any hop count, variable-length pattern queries such as cycles and
   shared-attribute clusters ([neo4j-queries.md](neo4j-queries.md)), and graph algorithms
   ([neo4j-gds.md](neo4j-gds.md)). At this data size even those have an in-process alternative (the NetworkX
@@ -182,5 +184,7 @@ secure, monitor and audit.
   the graph layer is an optional read-only projection for investigators.
 
 Limits of this evidence: one machine, local containers, 306,000 transactions, one (heaviest) account per profile,
-10 timed runs, and an untuned `pgq` query. A larger or much deeper graph could change the ranking; the benchmark
+one benchmark run of 10 timed repetitions per cell on warm databases, and an untuned `pgq` query. The methods are
+compared by their number of paths, not row by row (the acceptance tests do the row-by-row comparison on the small
+test data sets). A larger or much deeper graph could change the ranking; the benchmark
 is one command to re-run when it does.
