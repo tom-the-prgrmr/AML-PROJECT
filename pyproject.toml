@@ -47,7 +47,9 @@ select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
+# basetemp lives in the project and is wiped at the start of every run, so the system temp
+# drive does not fill up with TINY databases
+addopts = "-ra --basetemp=.pytest_tmp"
 markers = [
     "oracle: needs a running Oracle service (skipped otherwise)",
     "neo4j: needs a running Neo4j service (skipped otherwise)",
