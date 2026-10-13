@@ -15,7 +15,8 @@ from __future__ import annotations
 import logging
 import math
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +55,30 @@ class Database(ABC):
 
     @abstractmethod
     def close(self) -> None: ...
+
+    @contextmanager
+    def transaction(self) -> Iterator[None]:
+        """Writes made inside the block are committed together, or not at all.
+
+        Outside a block every ``execute`` / ``insert_df`` commits on its own. Use this where a
+        row and its audit record must not be separated. Blocks do not nest.
+        """
+        self._begin()
+        try:
+            yield
+        except BaseException:
+            self._rollback()
+            raise
+        self._commit()
+
+    @abstractmethod
+    def _begin(self) -> None: ...
+
+    @abstractmethod
+    def _commit(self) -> None: ...
+
+    @abstractmethod
+    def _rollback(self) -> None: ...
 
     def sql_file(self, name: str) -> Path:
         return sql_file(name, self.backend)
@@ -144,6 +169,15 @@ class DuckDb(Database):
             self.con.unregister("_insert_df")
         return len(df)
 
+    def _begin(self) -> None:
+        self.con.execute("BEGIN TRANSACTION")  # DuckDB raises if one is already open
+
+    def _commit(self) -> None:
+        self.con.execute("COMMIT")
+
+    def _rollback(self) -> None:
+        self.con.execute("ROLLBACK")
+
     def close(self) -> None:
         self.con.close()
 
@@ -166,11 +200,12 @@ class OracleDb(Database):
             )
         except oracledb.Error as exc:
             raise ServiceUnavailableError(f"Oracle not reachable at {cfg.dsn}: {exc}") from exc
+        self._in_transaction = False
 
     def execute(self, sql: str, params: Params = None) -> None:
         with self.con.cursor() as cur:
             cur.execute(sql, params or {})
-        self.con.commit()
+        self._autocommit()
 
     def query_df(self, sql: str, params: Params = None) -> pd.DataFrame:
         with self.con.cursor() as cur:
@@ -196,8 +231,25 @@ class OracleDb(Database):
         with self.con.cursor() as cur:
             for start in range(0, len(rows), self.batch_size):
                 cur.executemany(sql, rows[start : start + self.batch_size])
-        self.con.commit()
+        self._autocommit()
         return len(rows)
+
+    def _autocommit(self) -> None:
+        if not self._in_transaction:
+            self.con.commit()
+
+    def _begin(self) -> None:
+        if self._in_transaction:
+            raise RuntimeError("a transaction is already open")
+        self._in_transaction = True
+
+    def _commit(self) -> None:
+        self._in_transaction = False
+        self.con.commit()
+
+    def _rollback(self) -> None:
+        self._in_transaction = False
+        self.con.rollback()
 
     def close(self) -> None:
         self.con.close()

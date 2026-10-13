@@ -902,8 +902,15 @@ def cases_summary(
         except (CaseError, NarrativeError) as exc:
             typer.echo(str(exc), err=True)
             raise typer.Exit(code=1) from exc
+        except OSError as exc:  # e.g. --out-dir names an existing file
+            typer.echo(f"cannot write to {out_dir}: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
     if out is not None:
-        out.write_bytes(data)
+        try:
+            out.write_bytes(data)
+        except OSError as exc:  # e.g. the parent directory does not exist
+            typer.echo(f"cannot write to {out}: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
         typer.echo(f"wrote {out}")
         return
     # bytes, not text: a Windows console code page cannot encode Vietnamese names

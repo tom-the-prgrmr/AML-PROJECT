@@ -38,7 +38,7 @@ The verify loop in `.claude/loop.yaml` runs `ruff check`, `ruff format --check` 
 
 - **Oracle 23ai Free is the system of record.** Rules, SQL traces and DBA practice run there, including SQL property graphs (`GRAPH_TABLE ... MATCH`). **Neo4j is a read-only investigation projection** synced from Oracle. Neo4j Community has no RBAC, so read-only behaviour comes from READ access-mode sessions plus an application-level guard that rejects write clauses.
 - **DuckDB fallback.** Set `DB_BACKEND=duckdb` (the default) to run everything except the Oracle-only features with zero setup. `get_db()` in [src/aml/common/db.py](src/aml/common/db.py) also falls back to DuckDB when Oracle is unreachable, if `db.fallback_to_duckdb` is set.
-- **The `Database` abstraction** (`execute`, `query_df`, `run_script`, `insert_df`) keeps business code independent of the backend. Use it. Do not import the drivers directly in feature modules.
+- **The `Database` abstraction** (`execute`, `query_df`, `run_script`, `insert_df`) keeps business code independent of the backend. Use it. Do not import the drivers directly in feature modules. Each write commits on its own; wrap writes that must not be separated (a row and its audit record) in `with db.transaction():`.
 - **SQL lives in `.sql` files.** `sql_file(name)` resolves `sql/<backend>/<name>` first and then `sql/common/<name>`. Dialect conventions:
   - DuckDB scripts are plain statements, each ending with `;`.
   - Oracle scripts follow the SQL*Plus style: **every statement, SQL or PL/SQL, ends with a line containing only `/`**. A statement without that terminator raises an error. DDL is idempotent: wrap it in `EXECUTE IMMEDIATE` and swallow ORA-00955.

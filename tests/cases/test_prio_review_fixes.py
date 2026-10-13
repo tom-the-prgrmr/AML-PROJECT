@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -12,8 +14,10 @@ from .helpers import record_disposition as dispose
 from .prio_helpers import (
     FRACTION,
     MINI_TRUTH,
+    copy_tiny,
     insert_truth,
     labels_mod,
+    make_tiny_l,
     minigt,
     model_mod,
     prio_error,
@@ -63,7 +67,7 @@ def test_c_a_case_that_already_has_a_disposition_is_not_in_the_holdout(duck: Duc
     dispose(duck, settings, CASE_C04, "FALSE_POSITIVE", reason="x", actor="analyst01")
     cases = query(duck, "SELECT case_id FROM cases WHERE run_id = 1")["case_id"]
     scores = {str(c): 0.5 for c in cases}
-    h = prio_mod()._holdout(duck, settings, 1, scores)
+    h = mod("aml.cases.scoring").holdout(duck, settings, 1, scores)
     assert (h["n"], h["excluded_trained"]) == (len(scores) - 1, 1)
 
 
@@ -115,3 +119,21 @@ def test_f_a_scored_case_outside_the_queue_loads_with_no_rank(duck: DuckDb) -> N
     }
     text = mod("aml.cases.narrative").render_summary(view)
     assert "- Priority: 0.2500 (not in the queue, model prio/logreg/1)" in text.splitlines()
+
+
+def test_g_a_model_is_not_stored_when_its_audit_row_cannot_be_written(
+    tiny_stages: dict[str, Path], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def no_audit(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("audit_log is unavailable")
+
+    with copy_tiny(tiny_stages, tmp_path / "tx.duckdb") as db:
+        settings = duck_settings()
+        make_tiny_l(db, settings)
+        prio = prio_mod()
+        monkeypatch.setattr(prio, "audit", no_audit)
+        with pytest.raises(RuntimeError, match="audit_log is unavailable"):
+            prio.train(db, settings)
+        assert int(query(db, "SELECT COUNT(*) AS n FROM case_models")["n"][0]) == 0
+        monkeypatch.undo()
+        assert prio.train(db, settings).version == "prio/logreg/1"

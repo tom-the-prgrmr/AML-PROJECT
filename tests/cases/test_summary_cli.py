@@ -194,3 +194,17 @@ def test_ac5_stdout_is_utf8_whatever_the_console_code_page(
     assert text.splitlines()[0] == "# Case C-CIF00000189-20260413"
     assert TINY_NAME in text
     assert text.splitlines()[-1] == FOOTER
+
+
+def test_unwritable_targets_exit_1_with_a_message_not_a_traceback(
+    use_built: Path, tmp_path: Path
+) -> None:
+    a_file = tmp_path / "taken"
+    a_file.write_text("x", encoding="utf-8")
+    res = cli("cases", "summary", "--all", "--out-dir", str(a_file))
+    assert res.exit_code == 1
+    assert "cannot write to" in res.stderr
+    res = cli("cases", "summary", TINY_CASE, "--out", str(tmp_path / "missing" / "one.md"))
+    assert res.exit_code == 1
+    assert "cannot write to" in res.stderr
+    assert not isinstance(res.exception, OSError)

@@ -15,13 +15,12 @@ import pandas as pd
 
 from aml.cases.dispositions import SUSPICIOUS
 from aml.cases.features import read_features, write_features
-from aml.cases.labels import case_groups, has_ground_truth, truth_labels
+from aml.cases.labels import case_groups
 from aml.cases.model import (
     PrioritizationError,
     check_groups,
     fit_model,
     predict,
-    ranking_metrics,
 )
 from aml.cases.prio_store import (
     insert_model,
@@ -31,7 +30,7 @@ from aml.cases.prio_store import (
     read_model,
     scalar,
 )
-from aml.cases.runner import CLOSED
+from aml.cases.scoring import case_event, holdout, queue_ranks, top_features
 from aml.cases.values import lower_columns
 from aml.common.audit import AuditEvent, audit, audit_many
 from aml.common.config import Settings
@@ -91,8 +90,8 @@ def train(
 ) -> TrainingRun:
     """Fit a model on the latest decision of every labelled case and store it as a new version.
 
-    The model row is written before its audit row, in two separate writes: a process that dies
-    in between leaves a model without a ``MODEL_TRAINED`` audit row.
+    The model row and its ``MODEL_TRAINED`` audit row are written in one transaction, so a model
+    never becomes the active one without its audit record.
     """
     cfg = settings.cases.prioritization
     kind = kind or cfg.model
@@ -111,97 +110,34 @@ def train(
     check_groups(groups, cfg.cv_folds)  # also before anything is written
     X, y = _training_set(db, decided)
     model = fit_model(X, y, groups, cfg, seed=settings.seed, kind=kind)
-    model_id, version = insert_model(
-        db, kind=kind, seed=settings.seed, as_of=latest_run(db)[1],
-        counts=(len(X), suspicious, false_positive), model=model, actor=actor,
-    )  # fmt: skip
     m = model.metrics
-    audit(
-        db,
-        module="cases",
-        entity_type="model",
-        entity_id=version,
-        decision="MODEL_TRAINED",
-        reason=(
-            f"trained {kind} on {len(X)} labelled cases ({suspicious} SUSPICIOUS, "
-            f"{false_positive} FALSE_POSITIVE; class_weight balanced): cross-validated "
-            f"ROC-AUC {m['roc_auc']}, PR-AUC {m['pr_auc']}, prevalence {m['prevalence']}; "
-            "ranking only"
-        ),
-        version=version,
-        actor=actor,
-        details={
-            "model_id": model_id,
-            "data_hash": model.data_hash,
-            "metrics": m,
-            "features": list(model.features),
-        },
-    )
+    with db.transaction():
+        model_id, version = insert_model(
+            db, kind=kind, seed=settings.seed, as_of=latest_run(db)[1],
+            counts=(len(X), suspicious, false_positive), model=model, actor=actor,
+        )  # fmt: skip
+        audit(
+            db,
+            module="cases",
+            entity_type="model",
+            entity_id=version,
+            decision="MODEL_TRAINED",
+            reason=(
+                f"trained {kind} on {len(X)} labelled cases ({suspicious} SUSPICIOUS, "
+                f"{false_positive} FALSE_POSITIVE; class_weight balanced): cross-validated "
+                f"ROC-AUC {m['roc_auc']}, PR-AUC {m['pr_auc']}, prevalence {m['prevalence']}; "
+                "ranking only"
+            ),
+            version=version,
+            actor=actor,
+            details={
+                "model_id": model_id,
+                "data_hash": model.data_hash,
+                "metrics": m,
+                "features": list(model.features),
+            },
+        )
     return TrainingRun(model_id, version, kind, len(X), suspicious, false_positive, m)
-
-
-def _top_features(
-    contributions: dict[str, float], values: pd.Series, n: int
-) -> list[dict[str, Any]]:
-    """The ``n`` features with the largest |contribution|; a tie goes to the smaller name."""
-    rounded = {name: round(float(c), 4) for name, c in contributions.items()}
-    names = sorted(rounded, key=lambda name: (-abs(rounded[name]), name))[:n]
-    return [{"feature": f, "value": float(values[f]), "contribution": rounded[f]} for f in names]
-
-
-def _rank(scores: dict[str, float], status: dict[str, str]) -> dict[str, int]:
-    """Queue rank of the OPEN / REOPENED cases: score down, case id up (done in Python)."""
-    queue = sorted((c for c in scores if status[c] != CLOSED), key=lambda c: (-scores[c], c))
-    return {case_id: i for i, case_id in enumerate(queue, start=1)}
-
-
-def _holdout(
-    db: Database, settings: Settings, run_id: int, scores: dict[str, float]
-) -> dict[str, Any]:
-    """Queue metrics against the ground truth, which is only used to measure, never to decide.
-
-    A queued case that already has a disposition (a REOPENED one) was in the training set, so it is
-    left out; ``excluded_trained`` says how many.
-    """
-    if not scores or not has_ground_truth(db):
-        return {}
-    trained = set(latest_dispositions(db)["case_id"])
-    fresh = {c: s for c, s in scores.items() if c not in trained}
-    if not fresh:
-        return {"n": 0, "excluded_trained": len(scores)}
-    truth = truth_labels(db, run_id)
-    y = pd.Series({c: int(truth[c].disposition == SUSPICIOUS) for c in fresh}, dtype=int)
-    metrics = ranking_metrics(
-        y, pd.Series(fresh, dtype=float), settings.cases.prioritization.top_fractions
-    )
-    return metrics | {"excluded_trained": len(scores) - len(fresh)}
-
-
-def _case_event(
-    row: dict[str, Any], queue: int, version: str, score_run_id: int, run_id: int, model_id: int
-) -> AuditEvent:
-    place = (
-        "not in the queue (CLOSED)"
-        if row["queue_rank"] is None
-        else f"queue rank {row['queue_rank']} of {queue}"
-    )
-    factors = ", ".join(f"{t['feature']} {t['contribution']:+.2f}" for t in row["top_features"])
-    return AuditEvent(
-        module="cases",
-        entity_type="case",
-        entity_id=row["case_id"],
-        decision="PRIORITIZED",
-        reason=(
-            f"priority score {row['score']:.4f} from {version}, {place}; top factors: {factors}; "
-            "ranking only, no disposition"
-        ),
-        version=version,
-        details={
-            "score_run_id": score_run_id, "run_id": run_id, "model_id": model_id,
-            "score": row["score"], "queue_rank": row["queue_rank"],
-            "top_features": row["top_features"],
-        },
-    )  # fmt: skip
 
 
 def score(
@@ -209,8 +145,8 @@ def score(
 ) -> ScoringRun:
     """Score every current case with a model (the newest by default) and store the ranking.
 
-    The scores are written before the audit rows, in separate writes: a process that dies in
-    between leaves a scoring run without its ``PRIORITIZED`` audit rows.
+    The scores and their ``PRIORITIZED`` audit rows are written in one transaction, so a score
+    is never visible without its audit record.
     """
     cfg = settings.cases.prioritization
     model_id, version, model = read_model(db, model_id)  # both errors come before any write
@@ -226,14 +162,14 @@ def score(
     X = X.loc[list(status)]
     predicted = predict(model, X)
     scores = {c: round(float(s), 6) for c, s in predicted["score"].items()}
-    rank = _rank(scores, status)
+    rank = queue_ranks(scores, status)
     top = cfg.top_features
     rows = [
         {
             "case_id": c,
             "score": scores[c],
             "queue_rank": rank.get(c),
-            "top_features": _top_features(predicted.at[c, "contributions"], X.loc[c], top),
+            "top_features": top_features(predicted.at[c, "contributions"], X.loc[c], top),
         }
         for c in status
     ]
@@ -241,18 +177,9 @@ def score(
     score_run_id = 1 + scalar(db, "SELECT COALESCE(MAX(score_run_id), 0) FROM case_scores")
     run = ScoringRun(
         score_run_id, run_id, model_id, version, len(rows), len(rank),
-        _holdout(db, settings, run_id, queued),
+        holdout(db, settings, run_id, queued),
     )  # fmt: skip
-    if rows:
-        insert_scores(
-            db,
-            score_run_id=score_run_id,
-            run_id=run_id,
-            model_id=model_id,
-            version=version,
-            rows=rows,
-        )
-    events = [_case_event(r, len(rank), version, score_run_id, run_id, model_id) for r in rows]
+    events = [case_event(r, len(rank), version, score_run_id, run_id, model_id) for r in rows]
     events.append(
         AuditEvent(
             module="cases",
@@ -269,5 +196,15 @@ def score(
     )
     if actor:
         events = [e.model_copy(update={"actor": actor}) for e in events]
-    audit_many(db, events)
+    with db.transaction():
+        if rows:
+            insert_scores(
+                db,
+                score_run_id=score_run_id,
+                run_id=run_id,
+                model_id=model_id,
+                version=version,
+                rows=rows,
+            )
+        audit_many(db, events)
     return run
