@@ -70,7 +70,7 @@ def test_ac8_guard_blocks_writes_and_audits_only_when_asked(synced: Neo, mini: D
     row = rows.iloc[0]
     assert row["entity_type"] == "cypher"
     assert row["actor"] == "analyst01"
-    assert row["version"] == "guard/v1"
+    assert row["version"] == "guard/v2"
     assert row["details"]["query"] == BLOCKED_QUERY
 
     with pytest.raises(guard.WriteBlockedError):

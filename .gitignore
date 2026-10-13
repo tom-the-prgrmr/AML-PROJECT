@@ -26,3 +26,7 @@ Thumbs.db
 
 # Claude loop runtime state
 .claude
+.playwright-mcp
+
+# Neo4j GDS jar (downloaded by hand, see docs/neo4j-gds.md)
+docker/neo4j/plugins/*.jar

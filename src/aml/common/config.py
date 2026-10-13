@@ -346,6 +346,34 @@ class GraphQueryConfig(BaseModel):
         return self
 
 
+class GdsConfig(BaseModel):
+    procedures: list[str]  # fnmatch patterns the GDS runner's own .cypher files may CALL
+    graph_prefix: str  # in-memory graph names are <prefix>_accounts, ...
+    concurrency: int  # GDS threads; 1 keeps results reproducible
+    pagerank_max_iterations: int
+    pagerank_tolerance: float
+    louvain_max_levels: int
+    louvain_max_iterations: int
+    louvain_tolerance: float
+
+    @model_validator(mode="after")
+    def _in_range(self) -> GdsConfig:
+        if not 1 <= self.concurrency <= 4:
+            raise ValueError("gds concurrency must be between 1 and 4")
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,29}", self.graph_prefix):
+            raise ValueError("gds graph_prefix must be a plain identifier")
+        if self.pagerank_tolerance <= 0:
+            raise ValueError("gds pagerank_tolerance must be > 0")
+        if (
+            min(self.pagerank_max_iterations, self.louvain_max_levels, self.louvain_max_iterations)
+            < 1
+        ):
+            raise ValueError("gds iteration and level limits must be >= 1")
+        if self.louvain_tolerance < 0:
+            raise ValueError("gds louvain_tolerance must be >= 0")
+        return self
+
+
 class Settings(BaseModel):
     seed: int
     db: DbConfig
@@ -363,6 +391,7 @@ class Settings(BaseModel):
     network: NetworkConfig
     graph_sync: GraphSyncConfig
     graph_queries: GraphQueryConfig
+    gds: GdsConfig
 
     def path(self, relative: str) -> Path:
         """Resolve a config path relative to the project root."""

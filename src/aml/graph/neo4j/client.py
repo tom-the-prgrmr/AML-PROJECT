@@ -18,10 +18,15 @@ import pandas as pd
 from aml.common.audit import audit
 from aml.common.config import Settings
 from aml.common.db import Database, ServiceUnavailableError
-from aml.graph.neo4j.guard import GraphError, WriteBlockedError, assert_read_only
+from aml.graph.neo4j.guard import (
+    GUARD_VERSION,
+    GraphError,
+    WriteBlockedError,
+    assert_read_only,
+)
 
 CYPHER_ROOT = Path(__file__).resolve().parent / "cypher"
-WRITE_PREFIXES: tuple[str, ...] = ("schema.cypher", "sync/")  # 6b adds the prefix of its own
+WRITE_PREFIXES: tuple[str, ...] = ("schema.cypher", "sync/")
 COUNTERS = (
     "nodes_created", "nodes_deleted", "relationships_created", "relationships_deleted",
     "properties_set",
@@ -110,7 +115,7 @@ def _audit_blocked(db: Database, cypher: str, exc: WriteBlockedError, actor: str
         entity_id=hashlib.sha256(cypher.encode("utf-8")).hexdigest()[:16],
         decision="QUERY_BLOCKED",
         reason=str(exc),
-        version="guard/v1",
+        version=GUARD_VERSION,
         details={"query": cypher[:QUERY_AUDIT_LIMIT]},
         **extra,
     )
@@ -125,14 +130,19 @@ def run_read(
     audit_db: Database | None = None,
     actor: str | None = None,
     timeout: float | None = None,
+    procedures: Sequence[str] | None = None,
 ) -> pd.DataFrame:
     """Guard the query, run it in a READ session; columns are the RETURN keys (even with 0 rows).
+
+    ``procedures`` (None = ``neo4j.read_procedures``) is the allow-list the guard applies; the GDS
+    runner passes ``gds.procedures`` for its own ``.cypher`` files only.
 
     ``timeout`` (seconds; None = ``neo4j.read_timeout_seconds``) is enforced by the server, which
     rolls the transaction back; it surfaces as `QueryTimeoutError` and is not retried.
     """
     try:
-        assert_read_only(cypher, allowed_procedures=settings.neo4j.read_procedures)
+        allowed = settings.neo4j.read_procedures if procedures is None else procedures
+        assert_read_only(cypher, allowed_procedures=allowed)
     except WriteBlockedError as exc:
         if audit_db is not None:
             _audit_blocked(audit_db, cypher, exc, actor)
@@ -160,11 +170,12 @@ def run_read_file(
     params: Mapping[str, Any] | None = None,
     *,
     timeout: float | None = None,
+    procedures: Sequence[str] | None = None,
 ) -> pd.DataFrame:
     statements = load_statements(name)
     if len(statements) != 1:
         raise GraphError(f"{name} must hold exactly one statement, found {len(statements)}")
-    return run_read(driver, settings, statements[0], params, timeout=timeout)
+    return run_read(driver, settings, statements[0], params, timeout=timeout, procedures=procedures)
 
 
 # ---------------------------------------------------------------- writes

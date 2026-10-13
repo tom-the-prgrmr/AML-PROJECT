@@ -32,6 +32,7 @@ from aml.graph.model import TraceUnavailableError
 from aml.graph.neo4j import client
 from aml.graph.neo4j.client import open_driver
 from aml.graph.neo4j.extract import NODE_LABELS, REL_TYPES, SyncError
+from aml.graph.neo4j.gds import run_gds
 from aml.graph.neo4j.guard import GraphError
 from aml.graph.neo4j.queries import QUERY_NAMES, QueryError
 from aml.graph.neo4j.queries import run_query as run_graph_query
@@ -744,6 +745,37 @@ def graph_query(
     typer.echo("  ".join(result.rows.columns))
     for row in result.rows.head(limit).itertuples(index=False):
         typer.echo("  ".join(_cell(v) for v in row))
+
+
+@graph_app.command("gds")
+def graph_gds(
+    as_of: Annotated[
+        datetime | None,
+        typer.Option(
+            formats=["%Y-%m-%d"],
+            help="Only transfers up to this day (default: data.reference_date).",
+        ),
+    ] = None,
+) -> None:
+    """Compute GDS features (WCC, Louvain, PageRank, degree) and store them (raises no alert)."""
+    s = get_settings()
+    try:
+        with _source_db(s) as db:
+            run = run_gds(db, s, as_of=as_of.date() if as_of else None, actor="cli")
+    except ServiceUnavailableError as exc:
+        typer.echo(f"neo4j not available: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except GraphError as exc:  # includes GdsError
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(
+        f"run_id={run.run_id} as_of={run.as_of.isoformat()} accounts={run.accounts} "
+        f"active={run.active_accounts} wcc_components={run.wcc_components} "
+        f"louvain_communities={run.louvain_communities} shared_clusters={run.shared_clusters} "
+        f"seconds={run.seconds} gds={run.gds_version}"
+    )
+    for name, (nodes, rels) in run.graphs.items():
+        typer.echo(f"{name} nodes={nodes} relationships={rels}")
 
 
 def _graph_lag(watermark: datetime | None) -> str:

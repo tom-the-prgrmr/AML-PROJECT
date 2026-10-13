@@ -144,3 +144,14 @@ graph_sync:                  # Phase 6a Oracle -> Neo4j projection (aml graph sy
 
 graph_queries:                # Phase 6b investigation queries on Neo4j (aml graph query)
   max_rows: 10000            # more rows than this is an error, never a silent cut; >= 1
+
+gds:                          # Phase 6b-ii Neo4j Graph Data Science features (aml graph gds)
+  # Procedures only the GDS runner's own gds/*.cypher files may CALL; never the ordinary read path.
+  procedures: [gds.graph.project, gds.graph.drop, "gds.*.stream"]
+  graph_prefix: aml_gds      # in-memory graphs: <prefix>_accounts, _accounts_undirected, _shared
+  concurrency: 1             # 1..4; 1 keeps runs reproducible
+  pagerank_max_iterations: 200  # >= 1
+  pagerank_tolerance: 1.0e-10   # > 0; write 1.0e-10, PyYAML reads 1e-10 as a string
+  louvain_max_levels: 10        # >= 1
+  louvain_max_iterations: 10    # >= 1
+  louvain_tolerance: 0.0001     # >= 0
