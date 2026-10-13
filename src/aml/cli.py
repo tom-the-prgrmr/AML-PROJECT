@@ -16,7 +16,11 @@ from typing import Annotated
 import pandas as pd
 import typer
 
+from aml.cases.chain import ACTOR, NOTE, label_line, run_chain, train_line
 from aml.cases.dispositions import DISPOSITIONS, record_disposition
+from aml.cases.labels import simulate_dispositions
+from aml.cases.model import PrioritizationError
+from aml.cases.prioritize import KINDS, train
 from aml.cases.runner import CaseError, run_cases
 from aml.cases.view import list_suppressed, load_case
 from aml.common.audit import audit
@@ -645,7 +649,7 @@ def graph_sync(
     s = get_settings()
     try:
         with _source_db(s) as db:
-            run = run_sync(db, s, full=full, actor="cli")
+            run = run_sync(db, s, full=full, actor=ACTOR)
     except (SyncError, GraphError) as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=1) from exc
@@ -735,7 +739,7 @@ def graph_query(
                 account=account,
                 customer=customer,
                 as_of=as_of.date() if as_of else None,
-                actor="cli",
+                actor=ACTOR,
             )
     except QueryError as exc:
         typer.echo(str(exc), err=True)
@@ -769,7 +773,7 @@ def graph_gds(
     s = get_settings()
     try:
         with _source_db(s) as db:
-            run = run_gds(db, s, as_of=as_of.date() if as_of else None, actor="cli")
+            run = run_gds(db, s, as_of=as_of.date() if as_of else None, actor=ACTOR)
     except ServiceUnavailableError as exc:
         typer.echo(f"neo4j not available: {exc}", err=True)
         raise typer.Exit(code=1) from exc
@@ -814,7 +818,7 @@ def cases_build(
     s = get_settings()
     with get_db(s) as db:
         try:
-            run = run_cases(db, s, as_of=as_of.date() if as_of else None, actor="cli")
+            run = run_cases(db, s, as_of=as_of.date() if as_of else None, actor=ACTOR)
         except CaseError as exc:
             typer.echo(str(exc), err=True)
             raise typer.Exit(code=1) from exc
@@ -911,6 +915,82 @@ def cases_dispose(
     typer.echo(f"disposition_id={disposition_id} case_id={case_id} disposition={disposition}")
 
 
+def _check_kind(value: str | None) -> str | None:
+    if value is not None and value not in KINDS:
+        raise typer.BadParameter(f"must be one of {', '.join(KINDS)}")
+    return value
+
+
+def _write_json(path: Path | None, payload: dict[str, object]) -> None:
+    if path is not None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+@cases_app.command("label")
+def cases_label(
+    fraction: Annotated[
+        float | None, typer.Option(min=0.0, max=1.0, help="Share of case groups (0, 1].")
+    ] = None,
+) -> None:
+    """Record SIMULATED dispositions from the ground truth on a seeded share of the case groups."""
+    s = get_settings()
+    if fraction is not None:
+        if fraction <= 0:
+            raise typer.BadParameter("fraction must be in (0, 1]")
+        cfg = s.cases.prioritization.model_copy(update={"simulate_fraction": fraction})
+        s = s.model_copy(update={"cases": s.cases.model_copy(update={"prioritization": cfg})})
+    with get_db(s) as db:
+        try:
+            sim = simulate_dispositions(db, s)
+        except (CaseError, PrioritizationError) as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+    typer.echo(f"run_id={sim.run_id} groups={sim.groups} {label_line(sim)}")
+
+
+@cases_app.command("train")
+def cases_train(
+    model: Annotated[
+        str | None, typer.Option(help="logreg or lightgbm.", callback=_check_kind)
+    ] = None,
+    eval_out: Annotated[Path | None, typer.Option(help="Write the metrics as JSON.")] = None,
+) -> None:
+    """Train a ranking model on the decided cases and store it as a new version."""
+    s = get_settings()
+    with get_db(s) as db:
+        try:
+            run = train(db, s, kind=model, actor=ACTOR)
+        except (CaseError, PrioritizationError) as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+    typer.echo(train_line(run))
+    typer.echo(NOTE)
+    _write_json(eval_out, {"model": {"version": run.version, "kind": run.kind}, "cv": run.metrics})
+
+
+@app.command()
+def score(
+    as_of: Annotated[
+        datetime | None,
+        typer.Option(formats=["%Y-%m-%d"], help="Reference date (default: data.reference_date)."),
+    ] = None,
+    top: Annotated[int, typer.Option(min=0, help="Queue lines to show.")] = 10,
+    eval_out: Annotated[Path | None, typer.Option(help="Write model, cv, holdout as JSON.")] = None,
+) -> None:
+    """Build cases, simulate decisions, train and score: rank the queue (it never closes a case)."""
+    s = get_settings()
+    with get_db(s) as db:
+        try:
+            payload = run_chain(
+                db, s, as_of=as_of.date() if as_of else None, top=top, emit=typer.echo
+            )
+        except (CaseError, PrioritizationError) as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+    _write_json(eval_out, payload)
+
+
 @app.command()
 def bench(
     profile: Annotated[
@@ -932,7 +1012,7 @@ def bench(
             return
         out.mkdir(parents=True, exist_ok=True)
         with _source_db(s) as db:
-            result = run_bench(db, s, profile=profile, command=_command_line(), actor="cli")
+            result = run_bench(db, s, profile=profile, command=_command_line(), actor=ACTOR)
         written = write_result(result, out)
         report, chart = write_report(out)
     except BenchError as exc:
@@ -968,7 +1048,7 @@ def _not_yet(phase: int) -> None:
 
 
 for _name, _phase in {
-    "score": 7, "rag": 8, "ui": 9,
+    "rag": 8, "ui": 9,
 }.items():  # fmt: skip
     app.command(_name, help=f"(Phase {_phase})")(lambda p=_phase: _not_yet(p))
 

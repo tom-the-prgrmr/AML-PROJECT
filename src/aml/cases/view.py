@@ -6,7 +6,7 @@ Used by the CLI now and by scoring, summaries, the assistant and the UI later. I
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
 
@@ -37,6 +37,7 @@ class CaseAlert:
     end_ts: datetime
     amount_vnd: int
     reason: str
+    details: dict[str, Any] = field(default_factory=dict)  # screening: list_type, final_score
 
 
 @dataclass(frozen=True)
@@ -64,7 +65,7 @@ class CaseView:
     enrichment: dict[str, dict[str, Any]]  # keys = SECTIONS
     subjects: tuple[dict[str, Any], ...]  # customers_masked (or customers) row of each CIF
     disposition: Disposition | None
-    score: dict[str, Any] | None  # filled by the prioritization phase; None until then
+    score: dict[str, Any] | None  # current run only: score, queue_rank, model_version, top_features
 
 
 def _read(db: Database, sql: str) -> pd.DataFrame:
@@ -77,6 +78,11 @@ def _json(value: Any) -> dict[str, Any]:
     return dict(floats(parsed))
 
 
+def _details(value: Any) -> dict[str, Any]:
+    """The ``details`` JSON of an alert; NULL is an empty dict."""
+    return {} if plain(value) is None else _json(value)
+
+
 def _quote(case_id: str) -> str:
     """Literal for a case id. The shape is checked first, so no user text reaches the SQL."""
     if not is_case_id(case_id):
@@ -87,7 +93,8 @@ def _quote(case_id: str) -> str:
 def _alerts(db: Database, run_id: int, case_id: str) -> tuple[CaseAlert, ...]:
     df = _read(
         db,
-        "SELECT item_key, source, rule_id, alert_ref, cif, event_ts, end_ts, amount_vnd, reason "
+        "SELECT item_key, source, rule_id, alert_ref, cif, event_ts, end_ts, amount_vnd, reason, "
+        "details "
         f"FROM case_alerts WHERE run_id = {run_id} AND case_id = {_quote(case_id)}",
     )
     df = df.sort_values(["event_ts", "item_key"], kind="stable")
@@ -102,6 +109,7 @@ def _alerts(db: Database, run_id: int, case_id: str) -> tuple[CaseAlert, ...]:
             end_ts=pd.Timestamp(r.end_ts).to_pydatetime(),
             amount_vnd=int(r.amount_vnd),
             reason=str(plain(r.reason) or ""),
+            details=_details(r.details),
         )
         for r in df.itertuples()
     )
@@ -143,6 +151,29 @@ def _disposition(db: Database, case_id: str) -> Disposition | None:
     )
 
 
+def _score(db: Database, run_id: int, case_id: str) -> dict[str, Any] | None:
+    """The current priority score of a case; None for an older snapshot or before any scoring."""
+    latest = int(db.query_df("SELECT COALESCE(MAX(run_id), 0) FROM case_runs").iloc[0, 0])
+    if run_id != latest:
+        return None
+    df = _read(
+        db,
+        "SELECT score, queue_rank, model_version, top_features FROM case_scores_current "
+        f"WHERE case_id = {_quote(case_id)}",
+    )
+    if df.empty:
+        return None
+    r = df.iloc[0]
+    rank = plain(r["queue_rank"])
+    top = r["top_features"]
+    return {
+        "score": float(r["score"]),
+        "queue_rank": None if rank is None else int(rank),
+        "model_version": str(r["model_version"]),
+        "top_features": floats(json.loads(top) if isinstance(top, str) else top),
+    }
+
+
 @dataclass(frozen=True)
 class SuppressedItem:
     item_key: str
@@ -170,9 +201,17 @@ def list_suppressed(db: Database, *, limit: int | None = None) -> tuple[int, lis
 
 
 def load_case(
-    db: Database, case_id: str, *, run_id: int | None = None, masked: bool = True
+    db: Database,
+    case_id: str,
+    *,
+    run_id: int | None = None,
+    masked: bool = True,
+    scored: bool = True,
 ) -> CaseView:
-    """Load a case from a run (the latest by default); raise `CaseError` when it is not there."""
+    """Load a case from a run (the latest by default); raise `CaseError` when it is not there.
+
+    ``scored=False`` skips the score lookup (feature building reads thousands of cases).
+    """
     if run_id is None:
         run_id = int(db.query_df("SELECT COALESCE(MAX(run_id), 0) FROM case_runs").iloc[0, 0])
     head = _read(db, f"SELECT * FROM cases WHERE run_id = {run_id} AND case_id = {_quote(case_id)}")
@@ -194,5 +233,5 @@ def load_case(
         enrichment=enrichment,
         subjects=_subjects(db, kyc_cifs, masked),
         disposition=_disposition(db, case_id),
-        score=None,
+        score=_score(db, run_id, case_id) if scored else None,
     )

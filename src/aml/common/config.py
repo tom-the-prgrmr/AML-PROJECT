@@ -420,12 +420,65 @@ class SuppressionConfig(BaseModel):
         return self
 
 
+class LogRegConfig(BaseModel):
+    c: float  # inverse regularisation strength
+    max_iter: int
+
+    @model_validator(mode="after")
+    def _in_range(self) -> LogRegConfig:
+        if self.c <= 0:
+            raise ValueError("logreg c must be > 0")
+        if self.max_iter < 1:
+            raise ValueError("logreg max_iter must be >= 1")
+        return self
+
+
+class LightGbmConfig(BaseModel):
+    n_estimators: int
+    num_leaves: int
+    learning_rate: float
+    min_child_samples: int
+
+    @model_validator(mode="after")
+    def _in_range(self) -> LightGbmConfig:
+        if min(self.n_estimators, self.num_leaves, self.min_child_samples) < 1:
+            raise ValueError("lightgbm n_estimators, num_leaves and min_child_samples must be >= 1")
+        if self.learning_rate <= 0:
+            raise ValueError("lightgbm learning_rate must be > 0")
+        return self
+
+
+class PrioritizationConfig(BaseModel):
+    model: Literal["logreg", "lightgbm"]
+    simulate_dispositions: bool  # does `aml score` run the simulation step
+    simulate_fraction: float  # share of the case groups that get a simulated disposition
+    simulated_actor: str  # actor of the simulated dispositions; differs from audit.system_actor
+    cv_folds: int
+    top_features: int  # contributing features stored with each score
+    top_fractions: list[float]  # head / tail shares of the queue used for precision and recall
+    logreg: LogRegConfig
+    lightgbm: LightGbmConfig
+
+    @model_validator(mode="after")
+    def _in_range(self) -> PrioritizationConfig:
+        if not 0 < self.simulate_fraction <= 1:
+            raise ValueError("simulate_fraction must be in (0, 1]")
+        if self.cv_folds < 2:
+            raise ValueError("cv_folds must be >= 2")
+        if self.top_features < 1:
+            raise ValueError("top_features must be >= 1")
+        if not self.top_fractions or any(not 0 < f <= 1 for f in self.top_fractions):
+            raise ValueError("top_fractions must be a non-empty list of values in (0, 1]")
+        return self
+
+
 class CasesConfig(BaseModel):
     window_days: int  # a case window is anchored on its first alert and spans this many days
     txn_summary_days: int  # transaction summary ends on the day of the case's last alert
     top_counterparties: int  # largest counterparties kept in the network enrichment
     graph_features: Literal["auto", "networkx", "gds"]  # which account feature table to read
     suppression: SuppressionConfig
+    prioritization: PrioritizationConfig
 
     @model_validator(mode="after")
     def _in_range(self) -> CasesConfig:
@@ -466,6 +519,12 @@ class Settings(BaseModel):
             raise ValueError(f"bench hops must be between 1 and {self.trace.max_hops}")
         if any(not 1 <= h <= self.trace.max_hours for h in self.bench.hours):
             raise ValueError(f"bench hours must be between 1 and {self.trace.max_hours}")
+        return self
+
+    @model_validator(mode="after")
+    def _simulated_actor_is_not_the_system(self) -> Settings:
+        if self.cases.prioritization.simulated_actor == self.audit.system_actor:
+            raise ValueError("simulated_actor must differ from audit.system_actor")
         return self
 
     def path(self, relative: str) -> Path:

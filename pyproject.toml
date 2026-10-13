@@ -19,7 +19,11 @@ dependencies = [
     "networkx>=3.4,<4",
     "scipy>=1.13",
     "matplotlib>=3.11.2",
+    "scikit-learn>=1.5",
 ]
+
+[project.optional-dependencies]
+ml = ["lightgbm>=4.3"]
 
 [project.scripts]
 aml = "aml.cli:app"
