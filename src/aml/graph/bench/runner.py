@@ -210,16 +210,22 @@ def _git_commit() -> str | None:
 
 
 def _sync_costs(db: Database) -> dict[str, Any] | None:
-    """Seconds of the newest FULL and INCREMENTAL sync and the lag the newest run left."""
+    """Seconds of the newest FULL sync and of the newest INCREMENTAL one after it, and the lag.
+
+    Runs older than the newest FULL built a different graph (another data set), so their times
+    say nothing about the graph that was measured.
+    """
     try:
         frame = db.query_df(_statement(db, SYNC_FILE))
     except Exception:  # no run log in this database: nothing to report
         return None
     if frame.empty:
         return None
+    full_at = frame.index[frame["sync_mode"] == "FULL"]
+    current = frame.loc[: full_at[0]] if len(full_at) else frame  # newest first
 
     def newest(mode: str) -> float | None:
-        rows = frame[frame["sync_mode"] == mode]
+        rows = current[current["sync_mode"] == mode]
         return None if rows.empty else float(rows["seconds"].iloc[0])
 
     return {

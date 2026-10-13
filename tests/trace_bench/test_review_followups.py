@@ -7,12 +7,13 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from aml.common.db import DuckDb
 from aml.graph.bench.model import BenchError, BenchResult
 from aml.graph.bench.report import path_mismatches, render_report
-from aml.graph.bench.runner import run_bench
+from aml.graph.bench.runner import _sync_costs, run_bench
 
 from .helpers import bench_settings, make_sample
 
@@ -51,3 +52,38 @@ def test_bad_profile_label_is_refused_before_timing(
 ) -> None:
     with pytest.raises(BenchError, match="profile label"):
         run_bench(duck, bench_settings(tmp_path), profile=label)
+
+
+class _RunLog:
+    """A stand-in database whose only query answers with the sync run log, newest first."""
+
+    backend = "duckdb"
+
+    def __init__(self, rows: list[tuple[str, float]]) -> None:
+        self.frame = pd.DataFrame(rows, columns=["sync_mode", "seconds"]).assign(
+            lag_after_seconds=0
+        )
+
+    def sql_file(self, name: str) -> Path:
+        return DuckDb.sql_file(self, name)  # type: ignore[arg-type]
+
+    def query_df(self, sql: str, params: object = None) -> pd.DataFrame:
+        return self.frame
+
+
+@pytest.mark.parametrize(
+    ("newest_first", "incremental"),
+    [
+        ([("FULL", 40.0), ("INCREMENTAL", 0.3), ("FULL", 9.0)], None),
+        ([("INCREMENTAL", 2.4), ("FULL", 40.0), ("INCREMENTAL", 0.3)], 2.4),
+    ],
+)
+def test_sync_costs_ignore_runs_before_the_newest_full(
+    newest_first: list[tuple[str, float]], incremental: float | None
+) -> None:
+    costs = _sync_costs(_RunLog(newest_first))  # type: ignore[arg-type]
+    assert costs == {
+        "full_seconds": 40.0,
+        "incremental_seconds": incremental,
+        "lag_after_seconds": 0,
+    }
