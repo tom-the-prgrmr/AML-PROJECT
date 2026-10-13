@@ -11,6 +11,7 @@ from datetime import UTC, date, datetime
 import pandas as pd
 
 from aml.cases.runner import CASES_VERSION, CaseError
+from aml.cases.suppression import add_good_guys
 from aml.cases.values import is_case_id
 from aml.common.audit import audit
 from aml.common.config import Settings
@@ -102,4 +103,6 @@ def record_disposition(
             "decided_on": decided_on.isoformat(),
         },
     )
+    if disposition == FALSE_POSITIVE:  # a cleared screening pair stays quiet (good-guy list)
+        add_good_guys(db, settings, case_id, disposition_id)
     return disposition_id

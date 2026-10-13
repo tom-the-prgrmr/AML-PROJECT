@@ -401,11 +401,31 @@ class GdsConfig(BaseModel):
         return self
 
 
+class SuppressionConfig(BaseModel):
+    good_guy_days: int  # a good-guy row lasts this many days from the day the case was cleared
+    hibernation_days: int  # a pattern sleeps this many days from its latest clearance
+    hibernation_min_false_positives: int  # cleared alerts of a pattern before it starts to sleep
+    material_change_ratio: float  # amount above ratio x the largest cleared alert wakes the pattern
+
+    @model_validator(mode="after")
+    def _in_range(self) -> SuppressionConfig:
+        if self.good_guy_days < 1:
+            raise ValueError("good_guy_days must be >= 1")
+        if self.hibernation_days < 1:
+            raise ValueError("hibernation_days must be >= 1")
+        if self.hibernation_min_false_positives < 1:
+            raise ValueError("hibernation_min_false_positives must be >= 1")
+        if self.material_change_ratio < 1.0:
+            raise ValueError("material_change_ratio must be >= 1.0")
+        return self
+
+
 class CasesConfig(BaseModel):
     window_days: int  # a case window is anchored on its first alert and spans this many days
     txn_summary_days: int  # transaction summary ends on the day of the case's last alert
     top_counterparties: int  # largest counterparties kept in the network enrichment
     graph_features: Literal["auto", "networkx", "gds"]  # which account feature table to read
+    suppression: SuppressionConfig
 
     @model_validator(mode="after")
     def _in_range(self) -> CasesConfig:

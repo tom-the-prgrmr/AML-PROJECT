@@ -18,7 +18,7 @@ import typer
 
 from aml.cases.dispositions import DISPOSITIONS, record_disposition
 from aml.cases.runner import CaseError, run_cases
-from aml.cases.view import load_case
+from aml.cases.view import list_suppressed, load_case
 from aml.common.audit import audit
 from aml.common.config import Settings, get_settings
 from aml.common.db import Database, ServiceUnavailableError, get_db
@@ -823,6 +823,25 @@ def cases_build(
         f"suppressed={run.suppressed} active={run.active} cases={run.cases} opened={run.opened} "
         f"reopened={run.reopened} closed={run.closed} graph_features={run.graph_source}"
     )
+    for rule, count in run.suppressed_by_rule.items():  # no `run_id=`: one summary line only
+        typer.echo(f"{rule} suppressed={count}")
+
+
+@cases_app.command("suppressed")
+def cases_suppressed(
+    limit: Annotated[int | None, typer.Option(help="Show at most this many items.")] = None,
+) -> None:
+    """List the items the latest run suppressed, each with the rule and its reason."""
+    s = get_settings()
+    with get_db(s) as db:
+        try:
+            total, items = list_suppressed(db, limit=limit)
+        except CaseError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+    typer.echo(f"{total} suppressed item(s)")
+    for i in items:
+        typer.echo(f"  {i.item_key} {i.suppression_rule} {i.suppression_reason}")
 
 
 @cases_app.command("show")

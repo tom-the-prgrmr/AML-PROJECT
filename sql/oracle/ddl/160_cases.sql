@@ -59,7 +59,7 @@ BEGIN
       run_id             NUMBER(12)          NOT NULL,
       item_key           VARCHAR2(200 CHAR)  NOT NULL,
       golden_customer_id VARCHAR2(40 CHAR)   NOT NULL,
-      case_id            VARCHAR2(40 CHAR)   NOT NULL,
+      case_id            VARCHAR2(40 CHAR),                  -- NULL for a SUPPRESSED item
       source             VARCHAR2(10 CHAR)   NOT NULL,       -- RULE | NETWORK | SCREENING
       rule_id            VARCHAR2(40 CHAR)   NOT NULL,
       alert_ref          VARCHAR2(80 CHAR)   NOT NULL,

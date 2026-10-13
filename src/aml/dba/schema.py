@@ -25,6 +25,7 @@ SCHEMA_SCRIPTS: dict[str, tuple[str, ...]] = {
         "ddl/140_graph_sync.sql",
         "ddl/150_gds.sql",
         "ddl/160_cases.sql",
+        "ddl/170_case_suppression.sql",
         "ddl/050_security_objects.sql",  # security objects are applied last
     ),
     "duckdb": (
@@ -40,6 +41,7 @@ SCHEMA_SCRIPTS: dict[str, tuple[str, ...]] = {
         "ddl/140_graph_sync.sql",
         "ddl/150_gds.sql",
         "ddl/160_cases.sql",
+        "ddl/170_case_suppression.sql",
         "ddl/050_customers_masked.sql",  # security objects are applied last, after all tables exist
     ),
 }

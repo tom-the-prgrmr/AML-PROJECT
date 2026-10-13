@@ -84,7 +84,8 @@ def test_ac10_oracle_and_duckdb_agree_on_tiny(
         views = set(odb.query_df("SELECT view_name FROM user_views").iloc[:, 0])
         n_audit = int(
             odb.query_df(
-                "SELECT COUNT(*) FROM audit_log WHERE module = 'cases' AND ("
+                "SELECT COUNT(*) FROM audit_log WHERE module = 'cases' "
+                "AND decision IN ('CASE_OPENED', 'CASE_REOPENED', 'CASE_RUN_COMPLETED') AND ("
                 "(entity_type = 'case' AND JSON_VALUE(details, '$.run_id') = "
                 f"'{rid}') OR (entity_type = 'case_run' AND entity_id = '{rid}'))"
             ).iloc[0, 0]
@@ -116,6 +117,7 @@ def test_ac10_oracle_and_duckdb_agree_on_tiny(
         "CASE_DISPOSITIONS_CURRENT",
     } <= views
     # one row per opened case plus CASE_RUN_COMPLETED: 53 on a clean schema, 1 on a re-run
+    # (CASE_UPDATED is left out: it depends on what the previous run on this schema held)
     assert n_audit == orun.opened + orun.reopened + 1
     if not known:
         assert (orun.opened, n_audit) == (52, 53)

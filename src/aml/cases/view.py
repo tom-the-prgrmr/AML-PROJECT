@@ -16,7 +16,14 @@ from aml.cases.runner import SECTIONS, CaseError
 from aml.cases.values import floats, in_filter, is_case_id, iso_date, lower_columns, plain
 from aml.common.db import Database
 
-__all__ = ["CaseAlert", "CaseView", "Disposition", "load_case"]
+__all__ = [
+    "CaseAlert",
+    "CaseView",
+    "Disposition",
+    "SuppressedItem",
+    "list_suppressed",
+    "load_case",
+]
 
 
 @dataclass(frozen=True)
@@ -134,6 +141,32 @@ def _disposition(db: Database, case_id: str) -> Disposition | None:
         decided_on=date.fromisoformat(str(iso_date(r["decided_on"]))),
         run_id=int(r["run_id"]),
     )
+
+
+@dataclass(frozen=True)
+class SuppressedItem:
+    item_key: str
+    suppression_rule: str
+    suppression_reason: str
+
+
+def list_suppressed(db: Database, *, limit: int | None = None) -> tuple[int, list[SuppressedItem]]:
+    """The SUPPRESSED items of the latest run: their total and the first ``limit`` of them.
+
+    Ordered by (item_key, golden customer); raise `CaseError` when no run exists yet.
+    """
+    if int(db.query_df("SELECT COUNT(*) FROM case_runs").iloc[0, 0]) == 0:
+        raise CaseError("no case run yet: run `aml cases build` first")
+    df = _read(
+        db,
+        "SELECT item_key, suppression_rule, suppression_reason FROM case_alerts_current "
+        "WHERE status = 'SUPPRESSED' ORDER BY item_key, golden_customer_id",
+    )
+    items = [
+        SuppressedItem(str(r.item_key), str(r.suppression_rule), str(r.suppression_reason))
+        for r in df.itertuples()
+    ]
+    return len(items), items if limit is None else items[: max(limit, 0)]
 
 
 def load_case(

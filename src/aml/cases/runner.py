@@ -18,6 +18,7 @@ import pandas as pd
 from aml.cases.consolidate import assign_cases
 from aml.cases.enrich import enrich_cases
 from aml.cases.items import collect_items
+from aml.cases.suppression import count_by_rule, evaluate_suppression, suppression_events
 from aml.common.audit import AuditEvent, audit_many
 from aml.common.config import Settings
 from aml.common.db import Database
@@ -51,13 +52,15 @@ class CaseRun:
     as_of: date
     items: int  # (alert, golden customer) rows before suppression
     alerts: int  # distinct item_key
-    suppressed: int  # 7a: always 0
+    suppressed: int
     active: int
     cases: int
     opened: int  # cases whose case_id appears for the first time in any run
     reopened: int  # cases that became REOPENED in this run (were not REOPENED in the previous)
     closed: int  # cases that became CLOSED in this run (were not CLOSED in the previous)
     graph_source: str  # "gds" | "networkx" | "none"
+    suppressed_by_rule: dict[str, int]  # GOOD_GUY and HIBERNATION, both present even with 0
+    lifted: int  # items a good-guy row or a hibernation no longer covers (back to ACTIVE)
 
 
 def _scalar(db: Database, sql: str) -> int:
@@ -221,11 +224,8 @@ def run_cases(
     as_of = as_of or settings.data.reference_date
     _check_inputs(db)  # raises before anything is written
     items = collect_items(db, settings, as_of=as_of)
-    # 7a has no suppression; the case-suppression spec replaces this block with real rules.
-    items["status"] = ACTIVE
-    items["suppression_rule"] = pd.Series([None] * len(items), dtype=object)
-    items["suppression_reason"] = pd.Series([None] * len(items), dtype=object)
-    items["retriggered"] = 0
+    # Suppressed items are stored but belong to no case and do not anchor a window.
+    items = evaluate_suppression(db, settings, items, as_of=as_of)
     active = assign_cases(items[items["status"] == ACTIVE], settings.cases.window_days)
 
     run_id = _next_run_id(db)
@@ -239,7 +239,9 @@ def run_cases(
     prev_df = db.query_df(f"SELECT case_id, status FROM cases WHERE run_id = {previous_run}")
     previous_status = dict(zip(prev_df["case_id"].astype(str), prev_df["status"], strict=True))
     previous_keys = _item_keys(
-        db, f"SELECT case_id, item_key FROM case_alerts WHERE run_id = {previous_run}"
+        db,
+        f"SELECT case_id, item_key FROM case_alerts WHERE run_id = {previous_run} "
+        f"AND status = '{ACTIVE}'",  # a SUPPRESSED item has no case_id
     )
     # Published runs only: rows of a run that died before its `case_runs` row do not count.
     ever_seen = {
@@ -249,10 +251,14 @@ def run_cases(
         )["case_id"]
     }
 
-    if not active.empty:
-        written = active.assign(run_id=run_id)
+    # Every item is stored, before enrichment: `history.suppressed_items` reads this run's rows.
+    if not items.empty:
+        suppressed = items[items["status"] == SUPPRESSED].assign(case_id=None)
+        parts = [f for f in (active, suppressed) if not f.empty]  # no empty frames in concat
+        written = pd.concat(parts).assign(run_id=run_id)
         written["details"] = written["details"].astype(object)
         db.insert_df("case_alerts", written[_ALERT_COLUMNS])
+    if not cases.empty:
         db.insert_df("cases", cases[_CASE_COLUMNS])
     # Enrichment runs after `cases` and before `case_runs`, the row that makes the run current.
     graph_source = enrich_cases(
@@ -274,6 +280,8 @@ def run_cases(
         ),
         closed=sum(s == CLOSED and previous_status.get(c) != CLOSED for c, s in now_status.items()),
         graph_source=graph_source,
+        suppressed_by_rule=count_by_rule(items),
+        lifted=int(items["lifted"].sum()),
     )
     db.insert_df(
         "case_runs",
@@ -299,11 +307,9 @@ def run_cases(
             ]
         ),
     )
-    events = (
-        []
-        if cases.empty
-        else _events(run_id, cases, active, previous_status, previous_keys, ever_seen)
-    )
+    events = suppression_events(run_id, items)
+    if not cases.empty:
+        events += _events(run_id, cases, active, previous_status, previous_keys, ever_seen)
     events.append(_run_event(run))
     if actor:
         events = [e.model_copy(update={"actor": actor}) for e in events]

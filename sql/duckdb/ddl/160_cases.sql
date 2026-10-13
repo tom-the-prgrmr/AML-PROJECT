@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS case_alerts (
     run_id             BIGINT         NOT NULL,
     item_key           VARCHAR(200)   NOT NULL,
     golden_customer_id VARCHAR(40)    NOT NULL,
-    case_id            VARCHAR(40)    NOT NULL,
+    case_id            VARCHAR(40),                 -- NULL for a SUPPRESSED item
     source             VARCHAR(10)    NOT NULL,     -- RULE | NETWORK | SCREENING
     rule_id            VARCHAR(40)    NOT NULL,
     alert_ref          VARCHAR(80)    NOT NULL,

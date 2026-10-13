@@ -10,6 +10,7 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Sequence
+from datetime import date
 from decimal import Decimal
 from typing import Any
 
@@ -42,6 +43,11 @@ def whole(value: Any) -> int:
     """An integer count or amount; NULL counts as 0."""
     number = plain(value)
     return 0 if number is None else int(number)
+
+
+def plain_date(value: Any) -> date:
+    """A plain date: Oracle returns datetime for DATE columns, DuckDB a date or Timestamp."""
+    return pd.Timestamp(value).date()
 
 
 def iso_date(value: Any) -> str | None:
