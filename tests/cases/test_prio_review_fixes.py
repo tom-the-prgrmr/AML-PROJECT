@@ -7,7 +7,7 @@ import pytest
 
 from aml.common.db import DuckDb
 
-from .helpers import CASE_C04, duck_settings, load_minic, query, run_cases
+from .helpers import CASE_C04, duck_settings, load_minic, mod, query, run_cases
 from .helpers import record_disposition as dispose
 from .prio_helpers import (
     FRACTION,
@@ -95,3 +95,23 @@ def test_e_eval_payload_names_its_population() -> None:
     for part in ("cv", "holdout"):  # the top-level keys are pinned by test_prio_cli
         assert "alerted cases only" in payload[part]["population"]
         assert "Phase 7b" in payload[part]["population"]
+
+
+def test_f_a_scored_case_outside_the_queue_loads_with_no_rank(duck: DuckDb) -> None:
+    # a CLOSED case is scored but has no queue_rank: the NULL integer must not break load_case
+    load_minic(duck)
+    run = run_cases(duck, duck_settings())
+    duck.execute(
+        "INSERT INTO case_scores VALUES "
+        f"(1, {run.run_id}, 'C-C01-20260302', 1, 'prio/logreg/1', 0.25, NULL, '[]', "
+        "TIMESTAMP '2026-06-30 00:00:00')"
+    )
+    view = mod("aml.cases.view").load_case(duck, "C-C01-20260302")
+    assert view.score == {
+        "score": 0.25,
+        "queue_rank": None,
+        "model_version": "prio/logreg/1",
+        "top_features": [],
+    }
+    text = mod("aml.cases.narrative").render_summary(view)
+    assert "- Priority: 0.2500 (not in the queue, model prio/logreg/1)" in text.splitlines()

@@ -27,8 +27,8 @@ def is_case_id(text: str) -> bool:
 
 
 def plain(value: Any) -> Any:
-    """None for NULL / NaN / NaT, else a plain Python value (a whole Decimal becomes int)."""
-    if value is None or value is pd.NaT:
+    """None for NULL / NaN / NaT / pd.NA, else a plain Python value (whole Decimal -> int)."""
+    if value is None or value is pd.NaT or value is pd.NA:
         return None
     if isinstance(value, np.generic):
         value = value.item()

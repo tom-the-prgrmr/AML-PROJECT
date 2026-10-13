@@ -5,7 +5,7 @@ Vietnamese-name screening, entity resolution, transaction monitoring, SQL-vs-gra
 analysis, alert consolidation/prioritization, and a local GraphRAG investigator assistant.
 Oracle is the system of record; Neo4j is a read-only investigation projection.
 
-> Status: **Phases 0 to 6 done** (scaffold through the Neo4j projection and trace benchmark). Results tables are added phase by phase, each generated
+> Status: **Phases 0 to 7 done** (scaffold through alert consolidation, suppression, prioritization and case summaries). Results tables are added phase by phase, each generated
 > from an actual run with the command that produced it.
 
 ## Quick start
@@ -53,3 +53,51 @@ optional read-only projection for investigation (pattern queries, graph algorith
 Related: [docs/neo4j-sync.md](docs/neo4j-sync.md) (sync, lag, consistency),
 [docs/neo4j-queries.md](docs/neo4j-queries.md) (Cypher queries), [docs/neo4j-gds.md](docs/neo4j-gds.md) (GDS
 features).
+
+## Cases: consolidation, suppression, prioritization, summary (Phase 7)
+
+Screening hits, rule alerts and network alerts are merged into **one case per golden customer** over a
+90-day window, enriched so an investigator does not need another system (KYC, linked CIFs, data-quality
+issues, 90-day activity, network features, prior cases), ranked by a model, and summarised in markdown
+without an LLM. The numbers below come from one run on the `small` profile (DuckDB, `as_of` 2026-06-30,
+seed 42) on 2026-10-13, starting from empty case tables:
+
+```powershell
+uv run aml cases build                                  # 339 alerts -> 475 items -> 335 cases
+uv run aml score --eval-out results/phase7/eval.json    # build, simulate dispositions, rebuild, train, score
+uv run aml cases suppressed                             # what suppression held back, with the reason
+uv run aml cases summary --all --out-dir data/summaries # 309 markdown summaries
+```
+
+| Step | Result |
+|---|---|
+| Consolidation | 339 alerts became 475 case items (a group alert joins the case of every customer in it) and 335 cases |
+| Simulated dispositions | 234 cases in 70% of the case groups were given the ground-truth outcome: 200 suspicious, 34 false positive; 101 cases stayed open |
+| Suppression after those clearances | 36 screening items held back by the good-guy list, 0 by hibernation; 26 cases left the queue, 309 remained |
+| Model `prio/logreg/1` (5 grouped folds, 234 cases) | ROC-AUC 0.9599, PR-AUC 0.9865 at 85.5% prevalence |
+| Held-out queue (101 open cases, never trained on) | ROC-AUC 0.9868, PR-AUC 0.9985 at 90.1% prevalence; 8 of the 10 false positives are in the bottom 10% of the queue and all 10 in the bottom 20% |
+
+Running `uv run aml score` a second time on the same data labelled 0 new cases and reproduced the same
+queue and the same metrics.
+
+How to read these numbers:
+
+- **The model only ranks.** It never closes, clears or suppresses a case; every score is written to
+  `audit_log` with the model version and its top contributing features. Closing a case takes a
+  disposition, and only a disposition feeds the good-guy list.
+- **The class imbalance is the reverse of production.** On this synthetic data the rules rarely fire on
+  normal behaviour, so about 86% of cases are truly suspicious and the minority class is the false
+  positive. With that prevalence a random ordering already has about 0.9 precision at the top, so the
+  useful measure is how far down the queue the false positives are pushed, not precision at the top.
+- **Metrics cover alerted cases only.** Customers who never raised an alert are not sampled, so this says
+  nothing about what the rules miss (selection bias; the below-the-line sample is Phase 7b).
+- **Labels are simulated.** Dispositions are derived from the generator's ground truth, not from analysts,
+  so they are noise-free; real dispositions would be less separable.
+- **Hibernation had nothing to act on:** this data has too few repeated false-positive rule alerts. Its
+  behaviour is covered by tests on a hand-built fixture, not by this run.
+
+An example summary is in [results/phase7/example_summary.md](results/phase7/example_summary.md) (names and
+ID numbers are masked); the full evaluation is in [results/phase7/eval.json](results/phase7/eval.json). The
+specs with the rules and acceptance criteria are [case-consolidation](specs/case-consolidation.md),
+[case-suppression](specs/case-suppression.md), [case-prioritization](specs/case-prioritization.md) and
+[case-summary](specs/case-summary.md).
