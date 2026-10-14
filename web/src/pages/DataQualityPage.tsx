@@ -1,3 +1,4 @@
+import { useState } from "react";
 import ApiPanel from "../components/ApiPanel";
 import type {
   DqResult,
@@ -103,10 +104,24 @@ function RuleTrend({ points }: { points: DqTrendPoint[] }) {
 }
 
 function TrendTable({ points }: { points: DqTrendPoint[] }) {
-  const byRule = new Map<string, DqTrendPoint[]>();
-  for (const p of points) byRule.set(p.rule_id, [...(byRule.get(p.rule_id) ?? []), p]);
+  const [rule, setRule] = useState("");
+  const all = new Map<string, DqTrendPoint[]>();
+  for (const p of points) all.set(p.rule_id, [...(all.get(p.rule_id) ?? []), p]);
+  const byRule = rule === "" ? all : new Map([[rule, all.get(rule) ?? []]]);
   return (
-    <table className="data">
+    <>
+      <label className="toolbar">
+        <span>Luật</span>
+        <select aria-label="Chọn luật" value={rule} onChange={(e) => setRule(e.target.value)}>
+          <option value="">Tất cả luật</option>
+          {[...all.keys()].map((id) => (
+            <option key={id} value={id}>
+              {id}
+            </option>
+          ))}
+        </select>
+      </label>
+      <table className="data">
       <thead>
         <tr>
           <th>Luật</th>
@@ -121,7 +136,8 @@ function TrendTable({ points }: { points: DqTrendPoint[] }) {
           </tr>
         ))}
       </tbody>
-    </table>
+      </table>
+    </>
   );
 }
 

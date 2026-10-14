@@ -40,7 +40,7 @@ export default function CaseEvidence({ detail }: { detail: CaseDetail }) {
                 <td>{a.event_ts}</td>
                 <td>{a.end_ts}</td>
                 <td className="num">{a.amount_vnd}</td>
-                <td>{a.reason}</td>
+                <td className="reason-cell">{a.reason}</td>
               </tr>
             ))}
           </tbody>

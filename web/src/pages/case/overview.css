@@ -8,3 +8,6 @@
 .enrich-block dl > div { display: contents; }
 .enrich-block dd { margin: 0; }
 .memo-cell { white-space: pre-wrap; word-break: break-word; max-width: 360px; }
+
+/* The alert reason is a sentence: keep the column wide enough to read. */
+.reason-cell { min-width: 360px; }

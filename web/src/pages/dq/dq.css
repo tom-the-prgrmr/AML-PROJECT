@@ -57,3 +57,6 @@
 .dq-trend-box {
   padding: 1.4em 0 1.4em;
 }
+
+/* Twenty sample ids in a squeezed column made every row very tall. */
+.dq-ids { min-width: 420px; }

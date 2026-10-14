@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Iterator
 from typing import Annotated
 
@@ -10,6 +11,11 @@ from fastapi import Depends, Header, Request
 from aml.api.identity import USER_HEADER, User, resolve_user
 from aml.common.config import Settings
 from aml.common.db import Database, get_db
+
+# A page loads several panels at once. DuckDB releases its file when the last connection of the
+# process closes, and a connect that overlaps that close fails with "file is being used by
+# another process": opening and closing therefore never run at the same time.
+_OPEN_CLOSE = threading.Lock()
 
 
 def get_app_settings(request: Request) -> Settings:
@@ -35,8 +41,10 @@ def get_database(
     if shared is not None:
         yield shared
         return
-    db = get_db(request.app.state.settings)
+    with _OPEN_CLOSE:
+        db = get_db(request.app.state.settings)
     try:
         yield db
     finally:
-        db.close()
+        with _OPEN_CLOSE:
+            db.close()
