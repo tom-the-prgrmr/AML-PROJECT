@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from aml.common.config import RiskMemoConfig
 
 # Phrases an attacker might hide in a memo to steer an LLM-based analyst (English + Vietnamese).
 INJECTION_PHRASES: list[str] = [
@@ -15,6 +20,24 @@ INJECTION_PHRASES: list[str] = [
 ]
 # Injection memos never go on CASH / CARD (those channels carry no free-text note).
 INJECTABLE_CHANNELS = ("INTERNAL_TRANSFER", "INTERBANK_TRANSFER", "EBANKING")
+
+# Deliberately planted risk memos (spec datagen-memos); {ref} is an integer 10..998.
+GAMBLING_MEMOS: list[str] = [
+    "Nạp tiền game bài {ref}",
+    "nap tien ca cuoc bong da",
+    "Thanh toán kèo tối nay",
+    "nap the game doi thuong",
+    "Trả tiền lô đề",
+    "Nạp tài khoản cá độ {ref}",
+]
+CRYPTO_MEMOS: list[str] = [
+    "Mua USDT P2P",
+    "nap tien san Binance {ref}",
+    "Chuyển tiền mua BTC",
+    "mua coin qua OTC",
+    "Nạp ví crypto",
+    "Thanh toán lệnh mua ETH {ref}",
+]
 
 # channel -> (probability the memo is filled, templates). One unaccented template per channel
 # mimics real-world typing, keeping the share of non-ASCII memos well above 50%.
@@ -95,6 +118,46 @@ def inject_prompt_injections(
     chosen = np.sort(rng.choice(eligible, size=count, replace=False))
     phrases = rng.integers(len(INJECTION_PHRASES), size=count)
     for pos, k in zip(chosen.tolist(), phrases.tolist(), strict=True):
-        note = memo[pos] or "Chuyển khoản"
+        current = memo[pos]
+        note = current if isinstance(current, str) and current else "Chuyển khoản"
         memo[pos] = f"{note}. {INJECTION_PHRASES[k]}"
+    return chosen
+
+
+def plant_risk_memos(
+    memo: np.ndarray,
+    channels: np.ndarray,
+    background: np.ndarray,
+    suspicious: np.ndarray,
+    excluded: np.ndarray,
+    cfg: RiskMemoConfig,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Overwrite some transfer memos with gambling/crypto ones in place; return the positions.
+
+    Draw order is part of the contract: background rows, then suspicious-scenario rows, then
+    gambling-or-crypto, template index and reference number. Zero rates draw nothing.
+    Positions come back as the background rows (ascending) then the suspicious rows (ascending).
+    """
+    transfer = np.isin(channels, INJECTABLE_CHANNELS) & ~excluded
+    bg = np.flatnonzero(transfer & background)
+    ty = np.flatnonzero(transfer & suspicious)
+    n_bg = round(cfg.background_rate * len(bg))
+    n_ty = round(cfg.typology_rate * len(ty))
+    parts = [
+        np.sort(rng.choice(rows, size=n, replace=False))
+        for rows, n in ((bg, n_bg), (ty, n_ty))
+        if n > 0
+    ]
+    if not parts:
+        return np.empty(0, dtype=np.intp)
+    chosen = np.concatenate(parts)
+    is_gambling = rng.random(len(chosen)) < cfg.gambling_share
+    pick = rng.integers(0, len(GAMBLING_MEMOS), size=len(chosen))
+    ref = rng.integers(10, 999, size=len(chosen))
+    for pos, gambling, k, r in zip(
+        chosen.tolist(), is_gambling.tolist(), pick.tolist(), ref.tolist(), strict=True
+    ):
+        templates = GAMBLING_MEMOS if gambling else CRYPTO_MEMOS
+        memo[pos] = templates[k].format(ref=r)
     return chosen

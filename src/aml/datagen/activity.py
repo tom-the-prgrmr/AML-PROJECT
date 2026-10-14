@@ -15,12 +15,14 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 
+from aml.common.config import RiskMemoConfig
 from aml.datagen.accounts import build_accounts
 from aml.datagen.memos import (
     INJECTABLE_CHANNELS,
     INJECTION_PHRASES,
     generate_memos,
     inject_prompt_injections,
+    plant_risk_memos,
 )
 from aml.datagen.rng import table_rng
 from aml.datagen.transactions import (
@@ -73,6 +75,9 @@ class TxnGenParams:
     duplicate_rate: float  # DQ: extra duplicated transactions = round(rate * n_transactions)
     injection_memos: int  # prompt-injection memos planted in background transactions
     typology_counts: dict[str, int]  # scenarios per typology (spec 1b-ii)
+    risk_memo_background_rate: float = 0.0  # gambling/crypto memos (spec datagen-memos); 0 = off
+    risk_memo_typology_rate: float = 0.0
+    risk_memo_gambling_share: float = 0.5
 
     @classmethod
     def from_settings(cls, settings: Settings) -> TxnGenParams:
@@ -91,6 +96,9 @@ class TxnGenParams:
                 k: settings.data.typologies.get(k, 0) * profile.typology_scale
                 for k in TYPOLOGY_KEYS
             },
+            risk_memo_background_rate=settings.data.risk_memos.background_rate,
+            risk_memo_typology_rate=settings.data.risk_memos.typology_rate,
+            risk_memo_gambling_share=settings.data.risk_memos.gambling_share,
         )
 
 
@@ -232,6 +240,23 @@ def generate_activity(tables: CustomerTables, params: TxnGenParams, seed: int) -
             injected[inject_prompt_injections(memo, channels, ~on_suspicious, 1, pick_rng)] = True
             count -= 1
     injected[inject_prompt_injections(memo, channels, injected, count, memo_rng)] = True
+    suspicious_rows = np.zeros(len(frame), dtype=bool)
+    if typology is not None:
+        suspicious_ids = {s.scenario_id for s in typology.scenarios if s.is_suspicious}
+        suspicious_rows = frame[SCENARIO_TAG].isin(suspicious_ids).to_numpy(dtype=bool)
+    plant_risk_memos(
+        memo,
+        channels,
+        frame[SCENARIO_TAG].isna().to_numpy(dtype=bool),
+        suspicious_rows,
+        injected,
+        RiskMemoConfig(
+            background_rate=params.risk_memo_background_rate,
+            typology_rate=params.risk_memo_typology_rate,
+            gambling_share=params.risk_memo_gambling_share,
+        ),
+        table_rng(seed, "transactions.memos.risk"),  # own stream: no existing stream is touched
+    )
     frame["memo"] = memo
     frame["injected"] = injected  # keeps the flag aligned through the time sort
 

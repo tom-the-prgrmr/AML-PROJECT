@@ -44,6 +44,10 @@ data:
   duplicate_person_rate: 0.08
   dq_defect_rate: 0.02
   injection_memos: 30        # prompt-injection memos planted in background transactions
+  risk_memos:                # gambling-like / crypto-like memos planted on purpose (spec datagen-memos)
+    background_rate: 0.002   # share of background transfer rows
+    typology_rate: 0.10      # share of suspicious-scenario evidence transfer rows
+    gambling_share: 0.5      # P(gambling-like); the rest are crypto-like
   typologies:                # scenarios per typology; multiplied by the profile's typology_scale
     structuring: 20
     rapid_movement: 20

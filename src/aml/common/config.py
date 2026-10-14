@@ -99,6 +99,22 @@ class WatchlistConfig(BaseModel):
     unknown_dob_rate: float  # share of entries with no DOB information
 
 
+class RiskMemoConfig(BaseModel):
+    background_rate: float  # 0..0.05; share of background transfers given a gambling/crypto memo
+    typology_rate: float  # 0..1; share of suspicious-scenario evidence transfers given that memo
+    gambling_share: float  # 0..1; probability a planted memo is gambling-like (else crypto-like)
+
+    @model_validator(mode="after")
+    def _ranges(self) -> RiskMemoConfig:
+        if not 0.0 <= self.background_rate <= 0.05:
+            raise ValueError("risk_memos background_rate must be between 0 and 0.05")
+        if not 0.0 <= self.typology_rate <= 1.0:
+            raise ValueError("risk_memos typology_rate must be between 0 and 1")
+        if not 0.0 <= self.gambling_share <= 1.0:
+            raise ValueError("risk_memos gambling_share must be between 0 and 1")
+        return self
+
+
 class DataConfig(BaseModel):
     profile: Literal["small", "dense", "large"]
     output_dir: str
@@ -108,6 +124,7 @@ class DataConfig(BaseModel):
     duplicate_person_rate: float
     dq_defect_rate: float
     injection_memos: int
+    risk_memos: RiskMemoConfig
     typologies: dict[str, int]  # scenarios injected per typology (before profile scaling)
     watchlist: WatchlistConfig
 

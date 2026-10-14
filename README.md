@@ -96,6 +96,10 @@ How to read these numbers:
   so they are noise-free; real dispositions would be less separable.
 - **Hibernation had nothing to act on:** this data has too few repeated false-positive rule alerts. Its
   behaviour is covered by tests on a hand-built fixture, not by this run.
+- **Gambling-like and crypto-like memos are planted on purpose.** The generator writes them on a small share
+  of ordinary transfers (`data.risk_memos.background_rate`) and on a share of the evidence transfers of the
+  suspicious scenarios (`data.risk_memos.typology_rate`), so any lift a memo feature gives the ranking is a
+  signal we put there ourselves ([datagen-memos](specs/datagen-memos.md)).
 
 An example summary is in [results/phase7/example_summary.md](results/phase7/example_summary.md) (names and
 ID numbers are masked); the full evaluation is in [results/phase7/eval.json](results/phase7/eval.json). The
