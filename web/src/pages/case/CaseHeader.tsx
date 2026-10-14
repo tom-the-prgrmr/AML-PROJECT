@@ -3,7 +3,13 @@ import type { CaseDetail, Disposition } from "../../api/types";
 import PageHeader from "../../components/PageHeader";
 import Stat from "../../components/Stat";
 import StatusBadge from "../../components/StatusBadge";
-import { dispositionOriginLabel, formatDate, formatDateTime, formatNumber } from "../../i18n";
+import {
+  actorLabel,
+  dispositionOriginLabel,
+  formatDate,
+  formatDateTime,
+  formatNumber,
+} from "../../i18n";
 import "./overview.css";
 
 /** The recorded decision: who, when and why. It is separate from the status of the case. */
@@ -21,7 +27,7 @@ function Decision({ decision }: { decision: Disposition | null }) {
       </div>
       <div>
         <dt>Người quyết định</dt>
-        <dd className="code">{decision.actor}</dd>
+        <dd>{actorLabel(decision.actor)}</dd>
       </div>
       <div>
         <dt>Hình thức</dt>

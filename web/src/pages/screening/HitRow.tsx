@@ -3,6 +3,7 @@ import type { Hit, HitCustomer } from "../../api/screeningTypes";
 import StatusBadge from "../../components/StatusBadge";
 import {
   DASH,
+  actorLabel,
   dash,
   formatDate,
   formatNumber,
@@ -149,7 +150,7 @@ export default function HitRow({ hit, onRecorded }: Props) {
           <div className="screening-latest">
             <StatusBadge kind="reviewDecision" value={review.decision} />
             <span className="cell-sub">
-              <span className="code">{review.actor}</span> · {formatDate(review.decided_on)}
+              {actorLabel(review.actor)} · {formatDate(review.decided_on)}
             </span>
             <span className="screening-reason">{review.reason}</span>
           </div>

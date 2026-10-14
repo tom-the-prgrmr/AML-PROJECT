@@ -13,6 +13,7 @@ import {
   CASE_STATUS_LABELS,
   DASH,
   dash,
+  actorLabel,
   errorCodeLabel,
   featureLabel,
   formatDate,
@@ -114,7 +115,7 @@ function CaseTable({ rows, scores }: { rows: CaseRow[]; scores: Map<string, Case
                     <>
                       <StatusBadge kind="disposition" value={c.disposition.disposition} />
                       <span className="cell-sub">
-                        <span className="code">{c.disposition.actor}</span>, ngày{" "}
+                        {actorLabel(c.disposition.actor)}, ngày{" "}
                         {formatDate(c.disposition.decided_on)}
                       </span>
                     </>

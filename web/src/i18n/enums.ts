@@ -37,6 +37,15 @@ export const ALERT_SOURCE_LABELS: Labels = {
   RULE: "Luật giao dịch",
   NETWORK: "Mạng lưới",
   SCREENING: "Sàng lọc danh sách",
+  ANOMALY: "Mô hình bất thường",
+};
+/**
+ * Named actors of automated or simulated decisions (`audit.system_actor`, the `simulated_actor`
+ * of `cases.prioritization` and `ml.screening`). A real user's id is shown as is.
+ */
+export const ACTOR_LABELS: Labels = {
+  system: "Hệ thống",
+  simulated_analyst: "Chuyên viên mô phỏng",
 };
 
 // --- Screening (src/aml/screening/, src/aml/datagen/watchlist.py) ---
@@ -295,7 +304,11 @@ export const graphSourceLabel = lookup(GRAPH_SOURCE_LABELS);
 export const backendLabel = lookup(BACKEND_LABELS);
 
 // --- Priority scores, summary, assistant and metrics (specs/ui-mock-pages.md) ---
-/** The 35 case features of `src/aml/cases/features.py::FEATURES`, shown in `top_features`. */
+/**
+ * The case features shown in `top_features`: the 35 of `src/aml/cases/features.py::FEATURES`,
+ * the six memo counts of `src/aml/memo/features.py` and the two anomaly columns of
+ * `src/aml/ml/anomaly/case_features.py`.
+ */
 export const FEATURE_LABELS: Labels = {
   alerts: "Số cảnh báo",
   rule_alerts: "Số cảnh báo luật giao dịch",
@@ -332,6 +345,14 @@ export const FEATURE_LABELS: Labels = {
   shared_cluster_size: "Số khách hàng trong cụm",
   prior_cases: "Số case trước đó",
   prior_false_positives: "Số báo động giả trước đó",
+  memo_txns: "Số giao dịch có nội dung chuyển khoản",
+  memo_salary: "Số nội dung chuyển khoản là lương",
+  memo_loan_repayment: "Số nội dung chuyển khoản là trả nợ vay",
+  memo_gambling_like: "Số nội dung chuyển khoản giống cờ bạc",
+  memo_crypto_like: "Số nội dung chuyển khoản giống tiền mã hóa",
+  memo_suspicious_wording: "Số nội dung chuyển khoản có từ ngữ đáng ngờ",
+  anomaly_max_score: "Điểm bất thường cao nhất",
+  anomaly_flagged_months: "Số tháng bị mô hình bất thường đánh dấu",
 };
 /** `Stage.tool` of the metrics funnel. */
 export const STAGE_LABELS: Labels = {
@@ -378,6 +399,7 @@ export const SUPPRESSION_RULE_LABELS: Labels = {
   HIBERNATION: "Ngủ đông",
 };
 export const featureLabel = lookup(FEATURE_LABELS);
+export const actorLabel = lookup(ACTOR_LABELS);
 export const stageLabel = lookup(STAGE_LABELS);
 export const metricPartLabel = lookup(METRIC_PART_LABELS);
 export const ratingLabel = lookup(RATING_LABELS);
