@@ -188,9 +188,9 @@
   .menu {
     flex: 1;
     flex-direction: row;
+    flex-wrap: wrap;
     min-width: 0;
-    overflow-x: auto;
-    /* Room for the focus ring, which the scroll container would otherwise clip. */
+    /* Items wrap instead of scrolling sideways: every page stays visible without a scrollbar. */
     padding: var(--space-1);
   }
   .menu a {

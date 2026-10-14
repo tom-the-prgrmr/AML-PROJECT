@@ -38,5 +38,5 @@ def get_trend(
     rule_id: str | None = None,
     runs: Annotated[int | None, Query()] = None,
 ) -> JSONResponse:
-    rows, meta = dq_trend(db, rule_id=rule_id, runs=resolve_limit(settings, runs))
+    rows, meta = dq_trend(db, rule_id=rule_id, runs=resolve_limit(settings, runs, name="runs"))
     return envelope.live(FEATURE, rows, **meta)

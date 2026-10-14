@@ -48,12 +48,16 @@ def _invalid_request(_: Request, exc: RequestValidationError) -> Response:
 def _http_error(request: Request, exc: StarletteHTTPException) -> Response:
     """Routing failures. A 404 outside /api/ is a SPA route (or "not built"), never JSON data."""
     path = request.url.path
-    if exc.status_code == 404 and not path.startswith("/api/"):
+    is_api = path == "/api" or path.startswith("/api/")
+    if exc.status_code == 404 and not is_api:
         root = static.dist_dir(request.app.state.settings)
         if root is None:
             return error_response(404, "not_found", static.NOT_BUILT)
         if request.method in ("GET", "HEAD"):
-            return static.spa_response(root, path)
+            page = static.spa_response(root, path)
+            if page is not None:
+                return page
+            return error_response(404, "not_found", f"no such file: {path}")
     if exc.status_code == 404:
         return error_response(404, "not_found", f"no such endpoint: {path}")
     code = HTTP_CODES.get(exc.status_code, "http_error")

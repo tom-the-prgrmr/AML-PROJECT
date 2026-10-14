@@ -32,8 +32,18 @@ function Slot({ testId, title, children }: SlotProps) {
   );
 }
 
-export default function CaseDetailPage({ scoreSlot, summarySlot, assistantSlot }: Props) {
+/** Keyed by case id: going to another case starts from a clean page (no highlight, no trace). */
+export default function CaseDetailPage(props: Props) {
   const { caseId = "" } = useParams();
+  return <CaseDetailBody key={caseId} caseId={caseId} {...props} />;
+}
+
+function CaseDetailBody({
+  caseId,
+  scoreSlot,
+  summarySlot,
+  assistantSlot,
+}: Props & { caseId: string }) {
   const [highlightIds, setHighlightIds] = useState<string[]>([]);
   const setHighlight = useCallback((ids: string[]) => setHighlightIds(ids), []);
   const clearHighlight = useCallback(() => setHighlightIds([]), []);

@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 from aml.api import envelope
 from aml.api.constants import API_PREFIX
-from aml.api.decisions import audit_pii_view, pii_viewed, record_case_decision
+from aml.api.decisions import pii_viewed, record_case_decision
 from aml.api.deps import current_user, get_app_settings, get_database
 from aml.api.identity import User
 from aml.api.paging import check_offset, resolve_limit
@@ -104,7 +104,14 @@ def get_subjects(
 ) -> JSONResponse:
     subjects = case_subjects(db, case_id, masked=user.pii == "masked")
     if user.pii == "full":
-        audit_pii_view(db, user, case_id, [str(s["cif"]) for s in subjects])
+        pii_viewed(
+            db,
+            user,
+            entity_type="case",
+            entity_id=case_id,
+            what=f"subject data of case {case_id}",
+            details={"cifs": [str(s["cif"]) for s in subjects]},
+        )
     return envelope.live(FEATURE, subjects, pii=user.pii)
 
 

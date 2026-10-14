@@ -8,7 +8,7 @@ import pandas as pd
 
 from aml.api.values import in_filter, iso_date, lower_columns, plain
 from aml.common.config import Settings
-from aml.common.db import Database
+from aml.common.db import Database, split_oracle_script
 from aml.screening.review import ScreeningReview, latest_reviews
 
 DECISIONS = ("ALERT", "REVIEW", "AUTO_CLEARED")
@@ -30,6 +30,14 @@ def _latest_screening_run(db: Database) -> tuple[int | None, str | None]:
     if df.empty:
         return None, None
     return int(df.iloc[0]["run_id"]), iso_date(df.iloc[0]["as_of"])
+
+
+def _page(db: Database, *, decision: str | None, limit: int, offset: int) -> pd.DataFrame:
+    """One page, filtered, ordered and cut in the database (the table is never read whole)."""
+    text = db.sql_file("api/screening_hits_page.sql").read_text(encoding="utf-8")
+    sql = split_oracle_script(text)[0] if db.backend == "oracle" else text.strip().rstrip(";")
+    params = {"decision": decision, "page_limit": limit, "page_offset": offset}
+    return lower_columns(db.query_df(sql, params))
 
 
 def _customers(db: Database, cifs: list[str], *, masked: bool) -> dict[str, dict[str, Any]]:
@@ -66,15 +74,12 @@ def list_hits(
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Hits ordered ALERT, REVIEW, AUTO_CLEARED, then score desc; returns ``(rows, meta)``."""
     run_id, as_of = _latest_screening_run(db)
-    df = _read(db, "screening_hits.sql")
-    counts = {name: int((df["decision"] == name).sum()) for name in DECISIONS}
-    if decision is not None:
-        df = df[df["decision"] == decision]
-    df = df.assign(_rank=df["decision"].map({name: i for i, name in enumerate(DECISIONS)}))
-    df = df.sort_values(
-        ["_rank", "final_score", "cif", "entry_id"], ascending=[True, False, True, True]
-    )
-    page = df.iloc[offset : offset + limit]
+    by_decision = {
+        str(r["decision"]): int(r["n"]) for _, r in _read(db, "screening_hit_counts.sql").iterrows()
+    }
+    counts = {name: by_decision.get(name, 0) for name in DECISIONS}
+    total = counts[decision] if decision is not None else sum(by_decision.values())
+    page = _page(db, decision=decision, limit=limit, offset=offset)
     cifs = sorted({str(c) for c in page["cif"]})
     customers = _customers(db, cifs, masked=masked) if cifs else {}
     cases = {
@@ -85,7 +90,7 @@ def list_hits(
     rows: list[dict[str, Any]] = []
     for _, r in page.iterrows():
         key = (str(r["cif"]), str(r["entry_id"]))
-        row = {name: plain(r[name]) for name in page.columns if name != "_rank"}
+        row = {name: plain(r[name]) for name in page.columns}
         row["dob_gap_years"] = None if row["dob_gap_years"] is None else int(row["dob_gap_years"])
         row["run_id"] = int(row["run_id"])
         row["customer"] = customers.get(key[0])
@@ -95,7 +100,7 @@ def list_hits(
     meta: dict[str, Any] = {
         "run_id": run_id,
         "as_of": as_of,
-        "total": len(df),
+        "total": total,
         "limit": limit,
         "offset": offset,
         "counts": counts,

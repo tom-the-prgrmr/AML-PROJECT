@@ -16,7 +16,7 @@ const PRODUCT = "AML – Bàn điều tra";
 
 const MENU: { to: string; label: string; icon: ReactNode }[] = [
   { to: "/cases", label: "Hàng đợi case", icon: <IconCases /> },
-  { to: "/screening", label: "Rà soát screening", icon: <IconScreening /> },
+  { to: "/screening", label: "Sàng lọc danh sách", icon: <IconScreening /> },
   { to: "/data-quality", label: "Chất lượng dữ liệu", icon: <IconDataQuality /> },
   { to: "/benchmark", label: "Benchmark", icon: <IconBenchmark /> },
   { to: "/metrics", label: "Chỉ số", icon: <IconMetrics /> },

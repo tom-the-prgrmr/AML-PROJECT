@@ -48,18 +48,3 @@ def record_case_decision(
         raise translate_case_error(exc) from exc
     except ValueError as exc:  # the body was validated, so this is a bug, not a bad request
         raise ApiError(422, "invalid_request", str(exc)) from exc
-
-
-def audit_pii_view(db: Database, user: User, case_id: str, cifs: list[str]) -> None:
-    """One ``PII_VIEWED`` row for a response that carried unmasked customer data."""
-    audit(
-        db,
-        module="ui",
-        entity_type="case",
-        entity_id=case_id,
-        decision="PII_VIEWED",
-        reason=f"unmasked subject data of case {case_id} shown to {user.actor} (role {user.role})",
-        version=API_VERSION,
-        actor=user.actor,
-        details={"cifs": cifs},
-    )
