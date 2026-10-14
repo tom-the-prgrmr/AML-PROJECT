@@ -10,6 +10,9 @@ export interface CaseTransaction {
   channel: string | null;
   memo: string | null;
   counterparty_name: string | null;
+  memo_key: string | null;
+  memo_category: string | null;
+  memo_method: string | null;
   item_keys: string[];
 }
 

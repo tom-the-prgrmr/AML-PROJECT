@@ -30,6 +30,9 @@ KEYS = [
     "memo",
     "counterparty_name",
     "item_keys",
+    "memo_key",
+    "memo_category",
+    "memo_method",
 ]
 T01 = {
     "txn_id": "T01",
@@ -41,6 +44,9 @@ T01 = {
     "memo": None,
     "counterparty_name": None,
     "item_keys": ["STRUCTURING|A01|2026-03-02T09:00:00"],
+    "memo_key": None,
+    "memo_category": None,
+    "memo_method": None,
 }
 MASKED = {"pii": "masked", "total": 6, "limit": 50, "offset": 0}
 

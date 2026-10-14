@@ -189,7 +189,7 @@ def list_cases(
 - **Che PII phía server**: thuộc tính khách hàng chỉ được đọc từ `customers_masked` khi `user.pii == "masked"`. Mức
   đã áp được ghi ở `meta.pii`. Không có tham số request nào bật được bản không che. Mỗi response trả PII không che ghi
   1 dòng audit `PII_VIEWED` (Q3).
-- **Quy ước endpoint quyết định** (mọi `POST` ghi một quyết định của người): thân JSON bắt buộc có `reason` khác _(Sửa bởi `ui-mock-pages` S2, 2026-10-14: chỉ áp cho `POST` ghi quyết định về case / screening hit; ba `POST` của assistant không bắt buộc `reason`, vẫn từ chối `actor` và vẫn ghi audit)_
+- **Quy ước endpoint quyết định** (mọi `POST` ghi một quyết định của người): thân JSON bắt buộc có `reason` khác _(Sửa bởi `ui-mock-pages` S2, 2026-10-14: chỉ áp cho `POST` ghi quyết định về case / screening hit / memo key (memo key thêm bởi `ui-memo-relabel` S3, 9d); ba `POST` của assistant không bắt buộc `reason`, vẫn từ chối `actor` và vẫn ghi audit)_
   rỗng sau khi bỏ khoảng trắng; **không nhận** trường `actor` (trường lạ → 422) — actor luôn là `User.actor` của
   request; kết quả là ít nhất 1 dòng `audit_log` có `actor` đó và `reason` đó, ghi qua `aml.common.audit.audit()`
   (trực tiếp, hoặc do hàm nghiệp vụ được gọi tự ghi — không ghi hai lần); trả 201; lỗi thì không ghi gì.

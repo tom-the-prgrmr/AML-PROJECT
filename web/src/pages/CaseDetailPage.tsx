@@ -11,6 +11,7 @@ import CaseEvidence from "./case/CaseEvidence";
 import CaseGraphPanel from "./case/CaseGraphPanel";
 import CaseHeader from "./case/CaseHeader";
 import DispositionForm from "./case/DispositionForm";
+import MemoRelabelForm from "./case/MemoRelabelForm";
 import TracePanel from "./case/TracePanel";
 
 interface SlotProps {
@@ -39,6 +40,13 @@ function CaseDetailBody({ caseId }: { caseId: string }) {
   const [highlightIds, setHighlightIds] = useState<string[]>([]);
   const setHighlight = useCallback((ids: string[]) => setHighlightIds(ids), []);
   const clearHighlight = useCallback(() => setHighlightIds([]), []);
+  const [txnVersion, setTxnVersion] = useState(0);
+  const [prefill, setPrefill] = useState<{ memoKey: string; nonce: number } | null>(null);
+  const pickMemo = useCallback(
+    (memoKey: string) => setPrefill((p) => ({ memoKey, nonce: (p?.nonce ?? 0) + 1 })),
+    [],
+  );
+  const reloadTxns = useCallback(() => setTxnVersion((v) => v + 1), []);
   const highlight = useMemo(
     () => ({ highlightIds, setHighlight, clearHighlight }),
     [highlightIds, setHighlight, clearHighlight],
@@ -57,7 +65,8 @@ function CaseDetailBody({ caseId }: { caseId: string }) {
               <CaseSummaryPanel caseId={detail.case_id} />
             </Slot>
             <CaseEnrichment detail={detail} />
-            <CaseEvidence detail={detail} />
+            <CaseEvidence detail={detail} txnVersion={txnVersion} onRelabel={pickMemo} />
+            <MemoRelabelForm prefill={prefill} onRelabelled={reloadTxns} />
             <DispositionForm caseId={detail.case_id} onRecorded={reload} />
             <div className="two-col">
               <CaseGraphPanel caseId={detail.case_id} />

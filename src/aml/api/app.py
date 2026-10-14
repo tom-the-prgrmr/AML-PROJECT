@@ -13,6 +13,7 @@ from aml.api.routers import (
     cases,
     dq,
     graph,
+    memos,
     metrics,
     sample,
     screening,
@@ -39,6 +40,7 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None) 
         system.router,
         case_insights.router,  # before cases: /cases/scores is not a case id
         cases.router,
+        memos.router,
         graph.router,
         trace.router,
         screening.router,

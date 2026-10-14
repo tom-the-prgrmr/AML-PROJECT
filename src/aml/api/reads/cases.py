@@ -11,11 +11,14 @@ from typing import Any
 import pandas as pd
 
 from aml.api.errors import ApiError
+from aml.api.reads.memos import labels_by_key
 from aml.api.values import in_filter, iso_date, iso_seconds, lower_columns, plain
 from aml.cases.runner import CaseError
 from aml.cases.view import load_case
+from aml.common.config import Settings
 from aml.common.db import Database
 from aml.dba.masking import mask_name
+from aml.memo.normalize import memo_key, normalize_memo
 
 COUNTS = ("alerts", "rule_alerts", "network_alerts", "screening_alerts")
 TIMES = ("window_start", "first_alert_ts", "last_alert_ts")
@@ -143,7 +146,7 @@ def case_detail(db: Database, case_id: str) -> dict[str, Any]:
 
 
 def case_transactions(
-    db: Database, case_id: str, *, masked: bool, limit: int, offset: int
+    db: Database, settings: Settings, case_id: str, *, masked: bool, limit: int, offset: int
 ) -> tuple[list[dict[str, Any]], int]:
     """Transactions behind the case's alerts, one row per transaction; returns ``(page, total)``."""
     try:
@@ -153,10 +156,15 @@ def case_transactions(
     text = db.sql_file("api/case_transactions.sql").read_text(encoding="utf-8")
     one_case = in_filter("ca.case_id", [case_id])  # only this case's evidence leaves the database
     df = lower_columns(db.query_df(f"{text.strip().rstrip(';')} AND {one_case}"))
+    labels = labels_by_key(db, settings)
     rows: list[dict[str, Any]] = []
     for txn_id, group in df.groupby("txn_id", sort=False):
         first = group.iloc[0]
         name = plain(first["counterparty_name"])
+        memo = plain(first["memo"])
+        norm = normalize_memo(memo, settings.memo.max_chars)
+        key = memo_key(norm) if norm else None
+        label = labels.get(key) if key else None
         rows.append(
             {
                 "txn_id": txn_id,
@@ -165,9 +173,12 @@ def case_transactions(
                 "to_account_id": plain(first["to_account_id"]),
                 "amount_vnd": plain(first["amount_vnd"]),
                 "channel": plain(first["channel"]),
-                "memo": plain(first["memo"]),
+                "memo": memo,
                 "counterparty_name": mask_name(name) if masked else name,
                 "item_keys": sorted(set(group["item_key"])),
+                "memo_key": key if label else None,
+                "memo_category": label[0] if label else None,
+                "memo_method": label[1] if label else None,
             }
         )
     rows.sort(key=lambda r: (r["txn_ts"], r["txn_id"]))

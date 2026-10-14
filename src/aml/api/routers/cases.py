@@ -82,7 +82,7 @@ def get_transactions(
     limit = resolve_limit(settings, limit)
     check_offset(offset)
     rows, total = case_transactions(
-        db, case_id, masked=user.pii == "masked", limit=limit, offset=offset
+        db, settings, case_id, masked=user.pii == "masked", limit=limit, offset=offset
     )
     if user.pii == "full" and rows:
         pii_viewed(

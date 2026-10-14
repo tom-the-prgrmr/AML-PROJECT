@@ -205,6 +205,22 @@ export const BENCH_META_LABELS: Labels = {
   lag_after_seconds: "Độ trễ sau đồng bộ (giây)",
 };
 
+// --- Memo categories (src/aml/memo/classify.py, store.py) ---
+export const MEMO_CATEGORY_LABELS: Labels = {
+  salary: "Lương",
+  loan_repayment: "Trả nợ vay",
+  gambling_like: "Dấu hiệu cá cược",
+  crypto_like: "Dấu hiệu tiền mã hoá",
+  suspicious_wording: "Lời lẽ đáng ngờ",
+  other: "Khác",
+};
+export const MEMO_METHOD_LABELS: Labels = {
+  RULE: "Luật",
+  LLM: "Mô hình",
+  HUMAN: "Người gán",
+  FALLBACK: "Dự phòng",
+};
+
 // --- System (config.yaml ui.mock, src/aml/api/errors.py, web/src/api/client.ts) ---
 export const MOCK_FLAG_LABELS: Labels = {
   sample: "Panel mẫu",
@@ -221,6 +237,7 @@ export const ERROR_CODE_LABELS: Labels = {
   network_error: "Không kết nối được máy chủ",
   unknown_source: "Phản hồi không rõ nguồn dữ liệu",
   method_not_allowed: "Phương thức không được phép",
+  forbidden: "Không được phép",
   http_error: "Lỗi HTTP",
   unknown_error: "Lỗi không xác định",
 };
@@ -252,6 +269,8 @@ export const traceMethodLabel = lookup(TRACE_METHOD_LABELS);
 export const benchStatusLabel = lookup(BENCH_STATUS_LABELS);
 export const benchMetaLabel = lookup(BENCH_META_LABELS);
 export const mockFlagLabel = lookup(MOCK_FLAG_LABELS);
+export const memoCategoryLabel = lookup(MEMO_CATEGORY_LABELS);
+export const memoMethodLabel = lookup(MEMO_METHOD_LABELS);
 export const errorCodeLabel = lookup(ERROR_CODE_LABELS);
 
 // --- Case graph and trace panels (src/aml/api/routers/graph.py, src/aml/api/reads/trace.py) ---

@@ -309,7 +309,7 @@ còn lại suy ra từ thiết kế. -->
 - Test tự động cho frontend (Vitest, Playwright, `npm test`) — quyết định của người dùng.
 - Trang và thành phần của 9b (bố cục case detail, đồ thị, highlight, trace, screening review, DQ, benchmark); highlight
   theo `txn_id`; highlight từ `citations` (`item_key`) của summary template.
-- Hiện memo category của 8d trong bảng giao dịch và nút relabel memo (Q12 — spec riêng).
+- Hiện memo category của 8d trong bảng giao dịch và nút relabel memo (Q12 — spec riêng). _(Ghi chú: làm ở 9d, `specs/ui-memo-relabel.md`, phát triển song song trong worktree riêng và merge vào `main` sau 9c; spec này giữ nguyên nội dung. AC1 "ngoài các route của 9a / 9b" đọc là "9a / 9b / 9d".)_
 - Mọi hành động của assistant hay mô hình lên case: tự đóng, clear, file STR, đề xuất disposition bấm-một-lần, tự điền
   form, lọc case điểm thấp khỏi hàng đợi.
 - Assistant: hội thoại nhiều lượt, lưu bản nháp narrative, hiển thị Cypher đã sinh, chọn retriever / mode từ UI, hỏi
