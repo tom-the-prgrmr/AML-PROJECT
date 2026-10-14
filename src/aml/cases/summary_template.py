@@ -1,5 +1,8 @@
 """The templated case summary: stored case data laid out as markdown, with no LLM involved.
 
+Column headers are Vietnamese, the same words as the investigator UI; section titles and
+prose stay English, like the alert reasons they quote (spec case-summary Q1).
+
 `render_summary` is a pure function of a `CaseView`: no database, no clock, no network, so the
 same snapshot always gives the same bytes. It only restates what the case already holds; it never
 recommends a disposition.
@@ -131,7 +134,7 @@ def _subject(case: CaseView) -> list[str]:
     listed = ", ".join(
         f"{a['account_id']} ({_cell(a['account_type'])}, {a['cif']})" for a in accounts
     )
-    header = ["CIF", "Name", "Birth year", "Nationality", "Occupation", "KYC risk", "ID"]
+    header = ["CIF", "Họ tên", "Năm sinh", "Quốc tịch", "Nghề nghiệp", "Rủi ro KYC", "Giấy tờ"]
     return [f"## {SUBJECT}", "", *_table(header, rows), "", f"Accounts: {listed or '-'}"]
 
 
@@ -140,7 +143,7 @@ def _alerts(case: CaseView) -> list[str]:
         [str(n), _ts(alert.event_ts), alert.source, alert.rule_id, escape_md(alert.reason)]
         for n, alert in enumerate(case.alerts, start=1)
     ]
-    header = ["#", "First event", "Source", "Rule", "Reason"]
+    header = ["#", "Sự kiện đầu", "Nguồn", "Luật", "Lý do"]
     return [f"## {ALERTS}", "", *_table(header, rows)]
 
 
@@ -151,7 +154,7 @@ def _priority(case: CaseView) -> list[str]:
         [str(f["feature"]), f"{f['value']:g}", f"{f['contribution']:+.2f}"]
         for f in case.score["top_features"]
     ]
-    return [f"## {PRIORITY}", "", *_table(["Feature", "Value", "Contribution"], rows)]
+    return [f"## {PRIORITY}", "", *_table(["Yếu tố", "Giá trị", "Đóng góp"], rows)]
 
 
 def _activity(case: CaseView) -> list[str]:
@@ -171,7 +174,7 @@ def _activity(case: CaseView) -> list[str]:
         f"- {t['counterparties']} counterparty(ies); largest transaction "
         f"{_vnd(t['max_txn_vnd'])} VND",
         "",
-        *_table(["Channel", "Transactions", "VND"], channels),
+        *_table(["Kênh", "Số giao dịch", "VND"], channels),
     ]
 
 
@@ -204,7 +207,7 @@ def _network(case: CaseView) -> list[str]:
             ]
             for c in network["counterparties"]
         ]
-        header = ["Counterparty", "Owner", "Direction", "Transactions", "VND"]
+        header = ["Đối tác", "Chủ sở hữu", "Chiều tiền", "Số giao dịch", "VND"]
         lines += ["", *_table(header, rows)]
     related = ", ".join(network["shared_alert_cases"]) or "none"
     return [*lines, "", f"- Related cases sharing an alert: {related}"]

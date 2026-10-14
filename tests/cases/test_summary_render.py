@@ -82,7 +82,7 @@ def test_ac2_sections_come_in_the_fixed_order(mn: DuckDb) -> None:
 def test_ac2_subject_block(mn: DuckDb) -> None:
     lines = block(render_summary(load_case(mn, CASE_C01_A)), "## Subject")
     header, rows = _rows(lines)
-    assert header == "| CIF | Name | Birth year | Nationality | Occupation | KYC risk | ID |"
+    assert header == "| CIF | Họ tên | Năm sinh | Quốc tịch | Nghề nghiệp | Rủi ro KYC | Giấy tờ |"
     assert rows == [
         "| C01 | Nguyễn V. A. | 1990 | VN | Kế toán | LOW | PASSPORT ****4561 |",
         "| C02 | Nguyen V. A. | 1990 | VN | - | HIGH | PASSPORT ****4562 |",
@@ -92,7 +92,7 @@ def test_ac2_subject_block(mn: DuckDb) -> None:
 
 def test_ac2_alerts_block(mn: DuckDb) -> None:
     header, rows = _rows(block(render_summary(load_case(mn, CASE_C01_A)), "## Alerts"))
-    assert header == "| # | First event | Source | Rule | Reason |"
+    assert header == "| # | Sự kiện đầu | Nguồn | Luật | Lý do |"
     assert rows == [
         "| 1 | 2026-03-02 09:00:00 | RULE | STRUCTURING | three cash deposits just under the "
         "threshold |",
@@ -117,7 +117,7 @@ def test_ac2_activity_block(mn: DuckDb) -> None:
     ):
         assert line in lines, line
     header, rows = _rows(lines)
-    assert header == "| Channel | Transactions | VND |"
+    assert header == "| Kênh | Số giao dịch | VND |"
     assert rows == [
         "| CASH | 1 | 390,000,000 |",
         "| EBANKING | 1 | 480,000,000 |",
@@ -130,7 +130,7 @@ def test_ac2_network_block(mn: DuckDb) -> None:
     lines = block(render_summary(load_case(mn, CASE_C01_A)), "## Network")
     assert "- Graph features: not available" in lines
     header, rows = _rows(lines)
-    assert header == "| Counterparty | Owner | Direction | Transactions | VND |"
+    assert header == "| Đối tác | Chủ sở hữu | Chiều tiền | Số giao dịch | VND |"
     assert rows == [
         "| EXT-01 | external | IN | 1 | 500,000,000 |",
         "| EXT-02 | external | OUT | 1 | 480,000,000 |",
@@ -181,7 +181,7 @@ def test_ac3_score_and_priority_factors(mn: DuckDb) -> None:
     text = render_summary(_scored(load_case(mn, CASE_C01_A), 3))
     assert "- Priority: 0.9312 (queue rank 3, model prio/logreg/1)" in text.splitlines()
     header, rows = _rows(block(text, "## Priority factors"))
-    assert header == "| Feature | Value | Contribution |"
+    assert header == "| Yếu tố | Giá trị | Đóng góp |"
     assert rows == ["| network_alerts | 1 | +2.10 |", "| cash_share | 0.2 | -0.40 |"]
     assert "Not scored yet." not in text
 
@@ -233,8 +233,8 @@ def test_ac3_screening_only_case_without_transactions(mn: DuckDb) -> None:
         "(score 80.0) |"
     ) in lines
     assert "- No transactions in this window." in lines
-    assert not any(ln.startswith("| Channel") for ln in lines)
-    assert not any(ln.startswith("| Counterparty") for ln in lines)
+    assert not any(ln.startswith("| Kênh") for ln in lines)
+    assert not any(ln.startswith("| Đối tác") for ln in lines)
     assert "- Related cases sharing an alert: none" in lines
     assert "- No data quality issue found." in lines
     assert "- Customer: G-C05 (1 CIF(s), 1 account(s)), KYC risk LOW" in lines

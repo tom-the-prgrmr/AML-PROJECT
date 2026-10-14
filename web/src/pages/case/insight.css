@@ -93,6 +93,12 @@
 .markdown {
   overflow-wrap: anywhere;
 }
+/* A table cell breaks between words only: a rule id or an account id stays on one line and the
+   table scrolls inside its .table-wrap when it is too wide. */
+.markdown th,
+.markdown td {
+  overflow-wrap: normal;
+}
 .markdown h1,
 .markdown h2 {
   font-size: var(--text-md);
