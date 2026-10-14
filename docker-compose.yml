@@ -59,11 +59,11 @@ services:
     volumes:
       - ollamadata:/root/.ollama
     mem_limit: 5g
-    # GPU (NVIDIA, WSL2): uncomment to offload the model to the GPU.
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+    # GPU (NVIDIA, WSL2): offloads the model to the GPU. Comment out on a machine without one.
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
 
 volumes:
   oradata:
