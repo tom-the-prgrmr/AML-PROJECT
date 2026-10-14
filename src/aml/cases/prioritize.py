@@ -7,6 +7,9 @@ suppresses an alert. The model ranks; people decide.
 
 Phase 8d adds six memo columns (`aml.memo.features`). They join the 35 case features only when
 every memo of the training snapshots has a label; until then training is exactly as in Phase 7c.
+Phase 7b-i adds two anomaly columns (`aml.ml.anomaly.case_features`) once an anomaly run exists
+and `ml.anomaly.features` is `auto`; they are kept from ever lowering a score, like the risk memo
+columns.
 """
 
 from __future__ import annotations
@@ -41,12 +44,22 @@ from aml.common.db import Database
 from aml.memo.features import (
     MEMO_FEATURE_VERSION,
     MEMO_FEATURES,
+    NON_NEGATIVE,
     decided_memo_features,
     ensure_memo_features,
     fit_guarded,
     memo_info,
 )
 from aml.memo.store import SCHEMA_MISSING, memo_schema_ready
+from aml.ml.anomaly.case_features import (
+    ANOMALY_CASE_FEATURES,
+    ANOMALY_FEATURE_TAG,
+    NON_NEGATIVE_ANOMALY,
+    anomaly_info,
+    current_anomaly_run,
+    decided_anomaly_features,
+    ensure_anomaly_features,
+)
 
 __all__ = ["LabelledSet", "ScoringRun", "TrainingRun", "labelled_set", "score", "train"]
 
@@ -146,14 +159,28 @@ def train(
     skipped = SCHEMA_MISSING if use_memo and not memo_schema_ready(db) else None
     use_memo = use_memo and skipped is None
     memo_columns = decided_memo_features(db, settings, data.decided) if use_memo else None
-    feature_version, memo = FEATURE_VERSION, None
-    if memo_columns is None:  # no memo labels (or switched off): the Phase 7c model
+    use_anomaly = settings.ml.anomaly.features == "auto"
+    anomaly_columns = decided_anomaly_features(db, settings, data.decided) if use_anomaly else None
+    feature_version, memo, anomaly = FEATURE_VERSION, None, None
+    if memo_columns is None and anomaly_columns is None:  # the Phase 7c model
         model = fit_model(X, y, groups, cfg, seed=settings.seed, kind=kind)
     else:
-        X = X.join(memo_columns)
-        model, dropped = fit_guarded(X, y, groups, cfg, seed=settings.seed, kind=kind)
-        feature_version, memo = MEMO_FEATURE_VERSION, memo_info(db, settings, dropped)
-        model = replace(model, params=model.params | {"memo": memo})
+        if memo_columns is not None:
+            X, feature_version = X.join(memo_columns), MEMO_FEATURE_VERSION
+        if anomaly_columns is not None:
+            X, feature_version = X.join(anomaly_columns), feature_version + ANOMALY_FEATURE_TAG
+        model, dropped = fit_guarded(
+            X, y, groups, cfg, seed=settings.seed, kind=kind,
+            non_negative=NON_NEGATIVE + NON_NEGATIVE_ANOMALY,
+        )  # fmt: skip
+        params = model.params
+        if memo_columns is not None:
+            memo = memo_info(db, settings, tuple(d for d in dropped if d in MEMO_FEATURES))
+            params = params | {"memo": memo}
+        if anomaly_columns is not None:
+            anomaly = anomaly_info(db, tuple(d for d in dropped if d in ANOMALY_CASE_FEATURES))
+            params = params | {"anomaly": anomaly}
+        model = replace(model, params=params)
     m = model.metrics
     with db.transaction():
         model_id, version = insert_model(
@@ -182,6 +209,7 @@ def train(
                 "features": list(model.features),
             }
             | ({"memo": memo} if memo else {})
+            | ({"anomaly": anomaly} if anomaly else {})
             | ({"memo_skipped": skipped} if skipped else {}),
         )
     return TrainingRun(model_id, version, kind, len(X), suspicious, false_positive, m)
@@ -216,6 +244,21 @@ def score(
         memo_source = "zeros" if memo_columns is None else "stored"
         zeros = dict.fromkeys(MEMO_FEATURES, 0.0)
         X = X.assign(**zeros) if memo_columns is None else X.join(memo_columns)
+    anomaly_used: dict[str, str | None] | None = None
+    if set(model.features) & set(ANOMALY_CASE_FEATURES):
+        # Scored with the current anomaly run, which may be newer than the one the model was
+        # trained with; both versions go to the audit row and a missing run scores zeros.
+        columns = ensure_anomaly_features(db, settings, run_id)
+        current = current_anomaly_run(db)
+        X = (
+            X.assign(**dict.fromkeys(ANOMALY_CASE_FEATURES, 0.0))
+            if columns is None
+            else X.join(columns)
+        )
+        anomaly_used = {
+            "trained_version": (model.params.get("anomaly") or {}).get("model_version"),
+            "used_version": None if columns is None or current is None else current[1],
+        }
     predicted = predict(model, X)
     scores = {c: round(float(s), 6) for c, s in predicted["score"].items()}
     rank = queue_ranks(scores, status)
@@ -247,7 +290,9 @@ def score(
                 "queue; ranking only, no disposition"
             ),
             version=version,
-            details=asdict(run) | ({"memo_features": memo_source} if memo_source else {}),
+            details=asdict(run)
+            | ({"memo_features": memo_source} if memo_source else {})
+            | ({"anomaly_features": anomaly_used} if anomaly_used else {}),
         )
     )
     if actor:

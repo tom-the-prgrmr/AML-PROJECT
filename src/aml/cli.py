@@ -62,6 +62,7 @@ from aml.graph.network.runner import NetworkError, run_network
 from aml.graph.trace import METHODS, TraceError, TraceResult
 from aml.graph.trace import trace as run_trace
 from aml.memo.cli import memo_app
+from aml.ml.anomaly.cli import anomaly_app
 from aml.monitoring.evaluate import evaluate_rules, typology_coverage
 from aml.monitoring.runner import MonitoringError, run_monitoring
 from aml.screening.evaluate import evaluate, truth_pairs
@@ -1097,6 +1098,7 @@ def _command_line() -> str:
 
 
 app.add_typer(memo_app, name="memo")  # Phase 8d: the commands live in aml.memo.cli
+app.add_typer(anomaly_app, name="anomaly")  # Phase 7b-i: the commands live in aml.ml.anomaly.cli
 
 rag_app = typer.Typer(add_completion=False, help="Knowledge layer for the assistant (Phase 8).")
 app.add_typer(rag_app, name="rag")

@@ -1,7 +1,7 @@
--- Phase 7a: raw alert rows of the three sources, each tagged with its golden customer.
+-- Phase 7a: raw alert rows of the sources (Phase 7b-i adds ANOMALY), each tagged with its golden customer.
 -- Screening: one row per ALERT / REVIEW pair of screening_current; the event time is the as_of of
 -- the first screening run that flagged the pair (screening results carry no event time).
--- Rule / network: one row per (alert, account owner) of alerts_current; a golden customer with
+-- Rule / network / anomaly: one row per (alert, account owner) of alerts_current; a golden customer with
 -- several accounts in one alert is merged into one item in Python (collect_items).
 SELECT 'SCREENING'                                   AS source,
        'SCREENING_' || s.decision                    AS rule_id,
@@ -51,4 +51,4 @@ SELECT a.source,
 FROM alerts_current a
 JOIN alert_accounts aa ON aa.alert_id = a.alert_id
 LEFT JOIN customer_golden g ON g.cif = aa.cif
-WHERE a.source IN ('RULE', 'NETWORK') AND aa.cif IS NOT NULL;
+WHERE a.source IN ('RULE', 'NETWORK', 'ANOMALY') AND aa.cif IS NOT NULL;

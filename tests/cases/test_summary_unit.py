@@ -108,7 +108,9 @@ def test_ac1_no_new_schema_script() -> None:
         scripts = SCHEMA_SCRIPTS[backend]
         late = [i for i, s in enumerate(scripts) if s.startswith("ddl/050_")]
         assert late, backend
-        # 8d (specs/memo-analysis.md AC1) added script 190; this still proves 7d added none.
+        # 8d (specs/memo-analysis.md AC1) added script 190 and 7b-i (specs/ml-anomaly.md AC1)
+        # added 200; this still proves 7d added none.
         start = scripts.index("ddl/180_case_prioritization.sql")
-        assert list(scripts[start + 1 : min(late)]) == ["ddl/190_memo_analysis.sql"], backend
+        later = ["ddl/190_memo_analysis.sql", "ddl/200_ml_anomaly.sql"]
+        assert list(scripts[start + 1 : min(late)]) == later, backend
     assert mod("aml.cases.narrative") is narrative()  # the module is the one the spec names

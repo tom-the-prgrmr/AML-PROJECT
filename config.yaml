@@ -234,6 +234,20 @@ memo:                        # Phase 8d memo classification with the local LLM (
   results_dir: results/phase8   # memo_features.json (aml memo compare), memo_eval.json (aml memo eval)
   gold_path: docs/eval/memo_gold_v1.csv   # gold set of aml memo eval (synthetic, labelled by the project team)
 
+ml:                          # Phase 7b models (one sub-section per model)
+  anomaly:                   # Phase 7b-i isolation forest per customer-month (aml anomaly); signals for review, never closes a case
+    baseline_days: 90        # >= 1; window before the month under review that a customer is compared with
+    min_baseline_days: 28    # 0..baseline_days; a shorter baseline sets the 3 deviation features to 0
+    night_start_hour: 22     # 0..23; an hour >= start or < end counts as night
+    night_end_hour: 6        # 0..23, differs from night_start_hour
+    n_estimators: 200        # 10..2000; trees of the isolation forest
+    max_samples: 256         # >= 2; rows per tree, min(max_samples, rows) is used
+    alert_top_fraction: 0.005   # (0, 0.1]; alerts = ceil(fraction * rows) highest scores, always that many
+    min_samples: 50          # >= 2; fewer customer-months -> error before anything is written
+    top_deviations: 3        # 1..14; features with the largest deviation named in an alert reason
+    features: auto           # auto | off; auto = case ranking adds the 2 anomaly columns once a run exists
+    results_dir: results/phase7b   # anomaly_eval.json (aml anomaly eval)
+
 bench:                       # Phase 6c trace benchmark (aml bench); measures the state a backend is in
   hops: [2, 4, 6]            # increasing, each 1..trace.max_hops
   hours: [72, 720]           # window T; increasing, each 1..trace.max_hours (72 = aml trace default, 720 = ceiling)

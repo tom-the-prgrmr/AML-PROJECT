@@ -676,6 +676,58 @@ class MemoConfig(BaseModel):  # Phase 8d
         return self
 
 
+class AnomalyConfig(BaseModel):  # Phase 7b-i
+    # baseline_days >= 1: window before the month that a customer is compared with
+    baseline_days: int
+    # 0..baseline_days: a shorter baseline sets the three deviation features to 0
+    min_baseline_days: int
+    night_start_hour: int  # 0..23; an hour >= start or < end counts as night
+    night_end_hour: int  # 0..23, differs from night_start_hour
+    n_estimators: int  # 10..2000; trees of the isolation forest
+    max_samples: int  # >= 2; rows per tree, min(max_samples, rows) is used
+    alert_top_fraction: float  # (0, 0.1]; alerts = ceil(fraction * rows) highest scores
+    min_samples: int  # >= 2; fewer customer-months raise AnomalyError first
+    top_deviations: int  # 1..14; features named in an alert reason
+    # auto: case ranking adds the 2 anomaly columns once a run exists
+    features: Literal["auto", "off"]
+    results_dir: str  # where `aml anomaly eval` writes its JSON
+
+    @model_validator(mode="before")
+    @classmethod
+    def _yaml_off(cls, raw: Any) -> Any:
+        """YAML reads the bare word ``off`` as the boolean False; it means the string here."""
+        if isinstance(raw, dict) and raw.get("features") is False:
+            return {**raw, "features": "off"}
+        return raw
+
+    @model_validator(mode="after")
+    def _in_range(self) -> AnomalyConfig:
+        if self.baseline_days < 1:
+            raise ValueError("ml.anomaly baseline_days must be >= 1")
+        if not 0 <= self.min_baseline_days <= self.baseline_days:
+            raise ValueError("ml.anomaly min_baseline_days must be between 0 and baseline_days")
+        hours = (self.night_start_hour, self.night_end_hour)
+        if not all(0 <= h <= 23 for h in hours) or hours[0] == hours[1]:
+            raise ValueError(
+                "ml.anomaly night_start_hour and night_end_hour must be 0..23 and differ"
+            )
+        if not 10 <= self.n_estimators <= 2000:
+            raise ValueError("ml.anomaly n_estimators must be between 10 and 2000")
+        if self.max_samples < 2:
+            raise ValueError("ml.anomaly max_samples must be >= 2")
+        if not 0 < self.alert_top_fraction <= 0.1:
+            raise ValueError("ml.anomaly alert_top_fraction must be in (0, 0.1]")
+        if self.min_samples < 2:
+            raise ValueError("ml.anomaly min_samples must be >= 2")
+        if not 1 <= self.top_deviations <= 14:
+            raise ValueError("ml.anomaly top_deviations must be between 1 and 14")
+        return self
+
+
+class MlConfig(BaseModel):  # Phase 7b; the sibling specs add their own fields
+    anomaly: AnomalyConfig
+
+
 class MetricsConfig(BaseModel):  # Phase 9c
     minutes_per_alert: int  # the stated assumption behind every "hours saved" figure
     sample_size: int  # default size of the below-the-line samples
@@ -749,6 +801,7 @@ class Settings(BaseModel):
     cases: CasesConfig
     assistant: AssistantConfig
     memo: MemoConfig
+    ml: MlConfig
     bench: BenchConfig
     rag_eval: RagEvalConfig
     ui: UiConfig

@@ -111,21 +111,46 @@ ANOMALY_FEATURES = (
 )  # fmt: skip
 GRAPH_FEATURES = ("in_degree", "out_degree", "pagerank_ratio", "shared_cluster_size")
 FEATURE_DOCS: dict[str, str]  # một câu tiếng Anh cho mỗi feature (cho model card)
-LEG_COLUMNS = ("cif", "account_id", "txn_id", "txn_ts", "direction", "amount_vnd", "counterparty_id", "channel")
-SAMPLE_COLUMNS = ("cif", "month", "window_start", "window_end", "first_ts", "last_ts", "txn_count", "amount_vnd", "accounts")
+LEG_COLUMNS = (
+    "cif",
+    "account_id",
+    "txn_id",
+    "txn_ts",
+    "direction",
+    "amount_vnd",
+    "counterparty_id",
+    "channel",
+)
+SAMPLE_COLUMNS = (
+    "cif",
+    "month",
+    "window_start",
+    "window_end",
+    "first_ts",
+    "last_ts",
+    "txn_count",
+    "amount_vnd",
+    "accounts",
+)
 
 
 def build_samples(
     legs: pd.DataFrame, graph: pd.DataFrame, *, as_of: date, start_date: date, cfg: AnomalyConfig
-) -> pd.DataFrame: ...  # một dòng mỗi (cif, month) có >= 1 leg; SAMPLE_COLUMNS + ANOMALY_FEATURES; sắp (cif, month)
+) -> (
+    pd.DataFrame
+): ...  # một dòng mỗi (cif, month) có >= 1 leg; SAMPLE_COLUMNS + ANOMALY_FEATURES; sắp (cif, month)
 
 
 # src/aml/ml/anomaly/model.py  (thuần)
-def fit_score(X: pd.DataFrame, cfg: AnomalyConfig, *, seed: int) -> pd.Series: ...  # điểm làm tròn 6, cùng index
+def fit_score(
+    X: pd.DataFrame, cfg: AnomalyConfig, *, seed: int
+) -> pd.Series: ...  # điểm làm tròn 6, cùng index
 def rank_scores(scores: pd.Series) -> pd.Series: ...  # 1..n theo (điểm giảm, cif tăng, month tăng)
 def alert_count(n: int, fraction: float) -> int: ...  # ceil(round(fraction * n, 9)); n = 0 -> 0
 def top_deviations(X: pd.DataFrame, key: tuple[str, str], k: int) -> list[dict[str, Any]]: ...
-def data_hash(X: pd.DataFrame) -> str: ...  # 16 hex đầu của SHA-256 trên CSV của X (index cif, month)
+def data_hash(
+    X: pd.DataFrame,
+) -> str: ...  # 16 hex đầu của SHA-256 trên CSV của X (index cif, month)
 
 
 # src/aml/ml/anomaly/runner.py
@@ -152,7 +177,9 @@ class AnomalyRun:
     seconds: float
 
 
-def detect_anomalies(db: Database, settings: Settings, *, as_of: date | None = None) -> pd.DataFrame: ...  # không ghi
+def detect_anomalies(
+    db: Database, settings: Settings, *, as_of: date | None = None
+) -> pd.DataFrame: ...  # không ghi
 def run_anomaly(
     db: Database, settings: Settings, *, as_of: date | None = None, actor: str | None = None
 ) -> AnomalyRun: ...
@@ -163,12 +190,20 @@ COVERAGE_COLUMNS = [
     "typology", "is_suspicious", "scenarios", "flagged_rules", "flagged_anomaly", "flagged_any",
     "new_by_anomaly", "accounts", "accounts_rules", "accounts_anomaly", "accounts_new",
 ]  # fmt: skip
-def anomaly_coverage(db: Database) -> pd.DataFrame: ...  # một dòng mỗi typology của TYPOLOGY_KEYS có scenario
-def evaluate_anomaly(db: Database, settings: Settings) -> dict[str, Any]: ...  # tóm tắt + coverage; không ghi
+
+
+def anomaly_coverage(
+    db: Database,
+) -> pd.DataFrame: ...  # một dòng mỗi typology của TYPOLOGY_KEYS có scenario
+def evaluate_anomaly(
+    db: Database, settings: Settings
+) -> dict[str, Any]: ...  # tóm tắt + coverage; không ghi
 
 
 # src/aml/ml/anomaly/card.py  (đường dẫn mà specs/ml-governance.md CARD_SOURCES trỏ tới)
-def card_facts(db: Database, settings: Settings, run_id: int | None = None) -> dict[str, Any]: ...  # Q16
+def card_facts(
+    db: Database, settings: Settings, run_id: int | None = None
+) -> dict[str, Any]: ...  # Q16
 
 
 # src/aml/ml/anomaly/case_features.py  (nối vào 7c như 8d)
@@ -179,7 +214,9 @@ ANOMALY_FEATURE_TAG = "+anom/v1"
 
 def write_anomaly_features(db: Database, settings: Settings, run_id: int) -> int: ...
 def read_anomaly_features(db: Database, settings: Settings, run_id: int) -> pd.DataFrame | None: ...
-def decided_anomaly_features(db: Database, settings: Settings, decided: pd.DataFrame) -> pd.DataFrame | None: ...
+def decided_anomaly_features(
+    db: Database, settings: Settings, decided: pd.DataFrame
+) -> pd.DataFrame | None: ...
 ```
 - `config.yaml`: section cấp cao nhất mới `ml: {anomaly: {baseline_days: 90, min_baseline_days: 28, night_start_hour: 22,
   night_end_hour: 6, n_estimators: 200, max_samples: 256, alert_top_fraction: 0.005, min_samples: 50, top_deviations: 3,
@@ -267,7 +304,7 @@ def decided_anomaly_features(db: Database, settings: Settings, decided: pd.DataF
   không thêm cột: `alerts` đếm cả ANOMALY, ba cột `*_alerts` cũ giữ nguyên nghĩa. `reason` của case và dòng `- Alerts:` của
   tóm tắt thêm `, {n} ANOMALY` vào sau `{s} SCREENING` **chỉ khi n > 0** (chuỗi cũ không đổi khi chưa có alert ANOMALY).
   `truth_accounts.sql` tính cả item `ANOMALY` (nhãn mô phỏng 7c dùng account của alert như RULE / NETWORK). Item ANOMALY
-  **không bao giờ ngủ đông** (giữ `_HIBERNATING_SOURCES`) và không có good-guy (Q15).
+  **không bao giờ ngủ đông** (giữ `_HIBERNATING_SOURCES`) và không có good-guy (Q15). Item ANOMALY cũng đi vào các feature 7c đã ghim `alerts`, `distinct_rules` (thêm `ML_ANOMALY`) và `alert_amount_log` (alert bất thường mang cả tháng nên tiền đã có trong alert RULE bị đếm lần hai), nên ngay cả với `ml.anomaly.features=off` điểm 7c của case có item ANOMALY vẫn đổi; `aml.cases.features` không sửa.
 - **Đánh giá** (`anomaly_coverage`, Q4): giống `network_coverage` của 5c. Với mỗi typology của `TYPOLOGY_KEYS` có scenario:
   `flagged_rules` = scenario có account nằm trong `alert_accounts` của alert hiện hành nguồn RULE hoặc NETWORK (không xét thời
   gian); `flagged_anomaly` = scenario có một dòng `ground_truth` loại `account` mà cif chủ account có mẫu `alerted = 1` của
@@ -307,7 +344,7 @@ def decided_anomaly_features(db: Database, settings: Settings, decided: pd.DataF
   `+anom/v1` (`features/v1+anom/v1` hoặc `features/v1+memo/v1+anom/v1`), `params.anomaly = {run_id, model_version,
   dropped_features}`, audit `MODEL_TRAINED` thêm `details.anomaly` cùng nội dung; ngược lại **đúng hành vi hiện tại** (không
   khoá `anomaly`). `score`: model có cột bất thường nhận cột của run case hiện hành từ lần chạy bất thường hiện hành; audit
-  `SCORING_RUN_COMPLETED` thêm `details.anomaly_features = {trained_version, used_version}` (khác nhau không phải lỗi).
+  `SCORING_RUN_COMPLETED` thêm `details.anomaly_features = {trained_version, used_version}` (khác nhau không phải lỗi). Khi cả hai cột bị `fit_guarded` loại (không còn cột bất thường trong `features`), `score` không ghi dòng `case_anomaly_features` nào và `SCORING_RUN_COMPLETED` không có `details.anomaly_features`.
 
 ### Tác động lên spec khác — là một phần của spec này
 | # | spec | thay đổi | test phải cập nhật |
@@ -315,7 +352,7 @@ def decided_anomaly_features(db: Database, settings: Settings, decided: pd.DataF
 | S1 | `specs/case-consolidation.md` | nguồn thứ tư `ANOMALY` trong `items.sql`; hậu tố `, {n} ANOMALY` của `reason` khi n > 0; `alerts` đếm cả ANOMALY | không (chuỗi cũ giữ nguyên khi n = 0) |
 | S2 | `specs/case-prioritization.md` | `truth_accounts.sql` tính item ANOMALY; `train` / `score` nối 2 cột khi có lần chạy bất thường; Oracle nới `case_models.feature_version` lên 60 | không (TINY-L không có lần chạy bất thường → hành vi 7c) |
 | S3 | `specs/memo-analysis.md` | `fit_guarded` được gọi với danh sách `non_negative` mở rộng; `feature_version` có thể thành `features/v1+memo/v1+anom/v1` | không |
-| S4 | `specs/case-summary.md` | dòng `- Alerts:` thêm `, {n} ANOMALY` khi n > 0 | không |
+| S4 | `specs/case-summary.md` | dòng `- Alerts:` thêm `, {n} ANOMALY` khi n > 0; AC1 của 7d ghim danh sách script giữa `180` và `050` | `tests/cases/test_summary_unit.py::test_ac1_no_new_schema_script` nhận thêm `ddl/200_ml_anomaly.sql` (đã sửa khi hiện thực, 2026-10-14) |
 | S5 | `specs/ml-governance.md` (đang soạn) | card lấy từ `aml.ml.anomaly.card:card_facts` (đúng `CARD_SOURCES` của spec đó) nhưng trả **dict**, không phải `CardFacts | Skipped` — vì 7b-i hiện thực trước governance, governance phải bọc dict thành `CardFacts` (Q16); cặp audit mang phiên bản: (`monitoring`, `ALERT` có `details.rule_id = 'ML_ANOMALY'`) và (`ml_anomaly`, `ANOMALY_RUN_COMPLETED`), registry = `anomaly_runs.model_version` — `version_gaps` phải lọc `ALERT` theo `rule_id` vì `ALERT` của luật mang phiên bản luật | cập nhật `MODEL_DECISIONS` / test AC7 của governance |
 | S6 | `specs/screening-ml.md` (210), `specs/ml-governance.md` (220) | dùng chung section `ml:` / `MlConfig` (`ml.screening`, `ml.governance`); mỗi spec chỉ thêm trường của mình | — |
 | S7 | Phase 9 (`ui-*`, `metrics`) | nhãn nguồn `ANOMALY` trên UI, bằng chứng của alert ANOMALY trong bảng giao dịch case, dòng ANOMALY trên dashboard phát hiện: **chưa làm** (Ngoài phạm vi); `active_alerts` của dashboard tự đếm cả ANOMALY | không |
@@ -374,7 +411,7 @@ trị trả về; env ghim `AML__CASES__GRAPH_FEATURES=networkx` trên cả hai 
 - `run_cases` vẫn là bước người dùng tự chạy sau `aml anomaly run`; spec này không tự dựng lại case.
 - Thời gian dựng feature của code thật trên `small` dưới 60 giây là mục tiêu, **không phải AC** (nguyên mẫu vòng lặp đơn giản
   mất khoảng 70 giây).
-- Test [oracle] để lại dữ liệu như các phase trước (Oracle chỉ thêm).
+- Test [oracle] AC11 xoá các dòng nó đã ghi (theo id trả về; dòng audit vẫn còn), vì một lần chạy bất thường còn sót trên Oracle dùng chung sẽ thêm item ANOMALY vào case và cột bất thường vào mô hình của các test Oracle khác.
 
 ## Câu hỏi mở
 - [x] Q1. Đơn vị mẫu là gì? **(cần người dùng quyết)** — đề xuất mặc định: **(cif, tháng lịch)**, mẫu chỉ khi cif có giao dịch trong tháng; tháng của `as_of` có thể thiếu ngày. Lý do: brief nói "per-customer" kèm baseline 90 ngày, nên cần cửa sổ hiện tại để so; tháng lịch cho khoá alert ổn định giữa các lần chạy (`ML_ANOMALY|cif|YYYY-MM`), dễ đọc cho investigator, và phủ cả 6 tháng nên bắt được scenario ở đầu kỳ (một điểm duy nhất tại `as_of` sẽ bỏ sót mọi scenario trước tháng 6); cif khớp nguồn feature đồ thị theo account và không phụ thuộc kết quả ER. Phương án thay thế: (a) một mẫu mỗi cif tại `as_of` (cửa sổ 30 ngày gần nhất) — đơn giản, ít alert, nhưng chỉ thấy tháng cuối; (b) cửa sổ trượt 30 ngày neo vào `as_of` — khoá đổi khi `as_of` đổi; (c) theo golden customer — gộp người trùng trước khi chấm, nhưng mẫu đổi khi ER chạy lại. — Trả lời: theo đề xuất mặc định (đã trình bày cho người dùng, không phản đối, 2026-10-14).
