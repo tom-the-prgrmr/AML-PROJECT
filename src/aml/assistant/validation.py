@@ -8,10 +8,14 @@ The checks are deterministic and run on every sentence, in this order:
 3. ``amount_not_in_evidence`` -- an amount the cited items do not hold (exact match, no tolerance),
                                  or an amount that cannot be read
    ``date_not_in_evidence``   -- a date the cited items do not hold
-4. ``verdict_language``       -- the sentence clears, closes, approves or whitelists
+   ``direction_mismatch``     -- the sentence gives an account a side of a transfer
+                                 (src / dst) that no cited item holds; an account
+                                 of no cited transaction is ignored
+4. ``speculative``            -- the sentence hedges ("may be", "có thể là")
+   ``verdict_language``       -- the sentence clears, closes, approves or whitelists
 
-They do not check meaning: the direction of a transfer, a count or a relation is the model's job
-and the evaluation (8e) measures it.
+Counts and relations are still not checked; the direction of a transfer is checked only by the
+word lists of `facts.account_roles` (specs/assistant-direction-check.md). 8e measures the rest.
 """
 
 from __future__ import annotations
@@ -25,11 +29,13 @@ from typing import Any
 
 from aml.assistant.evidence import Evidence, parse_citation
 from aml.assistant.facts import (
+    account_roles,
     evidence_dates,
     evidence_numbers,
     extract_amounts,
     extract_dates,
     has_unreadable_amount,
+    is_speculative,
     is_verdict,
 )
 
@@ -38,6 +44,8 @@ ISSUES = (
     "unknown_citation",
     "amount_not_in_evidence",
     "date_not_in_evidence",
+    "direction_mismatch",
+    "speculative",
     "verdict_language",
 )
 STATUSES = ("answered", "insufficient_evidence")
@@ -159,6 +167,35 @@ def resolve(cite: str, evidence: Sequence[Evidence]) -> list[Evidence]:
     return [e for e in evidence if (first := _first(e)) is not None and cite in first]
 
 
+def transfer_sides(evidence: Evidence) -> frozenset[tuple[str, str]]:
+    """The (account, "src" | "dst") pairs an item holds: a transaction's two sides (a missing
+    side of a cash deposit gives none), or the
+    counterparty of a narrative item (IN: it sent; OUT: it received). Any other item holds none."""
+    data = evidence.data
+    kinds = [parse_citation(c)[0] for c in evidence.citations[:1]]
+    if kinds == ["txn"] and "src" in data and "dst" in data:
+        return frozenset(
+            (data[key], role)
+            for key, role in (("src", "src"), ("dst", "dst"))
+            if isinstance(data[key], str) and data[key]
+        )
+    account = data.get("account_id")
+    if (
+        evidence.retriever == "case_view"
+        and kinds == ["account"]
+        and data.get("direction") in ("IN", "OUT")
+        and isinstance(account, str)
+    ):
+        return frozenset({(account, "src" if data["direction"] == "IN" else "dst")})
+    return frozenset()
+
+
+def _direction_mismatch(text: str, items: Sequence[Evidence]) -> bool:
+    sides = frozenset().union(*(transfer_sides(e) for e in items))
+    roles = account_roles(text, {account for account, _ in sides})
+    return any((account, r) not in sides for account, rs in roles.items() for r in rs)
+
+
 def check_claim(claim: Claim, evidence: Sequence[Evidence]) -> Checked:
     resolved: dict[str, Evidence] = {}
     unknown = False
@@ -180,6 +217,10 @@ def check_claim(claim: Claim, evidence: Sequence[Evidence]) -> Checked:
         dates = frozenset().union(*(evidence_dates(e) for e in items))
         if not extract_dates(claim.text) <= dates:
             issues.add("date_not_in_evidence")
+        if _direction_mismatch(claim.text, items):
+            issues.add("direction_mismatch")
+    if is_speculative(claim.text):
+        issues.add("speculative")
     if is_verdict(claim.text):
         issues.add("verdict_language")
     ordered = tuple(i for i in ISSUES if i in issues)

@@ -1,4 +1,5 @@
-"""Numbers, dates and verdicts found in a sentence, and the ones an evidence item supports (pure).
+"""Numbers, dates, verdicts, hedges and account roles found in a sentence, and the ones an evidence
+item supports (pure).
 
 The post-check of an answer compares what a sentence states with what the cited evidence holds.
 Matching ignores case and Vietnamese diacritics, so ``390 triệu đồng`` and ``390 trieu dong`` are
@@ -7,13 +8,17 @@ the same amount (390,000,000).
 Only system-built text and values count as support: ``Evidence.text``, ``Evidence.data`` and, for
 a knowledge passage, its ``chunk_text``. A memo, an alert reason or a name never supports a number
 or a date: a memo that says "transferred 777 million" is not evidence of that amount.
+
+``account_roles`` reads which side of a transfer (``src`` / ``dst``) a sentence gives to an account,
+and ``is_speculative`` spots a hedged sentence ("may be", "có thể là"). Both are word lists on
+folded text, like ``is_verdict`` (specs/assistant-direction-check.md).
 """
 
 from __future__ import annotations
 
 import re
 import unicodedata
-from collections.abc import Iterator
+from collections.abc import Collection, Iterator
 from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
@@ -93,6 +98,42 @@ _VERDICTS = re.compile(
             r"\badmin mode\b",
         )
     )
+)
+
+ROLES = ("src", "dst")
+_ACCOUNT_WORD = r"(?:(?:cac tai khoan|tai khoan|tk|accounts?|the account)\s+)?"
+_SRC_WORDS = ("tu", "from", "khoi")
+_DST_WORDS = ("den", "toi", "sang", "cho", "vao", "ve", "to", "into")
+_PREP_BEFORE = re.compile(
+    rf"(?:^|[^a-z0-9])(?P<prep>{'|'.join(_SRC_WORDS + _DST_WORDS)})\s+{_ACCOUNT_WORD}$"
+)
+# "liên quan tới A01", "đề cập đến A01", "connected to A01": the preposition is not a direction
+_NO_DIRECTION = re.compile(
+    r"(?:^|[^a-z0-9])(?:lien quan|de cap|nhac|noi|related|linked|belongs?|thuoc|connected|tied"
+    r"|refer(?:s|red|ring)?|mentioned)\s+$"
+)
+_SEGMENT_END = re.compile(r"[,;:.!?](?:\s|$)")
+_VERB_WORDS = 4
+# "nhận" folds to "nhan", and so do "cá nhân", "nhân viên": those are never the verb
+_IN_VERBS = (
+    r"(?<!ca )(?<!cong )nhan(?!\s+(?:vien|su|dan|khau|to|than|loai|chung|dang|thuc|cach))"
+    r"|duoc chuyen|duoc nop|receives?|received|receiving|is credited|was credited"
+)
+_OUT_VERBS = (
+    r"chuyen|gui|thanh toan|rut|sends?|sent|transfers?|transferred|pays?|paid|wires?|wired"
+    r"|withdraws?|withdrew|debited"
+)
+_VERB = re.compile(rf"\b(?:(?P<dst>{_IN_VERBS})|(?P<src>{_OUT_VERBS}))\b")
+# "có giao dịch chuyển khoản", "had 3 transfers": the verb word is a noun here
+_NOUN_BEFORE_VERB = re.compile(
+    r"(?:^|\s)(?:giao dich|lenh|cac|nhung|mot|so|had|has|have|made?|makes|\d+)\s+$"
+)
+# "chuyển về A01" is a destination; "thông tin về A01" is "about"
+_OUT_VERB_BEFORE_VE = re.compile(rf"\b(?:{_OUT_VERBS})(?:\s+\S+){{0,2}}\s+$")
+_CASH_DEPOSIT = re.compile(r"^(?:\s+\S+){0,2}?\s+tien mat\b")  # "gửi 390 triệu tiền mặt"
+_HEDGES = re.compile(
+    r"\b(?:co the la|co le|co kha nang (?:la|thuoc|do|bi)|duong nhu|hinh nhu|chac la|du doan"
+    r"|may be|might be|could be|possibly|probably|perhaps|likely|presumably)\b"
 )
 
 
@@ -231,3 +272,62 @@ def is_verdict(text: str) -> bool:
     # "đồng" (the currency) folds to the same word as "đóng" (to close): take it out first
     currency_free = unicodedata.normalize("NFC", text).lower().replace("đồng", "vnd")
     return _VERDICTS.search(fold(currency_free)) is not None
+
+
+def is_speculative(text: str) -> bool:
+    """True when a sentence hedges ("có thể là", "might be", "possibly"). A word list: "có thể"
+    before a verb (what someone can do) and the month of May are not hedges."""
+    return _HEDGES.search(fold(text)) is not None
+
+
+def _verb_role(after: str) -> str | None:
+    """Role given by the earliest verb phrase starting in the first words of ``after``."""
+    cut = _SEGMENT_END.search(after)
+    words = (after[: cut.start()] if cut else after).split()
+    head = " ".join(words[:_VERB_WORDS])
+    window = " ".join(words[: _VERB_WORDS + 2])
+    best: tuple[int, str] | None = None
+    for m in _VERB.finditer(window):
+        if m.start() >= len(head):
+            break
+        if m.group("src") and _NOUN_BEFORE_VERB.search(window[: m.start()]):
+            continue  # "có giao dịch chuyển khoản": a noun, not what the account did
+        role = "dst" if m.group("dst") else "src"
+        if m.group("src") == "gui" and _CASH_DEPOSIT.match(window[m.end() :]):
+            role = "dst"  # "gửi tiền mặt" is a cash deposit into the account
+        if best is None or m.start() < best[0]:
+            best = (m.start(), role)
+    return best[1] if best else None
+
+
+def account_roles(text: str, accounts: Collection[str]) -> dict[str, frozenset[str]]:
+    """The side of a transfer (``src`` / ``dst``) a sentence gives to each account it names.
+
+    A preposition right before the id decides first (``từ`` = src, ``đến`` = dst, but "liên quan
+    tới" says nothing); without one, a verb in the 4 words after the id does ("nhận" = dst,
+    "chuyển" = src). A pronoun is never traced back to an account. An account with no role is
+    absent.
+    """
+    folded = fold(text)
+    lowered = {a: a.lower() for a in accounts}
+    mentions = sorted(
+        (m.start(), m.end(), a)
+        for a, low in lowered.items()
+        for m in re.finditer(rf"(?<![a-z0-9]){re.escape(low)}(?![a-z0-9])", folded)
+    )
+    found: dict[str, set[str]] = {}
+    for i, (start, end, account) in enumerate(mentions):
+        prep = _PREP_BEFORE.search(folded[:start])
+        word = prep.group("prep") if prep else None
+        if word in _DST_WORDS and _NO_DIRECTION.search(folded[: prep.start("prep")]):
+            word = None
+        elif word == "ve" and not _OUT_VERB_BEFORE_VE.search(folded[: prep.start("prep")]):
+            word = None  # "về" means "about" unless an outgoing verb precedes it
+        if word:
+            role = "src" if word in _SRC_WORDS else "dst"
+        else:
+            limit = mentions[i + 1][0] if i + 1 < len(mentions) else len(folded)
+            role = _verb_role(folded[end:limit])
+        if role:
+            found.setdefault(account, set()).add(role)
+    return {a: frozenset(r) for a, r in found.items()}

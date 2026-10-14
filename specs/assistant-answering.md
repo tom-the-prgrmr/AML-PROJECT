@@ -386,7 +386,7 @@ def explain_typology(
      của các mục đó, sai → `date_not_in_evidence`. So khớp **chính xác**, không dung sai (Q4).
   4. `is_verdict(câu)` → `verdict_language`.
   `supported` đúng khi không có issue nào. Hậu kiểm **không** kiểm ngữ nghĩa (chiều tiền, quan hệ, số đếm, tên): phần
-  đó phụ thuộc mô hình và do 8e đo.
+  đó phụ thuộc mô hình và do 8e đo. (Chiều tiền sau đó được kiểm theo từ vựng: xem `specs/assistant-direction-check.md`.)
 - **`is_verdict`** — lọc đầu ra: câu khớp một trong các họ mẫu (trên văn bản đã bỏ dấu, chữ thường): bỏ qua chỉ dẫn
   (`ignore|disregard … instructions|rules`, `bo qua … huong dan`), phán sạch (`mark … clean|safe`, `is|as clean|
   legitimate`, `la sach|hop le|an toan`), danh sách trắng (`whitelist`, `danh sach trang`), không báo cáo (`do not
@@ -431,7 +431,7 @@ def explain_typology(
   | L1 bọc dữ liệu | có (của 8b) | `render_evidence` / `wrap_untrusted`: dữ liệu không đóng được thẻ, không xuống dòng được |
   | L2 kênh chỉ dẫn cố định | có | message system là hằng: không chứa ký tự nào của dữ liệu hay câu hỏi; có `UNTRUSTED_NOTICE` |
   | L3 không có công cụ ghi | có | đầu ra mô hình của 8c chỉ được đọc thành JSON và in ra; package không có đường ghi disposition (Text2Cypher của 8b có guardrail riêng) |
-  | L4 hậu kiểm | có | câu không trích dẫn, trích ID bịa, sai số tiền / ngày bị gắn cờ; trường không tin cậy không đỡ được con số |
+  | L4 hậu kiểm | có | câu không trích dẫn, trích ID bịa, sai số tiền / ngày bị gắn cờ; trường không tin cậy không đỡ được con số; từ 2026-10-14 thêm sai chiều tiền và câu suy đoán (`assistant-direction-check`) |
   | L5 lọc đầu ra | có | `is_verdict` gắn cờ câu mang phán quyết dù nó có trích dẫn |
   | L6 mô hình nghe lời system prompt | **không** | mô hình có làm theo memo hay không; do 8e đo (injection resistance) — chưa đo |
 
@@ -584,7 +584,7 @@ Mọi giá trị suy ra bằng tay; chưa chạy. -->
   này — xem Q12.
 - Cắt, xếp hạng lại hay nén ngữ cảnh ở phía 8c (Q13); hội thoại nhiều lượt và lịch sử phía server; lưu câu trả lời hay
   bản nháp narrative vào bảng riêng (chỉ có dòng audit).
-- Kiểm ngữ nghĩa của câu (chiều tiền, quan hệ, số đếm, tỉ lệ phần trăm, tên, giờ phút); kiểm ID viết trong lời văn mà
+- Kiểm ngữ nghĩa của câu (quan hệ, số đếm, tỉ lệ phần trăm, tên, giờ phút); kiểm ID viết trong lời văn mà
   không nằm trong `cites`; ngày thiếu phần (`tháng 3 năm 2026`); ngày viết bằng tên tháng tiếng Anh; ngoại tệ.
 - Kiểm ngôn ngữ của văn bản mô hình trả (mô hình có viết đúng tiếng Việt hay không); dịch `reason`, tên rule và mô tả
   rule (vẫn là tiếng Anh như nguồn); bản tiếng Việt của năm tiêu đề narrative và của output `aml rag explain`.
