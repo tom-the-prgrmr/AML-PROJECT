@@ -1,0 +1,110 @@
+/* Data quality page. Tokens only: see web/src/styles.css. */
+
+/* The Vietnamese description wraps in a readable column instead of stretching the table. */
+td.dq-desc {
+  min-width: 260px;
+  max-width: 320px;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+/* Sample ids: the first few inline, the rest in a small scroll box behind "+N nữa". */
+td.dq-ids {
+  min-width: 220px;
+  max-width: 300px;
+  font-size: var(--text-sm);
+}
+.dq-more summary {
+  width: fit-content;
+  margin-top: var(--space-1);
+  color: var(--color-primary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+.dq-more summary:hover {
+  color: var(--color-primary-hover);
+}
+.dq-more-box {
+  max-height: 120px;
+  margin-top: var(--space-1);
+  padding: var(--space-2);
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+}
+
+.dq-delta-up {
+  color: var(--color-danger-fg);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.dq-delta-down {
+  color: var(--color-success-fg);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Trend: one slot per run = value, bar, run number. */
+.dq-trend {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.dq-bar-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 44px;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+.dq-bar-value {
+  font-weight: 600;
+}
+.dq-bar-track {
+  display: flex;
+  align-items: flex-end;
+  width: 28px;
+  height: 56px;
+  border-bottom: 1px solid var(--color-border-strong);
+}
+.dq-bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: var(--color-neutral-border);
+}
+.dq-bar-fail {
+  background: var(--color-danger-fg);
+}
+.dq-bar-run {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.dq-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.dq-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: var(--space-2);
+  border-radius: 3px;
+  background: var(--color-neutral-border);
+}
+.dq-swatch:first-child {
+  margin-left: 0;
+}
+.dq-swatch.dq-bar-fail {
+  background: var(--color-danger-fg);
+}

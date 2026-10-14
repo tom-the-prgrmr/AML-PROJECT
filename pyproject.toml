@@ -21,6 +21,8 @@ dependencies = [
     "matplotlib>=3.11.2",
     "scikit-learn>=1.5",
     "neo4j-graphrag>=1.22,<2",
+    "fastapi>=0.143.0",
+    "uvicorn>=0.54.0",
 ]
 
 [project.optional-dependencies]
@@ -31,6 +33,7 @@ aml = "aml.cli:app"
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "pytest>=8.2",
     "ruff>=0.6",
 ]

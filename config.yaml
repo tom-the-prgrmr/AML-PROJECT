@@ -248,3 +248,15 @@ rag_eval:                    # Phase 8e assistant evaluation (aml rag eval); sco
   english_per_type: 1        # >= 0; the last N questions of each type are asked in English
   modes: [vector, graphrag]  # retrieval modes compared; also the column order of the report
   results_dir: results/phase8   # golden_set.json, eval_answers.jsonl, eval_result.json, eval_report.md, eval_items.csv
+
+ui:                          # Phase 9a investigator UI (aml ui); FastAPI serves the API and the built SPA
+  host: 127.0.0.1            # no real authentication, so keep it on the local machine
+  port: 8000                 # 1..65535
+  dist_dir: web/dist         # the built SPA (npm --prefix web run build)
+  users: {analyst01: analyst, supervisor01: supervisor}   # actor -> role (analyst | supervisor); not empty
+  default_user: analyst01    # actor of a request without X-AML-User; null = the header is required
+  page_size: 50              # default page size of list endpoints; 1..max_page_size
+  max_page_size: 200
+  graph_max_counterparties: 50   # most counterparties (by total VND) drawn in a case graph; 1..500
+  mock:                      # one flag per sample-data feature; true = the endpoint returns a labelled fixture
+    sample: true

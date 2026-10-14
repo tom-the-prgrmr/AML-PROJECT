@@ -59,7 +59,11 @@ services:
     volumes:
       - ollamadata:/root/.ollama
     mem_limit: 5g
-    # CPU by default. For an NVIDIA GPU add docker-compose.gpu.yml: `make up PROFILE=llm GPU=1`.
+    # GPU (NVIDIA, WSL2): offloads the model to the GPU. Comment out on a machine without one.
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
 
 volumes:
   oradata:

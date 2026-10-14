@@ -16,7 +16,7 @@ uv run aml status               # config + which optional services are up
 uv run aml init-db              # base schema (audit_log) on DuckDB (default)
 
 .\tasks.ps1 up -ComposeProfile oracle   # or: make up PROFILE=oracle
-.\tasks.ps1 up -ComposeProfile llm -Gpu # Ollama on an NVIDIA GPU (make up PROFILE=llm GPU=1); omit -Gpu for CPU
+.\tasks.ps1 up -ComposeProfile llm      # Ollama on the NVIDIA GPU (docker-compose.yml; remove its deploy: block for CPU)
 $env:DB_BACKEND = "oracle"; uv run aml init-db
 uv run pytest                   # Oracle/Neo4j/Ollama tests skip if the service is down
 ```

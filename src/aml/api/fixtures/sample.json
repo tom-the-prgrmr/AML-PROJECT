@@ -1,0 +1,6 @@
+{
+  "items": [
+    {"id": "S-001", "label": "sample row 1", "value": 42},
+    {"id": "S-002", "label": "sample row 2", "value": 7}
+  ]
+}

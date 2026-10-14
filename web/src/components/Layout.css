@@ -1,0 +1,206 @@
+/* App shell: sidebar + top bar at >= 1024px, one horizontal scrollable nav bar below that. */
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-3);
+  top: -100px;
+  z-index: 20;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: var(--space-3);
+}
+
+/* --- Sidebar --- */
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100vh;
+  padding: var(--space-4) var(--space-3);
+  background: var(--color-sidebar-bg);
+  color: var(--color-sidebar-text);
+  border-right: 1px solid var(--color-border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  color: var(--color-sidebar-strong);
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.brand-name {
+  font-size: var(--text-md);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.menu a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-sidebar-text);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--transition),
+    color var(--transition);
+}
+.menu a:hover {
+  background: var(--color-sidebar-hover);
+  color: var(--color-primary-hover);
+}
+.menu a.active {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+}
+.menu a:focus-visible {
+  outline-color: var(--color-sidebar-strong);
+}
+.menu .icon {
+  flex: none;
+}
+
+.sidebar-note {
+  margin: auto 0 0;
+  padding: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-sidebar-muted);
+}
+
+/* --- Top bar and content --- */
+.app-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 56px;
+  padding: var(--space-2) var(--space-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.topbar-context {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.topbar-context > * + *::before {
+  content: "/";
+  margin-right: var(--space-2);
+  color: var(--color-border-strong);
+  font-family: var(--font-sans);
+}
+.topbar-section {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.user-switch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: none;
+  font-size: var(--text-sm);
+}
+.user-switch .user-name {
+  font-weight: 600;
+}
+.user-switch select {
+  min-width: 140px;
+}
+
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+.content:focus {
+  outline: none;
+}
+
+@media (max-width: 1023.98px) {
+  .app {
+    display: block;
+  }
+  .sidebar {
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-3);
+    height: auto;
+    padding: var(--space-2) var(--space-4);
+  }
+  .brand {
+    padding: 0;
+  }
+  .brand-name,
+  .sidebar-note {
+    display: none;
+  }
+  .menu {
+    flex: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    min-width: 0;
+    /* Items wrap instead of scrolling sideways: every page stays visible without a scrollbar. */
+    padding: var(--space-1);
+  }
+  .menu a {
+    padding: var(--space-2) var(--space-3);
+  }
+  .topbar {
+    position: static;
+    padding: var(--space-2) var(--space-4);
+  }
+  .content {
+    padding: var(--space-4);
+  }
+}

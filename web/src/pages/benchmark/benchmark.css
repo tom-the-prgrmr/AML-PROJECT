@@ -1,0 +1,34 @@
+/* Benchmark page. Tokens only: see web/src/styles.css. */
+
+/* The full meta of a run, folded away under the cell table. */
+.bench-details {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+}
+.bench-details summary {
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+.bench-details[open] summary {
+  margin-bottom: var(--space-3);
+}
+.bench-meta {
+  margin: 0;
+}
+/* A nested meta object (versions, machine, dataset...) as an indented group. */
+.bench-meta .bench-meta {
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--color-border-strong);
+}
+
+.bench-list {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+}
+.bench-list li + li {
+  margin-top: var(--space-1);
+}
