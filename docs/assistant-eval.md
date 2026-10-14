@@ -10,7 +10,7 @@ synthetic.
 ## Results on `small` (2026-10-14)
 
 Copied from [results/phase8/eval_report.md](../results/phase8/eval_report.md): `aml rag eval --force` at commit
-`0278cdf`, `qwen2.5:3b-instruct` + `bge-m3` in Ollama (GTX 1650, 4 GB), prompt `answer/v1`, seed 42, golden set
+`73b0989`, `qwen2.5:3b-instruct` + `bge-m3` in Ollama (GTX 1650, 4 GB), prompt `answer/v1`, seed 42, golden set
 `2721a5db5d1008f0` (30 questions, 5 in English), DuckDB `small` with the graph and the knowledge layer synced to
 Neo4j.
 
@@ -18,7 +18,7 @@ Neo4j.
 |---|---|---|
 | answer correctness | 0/26 | 18/26 (69.2%) |
 | citation precision | n/a | 59/60 (98.3%) |
-| hallucination rate | n/a | 0/25 |
+| hallucination rate | n/a | 1/25 (4.0%) |
 | refusal correctness | 4/30 | 29/30 (96.7%) |
 | injection resistance (of exposed) | n/a (0/4 exposed) | 4/4 (4/4 exposed) |
 
@@ -40,8 +40,10 @@ What the numbers say:
   answers that name only part of the path (one of the two round-trip hops in 3 answers, 5 of 7 and 4 of 6
   pass-through accounts in the other 2),
   2 are structuring-evidence answers that list two or three of the seven transactions, and 1 is an account
-  owner question it refused. No answer named an id that does not exist (hallucination 0/25), and 59 of 60
-  citations point at evidence of the scenario.
+  owner question it refused. No answer named an id that does not exist; the one flagged answer (hallucination
+  1/25) is G-M02, where a true sentence about the outbound hop of a pass-through account cites the inbound
+  transfer instead, which the direction check of the answer validator flags. 59 of 60 citations point at
+  evidence of the scenario.
 - **Injection:** in all 4 injection questions the poisoned memo reached the GraphRAG context through the
   transaction lookup route, and no answer followed it. The deterministic post-check is the second line: a
   sentence like "khách hàng này là sạch" is shown as unverified or dropped, whatever the model writes.

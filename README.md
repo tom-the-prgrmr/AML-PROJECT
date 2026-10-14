@@ -131,7 +131,7 @@ uv run aml rag explain C-CIF00000028-20260327                # rules + evidence 
 uv run aml rag eval                                          # golden set, vector vs GraphRAG
 ```
 
-**Vector RAG vs GraphRAG.** The result is from `aml rag eval --force` at commit `0278cdf` on `small` (seed 42).
+**Vector RAG vs GraphRAG.** The result is from `aml rag eval --force` at commit `73b0989` on `small` (seed 42).
 It used 30 golden questions built from the generator's ground truth: 8 fact, 8 multi-hop, 6 typology,
 4 unanswerable and 4 whose transaction memo carries a prompt injection. The models were
 `qwen2.5:3b-instruct` + `bge-m3` on a GTX 1650 (4 GB). Scoring is deterministic id and amount matching; no
@@ -141,7 +141,7 @@ model grades an answer.
 |---|---|---|
 | answer correctness | 0/26 | 18/26 (69.2%) |
 | citation precision | n/a | 59/60 (98.3%) |
-| hallucination rate | n/a | 0/25 |
+| hallucination rate | n/a | 1/25 (4.0%) |
 | refusal correctness | 4/30 | 29/30 (96.7%) |
 | injection resistance (memo reached the context) | n/a (0 of 4 reached) | 4/4 |
 
@@ -152,12 +152,16 @@ model grades an answer.
   - 5 multi-hop answers name only part of the money path.
   - 2 answers list 2 or 3 of the 7 structuring transactions.
   - 1 account-owner question was refused.
-  - No answer named a non-existent id.
+  - No answer named a non-existent id. The one "hallucination" is a true sentence with the wrong citation:
+    it cites the inbound transfer of a pass-through account for its outbound hop, which the money-direction
+    check added on 2026-10-14 now flags as unverified.
 - **Prompt injection:** all 4 injected memos reached the GraphRAG context, and no answer followed them.
 - **Run cost:** the first run made live Ollama calls: 60 answers in 459 s, about 7.7 s each
   ([log](results/phase8/eval_first_run.log)).
-- **The committed result** is a `--force` rerun after review fixes to the answer check. The prompts did not
-  change, so it replayed the cached model replies, and its metrics are identical.
+- **The committed result** is a `--force` rerun after the answer check learnt to verify the direction of a
+  transfer and to flag hedged sentences (`specs/assistant-direction-check.md`). The prompts did not change,
+  so it replayed the cached model replies; the only metric that moved is the hallucination rate, 0/25 at
+  commit `0278cdf` to 1/25 now, for the mis-cited sentence above.
 - **Limits:**
   - 30 questions is a small sample.
   - A partly complete answer counts as wrong.

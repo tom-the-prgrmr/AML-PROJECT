@@ -97,7 +97,9 @@ class ScreeningMlLogRegConfig(BaseModel):
 class ScreeningMlConfig(BaseModel):
     simulate_fraction: float  # (0, 1]; phần nhóm (entry_id) được mô phỏng nhãn
     simulated_actor: str  # actor của nhãn mô phỏng; khác audit.system_actor
-    use_human_reviews: bool  # review TRUE_MATCH / FALSE_MATCH của người được dùng làm nhãn (thắng nhãn mô phỏng)
+    use_human_reviews: (
+        bool  # review TRUE_MATCH / FALSE_MATCH của người được dùng làm nhãn (thắng nhãn mô phỏng)
+    )
     cv_folds: int  # >= 2
     top_features: int  # >= 1; số feature đóng góp ghi cho mỗi hit
     logreg: ScreeningMlLogRegConfig
@@ -126,8 +128,12 @@ def match_features(
 ) -> dict[str, float]: ...  # thuần; đủ khoá FEATURES, giá trị float hữu hạn
 
 
-def write_features(db: Database, settings: Settings) -> int: ...  # cho dòng screening_current chưa có; trả số cặp đã ghi
+def write_features(
+    db: Database, settings: Settings
+) -> int: ...  # cho dòng screening_current chưa có; trả số cặp đã ghi
 def read_features(db: Database) -> pd.DataFrame: ...
+
+
 # index (result_run_id, cif, entry_id) của mọi dòng screening_current, tăng dần; cột FEATURES
 
 
@@ -145,6 +151,8 @@ class LabelSimulation:
 
 def simulate_labels(db: Database, settings: Settings) -> LabelSimulation: ...
 def training_labels(db: Database, settings: Settings) -> pd.DataFrame: ...
+
+
 # index (cif, entry_id) tăng dần; cột label (1 = TRUE_MATCH), origin (SIMULATED | HUMAN); chỉ cặp hiện hành
 
 
@@ -162,11 +170,19 @@ class MatchModel:
 
 
 def fit_match_model(
-    X: pd.DataFrame, y: pd.Series, groups: pd.Series, rule: pd.Series, cfg: ScreeningMlConfig, *, seed: int
+    X: pd.DataFrame,
+    y: pd.Series,
+    groups: pd.Series,
+    rule: pd.Series,
+    cfg: ScreeningMlConfig,
+    *,
+    seed: int,
 ) -> MatchModel: ...  # rule = decision của Tier 2 cho cùng index; chỉ dùng để tính comparison
 def predict(model: MatchModel, X: pd.DataFrame) -> pd.DataFrame: ...
 # index như X; cột score (0..1) và contributions (dict feature -> đóng góp trên thang log-odds)
 def compare_at_recall(y: pd.Series, score: pd.Series, rule: pd.Series) -> pd.DataFrame: ...
+
+
 # cột: baseline, pairs, positives, rule_flagged, rule_tp, rule_precision, rule_recall,
 #      model_flagged, model_tp, model_precision, model_recall, flagged_reduction_pct
 # dòng (đúng thứ tự): "two_tier_alert", "two_tier"
@@ -190,7 +206,9 @@ class MatchScoringRun:
     model_id: int
     version: str
     scored: int
-    holdout: list[dict[str, Any]]  # các dòng compare_at_recall trên cặp không có nhãn; [] khi không có cặp nào
+    holdout: list[
+        dict[str, Any]
+    ]  # các dòng compare_at_recall trên cặp không có nhãn; [] khi không có cặp nào
 
 
 def train(db: Database, settings: Settings, *, actor: str | None = None) -> MatchTrainingRun: ...

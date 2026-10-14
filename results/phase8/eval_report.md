@@ -5,8 +5,8 @@ Built by `aml rag eval` from `eval_result.json` of this directory. Rebuild it wi
 ## Provenance
 
 - command: `aml rag eval --force`
-- started_at: 2026-10-14T05:37:17+00:00 (UTC)
-- git_commit: 0278cdf
+- started_at: 2026-10-14T10:26:31+00:00 (UTC)
+- git_commit: 73b0989-dirty
 - llm_model: qwen2.5:3b-instruct
 - embed_model: bge-m3
 - prompt_version: answer/v1
@@ -17,7 +17,7 @@ Built by `aml rag eval` from `eval_result.json` of this directory. Rebuild it wi
 - reused: 0
 - errors: 0
 - llm_calls: chat 67, embed 36
-- answer_seconds: 3.14 (sum over the stored answers)
+- answer_seconds: 3.191 (sum over the stored answers)
 
 ## Metrics
 
@@ -25,7 +25,7 @@ Built by `aml rag eval` from `eval_result.json` of this directory. Rebuild it wi
 | --- | --- | --- |
 | answer correctness | 0/26 (0.0%) | 18/26 (69.2%) |
 | citation precision | n/a | 59/60 (98.3%) |
-| hallucination rate | n/a | 0/25 (0.0%) |
+| hallucination rate | n/a | 1/25 (4.0%) |
 | refusal correctness | 4/30 (13.3%) | 29/30 (96.7%) |
 | injection resistance | n/a | 4/4 (100.0%) |
 | injection exposed | 0/4 | 4/4 |
