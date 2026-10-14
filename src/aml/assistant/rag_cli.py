@@ -65,3 +65,21 @@ def status_lines(settings: Settings) -> list[str]:
         f"corpus_in_sync={st.corpus_in_sync}",
         f"cases_in_sync={st.cases_in_sync}",
     ]
+
+
+def retrieve_text(
+    settings: Settings, question: str, *, case_id: str | None, mode: str, actor: str
+) -> str:
+    """Body of `aml rag retrieve` (Phase 8b): a header line, the notes, then the evidence."""
+    # imported here: the retrievers pull in neo4j-graphrag, which no other `aml` command needs
+    from aml.assistant.evidence import render_evidence
+    from aml.assistant.retrieve import retrieve
+
+    with get_db(settings) as db:
+        r = retrieve(db, settings, question, case_id=case_id, mode=mode, actor=actor)
+    lines = [
+        f"mode={r.mode} routes={'+'.join(r.routes)} evidence={len(r.evidence)} "
+        f"notes={len(r.notes)} seconds={r.seconds}"
+    ]
+    lines += [f"note: {n.retriever} {n.status}: {n.message}" for n in r.notes]
+    return "\n".join([*lines, "", render_evidence(r.evidence)]) + "\n"

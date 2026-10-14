@@ -4,17 +4,20 @@
 decision saw. `score` ranks every current case and stores the score with its top factors. Both only
 write their own tables and audit rows: nothing here records a disposition, changes a case status or
 suppresses an alert. The model ranks; people decide.
+
+Phase 8d adds six memo columns (`aml.memo.features`). They join the 35 case features only when
+every memo of the training snapshots has a label; until then training is exactly as in Phase 7c.
 """
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import Any
 
 import pandas as pd
 
 from aml.cases.dispositions import SUSPICIOUS
-from aml.cases.features import read_features, write_features
+from aml.cases.features import FEATURE_VERSION, read_features, write_features
 from aml.cases.labels import case_groups
 from aml.cases.model import (
     PrioritizationError,
@@ -35,8 +38,17 @@ from aml.cases.values import lower_columns
 from aml.common.audit import AuditEvent, audit, audit_many
 from aml.common.config import Settings
 from aml.common.db import Database
+from aml.memo.features import (
+    MEMO_FEATURE_VERSION,
+    MEMO_FEATURES,
+    decided_memo_features,
+    ensure_memo_features,
+    fit_guarded,
+    memo_info,
+)
+from aml.memo.store import SCHEMA_MISSING, memo_schema_ready
 
-__all__ = ["ScoringRun", "TrainingRun", "score", "train"]
+__all__ = ["LabelledSet", "ScoringRun", "TrainingRun", "labelled_set", "score", "train"]
 
 KINDS = ("logreg", "lightgbm")
 
@@ -85,6 +97,35 @@ def _training_set(db: Database, decided: pd.DataFrame) -> tuple[pd.DataFrame, pd
     return X, label.loc[X.index]
 
 
+@dataclass(frozen=True)
+class LabelledSet:
+    """The decided cases a model learns from: features, labels and the groups that share alerts."""
+
+    X: pd.DataFrame
+    y: pd.Series
+    groups: pd.Series
+    decided: pd.DataFrame  # case_id, disposition, run_id (the snapshot the decision saw)
+    suspicious: int
+    false_positive: int
+
+
+def labelled_set(db: Database, settings: Settings) -> LabelledSet:
+    """Read the training set; raises `PrioritizationError` before anything is written."""
+    cfg = settings.cases.prioritization
+    decided = latest_dispositions(db)
+    suspicious = int((decided["disposition"] == SUSPICIOUS).sum())
+    false_positive = len(decided) - suspicious
+    if min(suspicious, false_positive) < cfg.cv_folds:  # checked before anything is written
+        raise PrioritizationError(
+            f"not enough labelled cases: need at least {cfg.cv_folds} per class, "
+            f"got SUSPICIOUS={suspicious} FALSE_POSITIVE={false_positive}"
+        )
+    groups = _decided_groups(db, decided)
+    check_groups(groups, cfg.cv_folds)  # also before anything is written
+    X, y = _training_set(db, decided)
+    return LabelledSet(X, y, groups, decided, suspicious, false_positive)
+
+
 def train(
     db: Database, settings: Settings, *, kind: str | None = None, actor: str | None = None
 ) -> TrainingRun:
@@ -98,23 +139,27 @@ def train(
     if kind not in KINDS:
         raise PrioritizationError(f"unknown model kind {kind}: use one of {', '.join(KINDS)}")
     actor = actor or settings.audit.system_actor
-    decided = latest_dispositions(db)
-    suspicious = int((decided["disposition"] == SUSPICIOUS).sum())
-    false_positive = len(decided) - suspicious
-    if min(suspicious, false_positive) < cfg.cv_folds:  # checked before anything is written
-        raise PrioritizationError(
-            f"not enough labelled cases: need at least {cfg.cv_folds} per class, "
-            f"got SUSPICIOUS={suspicious} FALSE_POSITIVE={false_positive}"
-        )
-    groups = _decided_groups(db, decided)
-    check_groups(groups, cfg.cv_folds)  # also before anything is written
-    X, y = _training_set(db, decided)
-    model = fit_model(X, y, groups, cfg, seed=settings.seed, kind=kind)
+    data = labelled_set(db, settings)
+    X, y, groups = data.X, data.y, data.groups
+    suspicious, false_positive = data.suspicious, data.false_positive
+    use_memo = settings.memo.features == "auto"
+    skipped = SCHEMA_MISSING if use_memo and not memo_schema_ready(db) else None
+    use_memo = use_memo and skipped is None
+    memo_columns = decided_memo_features(db, settings, data.decided) if use_memo else None
+    feature_version, memo = FEATURE_VERSION, None
+    if memo_columns is None:  # no memo labels (or switched off): the Phase 7c model
+        model = fit_model(X, y, groups, cfg, seed=settings.seed, kind=kind)
+    else:
+        X = X.join(memo_columns)
+        model, dropped = fit_guarded(X, y, groups, cfg, seed=settings.seed, kind=kind)
+        feature_version, memo = MEMO_FEATURE_VERSION, memo_info(db, settings, dropped)
+        model = replace(model, params=model.params | {"memo": memo})
     m = model.metrics
     with db.transaction():
         model_id, version = insert_model(
             db, kind=kind, seed=settings.seed, as_of=latest_run(db)[1],
             counts=(len(X), suspicious, false_positive), model=model, actor=actor,
+            feature_version=feature_version,
         )  # fmt: skip
         audit(
             db,
@@ -135,7 +180,9 @@ def train(
                 "data_hash": model.data_hash,
                 "metrics": m,
                 "features": list(model.features),
-            },
+            }
+            | ({"memo": memo} if memo else {})
+            | ({"memo_skipped": skipped} if skipped else {}),
         )
     return TrainingRun(model_id, version, kind, len(X), suspicious, false_positive, m)
 
@@ -160,6 +207,15 @@ def score(
             f"case_features of run {run_id} lacks {len(missing)} case(s), e.g. {missing[0]}"
         )
     X = X.loc[list(status)]
+    memo_source: str | None = None
+    if set(model.features) & set(MEMO_FEATURES):
+        # A run with a memo that has no label yet scores with zeros: a missing label must never
+        # block the queue. Which one was used is written to the audit row.
+        ready = memo_schema_ready(db)
+        memo_columns = ensure_memo_features(db, settings, run_id) if ready else None
+        memo_source = "zeros" if memo_columns is None else "stored"
+        zeros = dict.fromkeys(MEMO_FEATURES, 0.0)
+        X = X.assign(**zeros) if memo_columns is None else X.join(memo_columns)
     predicted = predict(model, X)
     scores = {c: round(float(s), 6) for c, s in predicted["score"].items()}
     rank = queue_ranks(scores, status)
@@ -191,7 +247,7 @@ def score(
                 "queue; ranking only, no disposition"
             ),
             version=version,
-            details=asdict(run),
+            details=asdict(run) | ({"memo_features": memo_source} if memo_source else {}),
         )
     )
     if actor:

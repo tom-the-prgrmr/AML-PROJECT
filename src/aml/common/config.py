@@ -29,6 +29,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config.yaml"
 DOTENV_PATH = PROJECT_ROOT / ".env"
 ENV_PREFIX = "AML__"
+# Phase 8e: question types of the golden set and the retrieval modes that can be compared.
+RAG_EVAL_TYPES = ("fact", "multi_hop", "typology", "unanswerable", "injection")
+RAG_EVAL_MODES = ("graphrag", "vector")
 
 # docker-compose variable -> config key path (raw strings, not YAML-parsed).
 SECRET_ENV_MAP: dict[str, list[str]] = {
@@ -529,6 +532,70 @@ class KnowledgeConfig(BaseModel):
     chunk_max_chars: int = Field(ge=200)
 
 
+def _check_ranges(model: BaseModel, ranges: dict[str, tuple[float, float]]) -> None:
+    """Raise ``<field> must be between <low> and <high>`` for the first field out of range."""
+    for name, (low, high) in ranges.items():
+        if not low <= getattr(model, name) <= high:
+            raise ValueError(f"{name} must be between {low} and {high}")
+
+
+class RetrievalConfig(BaseModel):  # Phase 8b
+    hops: int  # depth of the case graph retriever
+    max_transfers: int  # transfers listed for a case
+    max_shared: int  # "shares an attribute" facts
+    include_memos: bool  # read memos from the system of record for the listed transactions
+    max_untrusted_chars: int  # cut for memo / alert reason / names
+    max_chunk_chars: int  # cut for chunk text
+    top_k: int  # chunks of the vector search
+    min_score: float  # chunks below this score are dropped
+    max_linked_per_chunk: int  # knowledge nodes fetched per chunk
+    max_typology_chunks: int  # extra chunks per typology of the case
+    max_context_chars: int  # ceiling of len(render_evidence(...)) returned by retrieve()
+
+    @model_validator(mode="after")
+    def _in_range(self) -> RetrievalConfig:
+        _check_ranges(
+            self,
+            {
+                "hops": (1, 3),
+                "max_transfers": (1, 200),
+                "max_shared": (0, 50),
+                "max_untrusted_chars": (20, 2000),
+                "max_chunk_chars": (200, 8000),
+                "top_k": (1, 20),
+                "min_score": (0, 1),
+                "max_linked_per_chunk": (0, 20),
+                "max_typology_chunks": (0, 10),
+                "max_context_chars": (500, 100000),
+            },
+        )
+        return self
+
+
+class Text2CypherConfig(BaseModel):  # Phase 8b
+    enabled: bool
+    max_rows: int  # LIMIT forced on every generated query
+    timeout_seconds: float  # server-side timeout of a generated query
+    max_path_length: int  # upper bound of a variable-length pattern
+    max_query_chars: int
+    max_attempts: int  # generations per question
+
+    @model_validator(mode="after")
+    def _in_range(self) -> Text2CypherConfig:
+        if self.timeout_seconds <= 0:
+            raise ValueError("timeout_seconds must be > 0")
+        _check_ranges(
+            self,
+            {
+                "max_rows": (1, 200),
+                "max_path_length": (1, 5),
+                "max_query_chars": (100, 10000),
+                "max_attempts": (1, 3),
+            },
+        )
+        return self
+
+
 class AssistantConfig(BaseModel):
     provider: Literal["ollama", "fake"]
     request_timeout_seconds: float = Field(gt=0)
@@ -541,6 +608,63 @@ class AssistantConfig(BaseModel):
     vector_procedures: list[
         str
     ]  # separate allow-list for vector queries; not neo4j.read_procedures
+    retrieval: RetrievalConfig  # Phase 8b
+    text2cypher: Text2CypherConfig  # Phase 8b
+
+
+class RagEvalConfig(BaseModel):
+    questions: dict[str, int]  # exactly the keys of RAG_EVAL_TYPES, each >= 0, total >= 1
+    english_per_type: int  # >= 0; the last N questions of each type are asked in English
+    modes: list[str]  # not empty, no repeats, each one of RAG_EVAL_MODES
+    results_dir: str
+
+    @model_validator(mode="after")
+    def _in_range(self) -> RagEvalConfig:
+        if set(self.questions) != set(RAG_EVAL_TYPES):
+            raise ValueError(f"rag_eval questions must have exactly the keys {RAG_EVAL_TYPES}")
+        if any(n < 0 for n in self.questions.values()):
+            raise ValueError("rag_eval questions must be >= 0")
+        if sum(self.questions.values()) < 1:
+            raise ValueError("rag_eval questions must ask at least one question")
+        if self.english_per_type < 0:
+            raise ValueError("rag_eval english_per_type must be >= 0")
+        if not self.modes:
+            raise ValueError("rag_eval modes must not be empty")
+        for mode in self.modes:
+            if mode not in RAG_EVAL_MODES:
+                raise ValueError(f"rag_eval: unknown mode {mode!r}")
+        if len(set(self.modes)) != len(self.modes):
+            raise ValueError("rag_eval modes must not repeat")
+        return self
+
+
+class MemoConfig(BaseModel):  # Phase 8d
+    max_chars: int  # a normalised memo is cut at this many characters
+    max_retries: int  # extra calls when the model's reply is not a valid category
+    max_llm_keys: int  # more memo keys than this need the LLM -> MemoError, never a silent cut
+    features: Literal["auto", "off"]  # auto: training uses the memo columns once labels exist
+    results_dir: str  # where `aml memo compare` / `aml memo eval` write their JSON
+    gold_path: str  # default gold set of `aml memo eval`
+
+    @model_validator(mode="before")
+    @classmethod
+    def _yaml_off(cls, raw: Any) -> Any:
+        """YAML reads the bare word ``off`` as the boolean False; it means the string here."""
+        if isinstance(raw, dict) and raw.get("features") is False:
+            return {**raw, "features": "off"}
+        return raw
+
+    @model_validator(mode="after")
+    def _in_range(self) -> MemoConfig:
+        if self.max_chars < 20:
+            raise ValueError("memo max_chars must be >= 20")
+        if self.max_chars > 1000:  # the width of transactions.memo; memo_norm is VARCHAR(4000)
+            raise ValueError("memo max_chars must be <= 1000")
+        if not 0 <= self.max_retries <= 3:
+            raise ValueError("memo max_retries must be between 0 and 3")
+        if self.max_llm_keys < 1:
+            raise ValueError("memo max_llm_keys must be >= 1")
+        return self
 
 
 class Settings(BaseModel):
@@ -563,7 +687,9 @@ class Settings(BaseModel):
     gds: GdsConfig
     cases: CasesConfig
     assistant: AssistantConfig
+    memo: MemoConfig
     bench: BenchConfig
+    rag_eval: RagEvalConfig
 
     @model_validator(mode="after")
     def _bench_within_trace(self) -> Settings:

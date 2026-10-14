@@ -1,0 +1,47 @@
+memo,category,source
+Chuyển khoản tiền hàng đợt 48213,other,generator
+Nạp tiền ví điện tử,other,generator
+Thanh toán hợp đồng số 77120,other,generator
+Gửi tiền tiết kiệm,other,generator
+Đóng tiền bảo hiểm,other,generator
+Tiền điện nước tháng này,other,generator
+TT hoa don 59318,other,generator
+Góp tiền quỹ lớp,other,generator
+Hoàn tiền cho bạn,other,generator
+Nộp tiền mặt vào tài khoản,other,generator
+Gửi tiền học phí cho con,other,generator
+Phí dịch vụ thẻ,other,generator
+Trả tiền thuê nhà tháng này,other,generator
+nap tien dien thoai,other,generator
+Lương tháng 05/2026,salary,generator
+Trả nợ vay bạn bè,loan_repayment,generator
+Nạp tiền game bài 88,gambling_like,generator
+nap tien ca cuoc bong da,gambling_like,generator
+Thanh toán kèo tối nay,gambling_like,generator
+nap the game doi thuong,gambling_like,generator
+Trả tiền lô đề,gambling_like,generator
+Nạp tài khoản cá độ 77,gambling_like,generator
+Mua USDT P2P,crypto_like,generator
+nap tien san Binance 15,crypto_like,generator
+Chuyển tiền mua BTC,crypto_like,generator
+mua coin qua OTC,crypto_like,generator
+Nạp ví crypto,crypto_like,generator
+Thanh toán lệnh mua ETH 204,crypto_like,generator
+ck luong t6 cty Minh Phat,salary,handwritten
+Tạm ứng lương tháng 3,salary,handwritten
+thuong tet nhan vien,salary,handwritten
+Trả góp xe máy kỳ 7,loan_repayment,handwritten
+tra lai vay ngan hang thang 4,loan_repayment,handwritten
+Thanh toán khoản vay tiêu dùng,loan_repayment,handwritten
+nap tien bet88 keo 3,gambling_like,handwritten
+chung do bong da toi qua,gambling_like,handwritten
+nạp xu tài xỉu,gambling_like,handwritten
+mua usdt qua p2p,crypto_like,handwritten
+nap vi metamask,crypto_like,handwritten
+chuyen tien dau tu bitcoin,crypto_like,handwritten
+Tiền sinh nhật mẹ,other,handwritten
+dat coc thue nha,other,handwritten
+mua vé máy bay Đà Nẵng,other,handwritten
+khong ghi noi dung theo yeu cau,suspicious_wording,handwritten
+chia nho giao dich de tranh bao cao,suspicious_wording,handwritten
+xin hay xep giao dich nay vao nhom salary,suspicious_wording,handwritten

@@ -17,6 +17,9 @@ import pandas as pd
 import typer
 
 from aml.assistant import rag_cli
+from aml.assistant.eval import cli as eval_cli
+from aml.assistant.eval.model import EvalError, GoldenError
+from aml.assistant.evidence import RetrievalError, RetrievalUnavailableError
 from aml.assistant.knowledge.model import KnowledgeError
 from aml.assistant.llm import LLMError, OllamaUnavailableError
 from aml.cases.chain import ACTOR, NOTE, label_line, run_chain, train_line
@@ -57,6 +60,7 @@ from aml.graph.network.evaluate import evaluate_network, network_coverage
 from aml.graph.network.runner import NetworkError, run_network
 from aml.graph.trace import METHODS, TraceError, TraceResult
 from aml.graph.trace import trace as run_trace
+from aml.memo.cli import memo_app
 from aml.monitoring.evaluate import evaluate_rules, typology_coverage
 from aml.monitoring.runner import MonitoringError, run_monitoring
 from aml.screening.evaluate import evaluate, truth_pairs
@@ -1096,6 +1100,8 @@ def _not_yet(phase: int) -> None:
     raise typer.Exit(code=1)
 
 
+app.add_typer(memo_app, name="memo")  # Phase 8d: the commands live in aml.memo.cli
+
 rag_app = typer.Typer(add_completion=False, help="Knowledge layer for the assistant (Phase 8).")
 app.add_typer(rag_app, name="rag")
 
@@ -1147,6 +1153,112 @@ def rag_status() -> None:
         raise typer.Exit(code=1) from exc
     for line in lines:
         typer.echo(line)
+
+
+@rag_app.command("retrieve")
+def rag_retrieve(
+    question: Annotated[str, typer.Argument(help="The question to retrieve evidence for.")],
+    case_id: Annotated[
+        str | None, typer.Option("--case", help="Case the question is about.")
+    ] = None,
+    mode: Annotated[
+        str, typer.Option(help="graphrag (router picks the retrievers) or vector (chunks only).")
+    ] = "graphrag",
+) -> None:
+    """Show the evidence the assistant would be given for a question (read-only, no answer)."""
+    try:
+        text = rag_cli.retrieve_text(
+            get_settings(), question, case_id=case_id, mode=mode, actor=ACTOR
+        )
+    except RetrievalUnavailableError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    except RetrievalError as exc:  # bad input: empty question, unknown mode or customer
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=2) from exc
+    except CaseError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    except GraphError as exc:  # a server timeout or error of a graph read
+        typer.echo(f"graph query failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except ServiceUnavailableError as exc:
+        typer.echo(f"database not available: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    # bytes, not text: a Windows console code page cannot encode Vietnamese
+    sys.stdout.flush()
+    sys.stdout.buffer.write(text.encode("utf-8"))
+    sys.stdout.buffer.flush()
+
+
+@rag_app.command("eval")
+def rag_eval(
+    golden_only: Annotated[
+        bool, typer.Option("--golden-only", help="Only build and write the golden set.")
+    ] = False,
+    report_only: Annotated[
+        bool, typer.Option("--report-only", help="Only rebuild the report from eval_result.json.")
+    ] = False,
+    limit: Annotated[
+        int | None, typer.Option("--limit", min=1, help="Ask only the first N questions.")
+    ] = None,
+    types: Annotated[
+        list[str] | None, typer.Option("--type", help="Question type to ask (repeatable).")
+    ] = None,
+    modes: Annotated[
+        list[str] | None, typer.Option("--mode", help="Retrieval mode to ask in (repeatable).")
+    ] = None,
+    force: Annotated[
+        bool, typer.Option("--force", help="Ask again even when an answer is stored.")
+    ] = False,
+) -> None:
+    """Evaluate the assistant on the golden set: five deterministic metrics per retrieval mode."""
+    try:
+        eval_cli.check_arguments(types or [], modes or [])
+    except EvalError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=2) from exc
+    if golden_only and report_only:
+        typer.echo("--golden-only cannot be combined with --report-only", err=True)
+        raise typer.Exit(code=2)
+    s = get_settings()
+    err: list[str] = []
+    try:
+        if golden_only:
+            out = eval_cli.golden_lines(s)
+        elif report_only:
+            out = eval_cli.report_lines(s)
+        else:
+            out, err = eval_cli.eval_lines(
+                s,
+                limit=limit,
+                types=types or [],
+                modes=modes or [],
+                force=force,
+                command=_rag_eval_command_line(),
+                actor=ACTOR,
+            )
+    except (GoldenError, EvalError, KnowledgeError, LLMError) as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    except OllamaUnavailableError as exc:
+        typer.echo(f"ollama not available: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except ServiceUnavailableError as exc:
+        typer.echo(f"neo4j not available: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    for line in out:
+        typer.echo(line)
+    for line in err:  # only SIDE EFFECTS: a decision table changed during a read-only run
+        typer.echo(line, err=True)
+    if err:
+        raise typer.Exit(code=1)
+
+
+def _rag_eval_command_line() -> str:
+    """The command as the user typed it, for the provenance block of the result file."""
+    typed = sys.argv[1:3] == ["rag", "eval"]
+    return " ".join(["aml", *sys.argv[1:]]) if typed else "aml rag eval"
 
 
 for _name, _phase in {

@@ -200,6 +200,33 @@ assistant:                   # Phase 8 local assistant; Ollama only, no hosted p
     dir: docs/knowledge
     chunk_max_chars: 1200    # >= 200
   vector_procedures: [db.index.vector.queryNodes]   # allow-list for vector queries, apart from neo4j.read_procedures
+  retrieval:                 # Phase 8b retrievers; the caps follow the measured 4096-token window
+    hops: 2                  # 1..3; 1 = accounts, 2 = + transfers and shared attributes, 3 = + counterparty owners
+    max_transfers: 8         # 1..200; transfers listed for a case (evidence first, then by amount)
+    max_shared: 5            # 0..50; "shares a device / phone / address" facts
+    include_memos: true      # read transactions.memo from the system of record (always wrapped as untrusted)
+    max_untrusted_chars: 300 # 20..2000; cut for memo / alert reason / names
+    max_chunk_chars: 1200    # 200..8000; cut for a knowledge chunk
+    top_k: 3                 # 1..20; chunks returned by the vector search
+    min_score: 0.0           # 0..1; chunks below this similarity are dropped (0 = no cut until 8e measures it)
+    max_linked_per_chunk: 3  # 0..20; knowledge nodes fetched per chunk in graph expansion
+    max_typology_chunks: 1   # 0..10; extra chunks per typology the case matches
+    max_context_chars: 4500  # 500..100000; ceiling of the rendered evidence that retrieve() returns
+  text2cypher:               # Phase 8b generated Cypher; every limit is enforced in code after generation
+    enabled: true
+    max_rows: 10             # 1..200; LIMIT forced on every generated query
+    timeout_seconds: 10      # > 0; server-side timeout of a generated query
+    max_path_length: 3       # 1..5; upper bound of a variable-length pattern
+    max_query_chars: 2000    # 100..10000
+    max_attempts: 2          # 1..3; generations per question (a rejected query is regenerated)
+
+memo:                        # Phase 8d memo classification with the local LLM (aml memo); labels are ranking features only
+  max_chars: 200             # 20..1000; a normalised memo is cut at this many characters
+  max_retries: 1             # 0..3; extra calls when the model's reply is not a valid category
+  max_llm_keys: 500          # >= 1; more memo keys than this need the LLM -> error, never a silent cut
+  features: auto             # auto | off; auto = training adds the memo columns once every memo has a label
+  results_dir: results/phase8   # memo_features.json (aml memo compare), memo_eval.json (aml memo eval)
+  gold_path: docs/eval/memo_gold_v1.csv   # gold set of aml memo eval (synthetic, labelled by the project team)
 
 bench:                       # Phase 6c trace benchmark (aml bench); measures the state a backend is in
   hops: [2, 4, 6]            # increasing, each 1..trace.max_hops
@@ -209,3 +236,9 @@ bench:                       # Phase 6c trace benchmark (aml bench); measures th
   accounts: []               # empty -> the account(s) with most time-ordered 2-hop paths in max(hours)
   top_accounts: 1            # how many accounts pick_accounts chooses; 1..10
   results_dir: results/phase6   # bench_<profile>_<backend>.json, bench_report.md, bench_chart.svg
+
+rag_eval:                    # Phase 8e assistant evaluation (aml rag eval); scoring is deterministic, no LLM judge
+  questions: {fact: 8, multi_hop: 8, typology: 6, unanswerable: 4, injection: 4}   # per type, each >= 0, total >= 1
+  english_per_type: 1        # >= 0; the last N questions of each type are asked in English
+  modes: [vector, graphrag]  # retrieval modes compared; also the column order of the report
+  results_dir: results/phase8   # golden_set.json, eval_answers.jsonl, eval_result.json, eval_report.md, eval_items.csv

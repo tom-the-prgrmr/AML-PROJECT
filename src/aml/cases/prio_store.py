@@ -62,8 +62,13 @@ def insert_model(
     counts: tuple[int, int, int],
     model: TrainedModel,
     actor: str,
+    feature_version: str = FEATURE_VERSION,
 ) -> tuple[int, str]:
-    """Store a trained model under the next ``model_id``; return the id and its version."""
+    """Store a trained model under the next ``model_id``; return the id and its version.
+
+    ``feature_version`` names the feature set the model was trained on (Phase 8d adds a second one:
+    the Phase 7c features plus the memo columns).
+    """
     model_id = 1 + scalar(db, "SELECT COALESCE(MAX(model_id), 0) FROM case_models")
     version = f"prio/{kind}/{model_id}"
     cases, suspicious, false_positive = counts
@@ -71,7 +76,7 @@ def insert_model(
         "model_id": model_id,
         "kind": kind,
         "version": version,
-        "feature_version": FEATURE_VERSION,
+        "feature_version": feature_version,
         "trained_ts": datetime.now(UTC).replace(tzinfo=None),
         "as_of": as_of,
         "seed": seed,

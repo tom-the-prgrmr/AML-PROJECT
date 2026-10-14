@@ -73,6 +73,9 @@ def _blank(cypher: str, *, unquote: bool = False) -> str:
     return "".join(out)
 
 
+blank_literals = _blank  # public name for the Text2Cypher guard (same function, same behaviour)
+
+
 def _blocked(message: str) -> WriteBlockedError:
     return WriteBlockedError(f"{message} is not allowed in a read-only query")
 

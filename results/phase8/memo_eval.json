@@ -1,0 +1,145 @@
+{
+  "version": "memo/v1",
+  "model": "qwen2.5:3b-instruct",
+  "n": 46,
+  "correct": 39,
+  "accuracy": 0.8478,
+  "by_category": {
+    "salary": {
+      "n": 4,
+      "correct": 4,
+      "predicted": 4,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "loan_repayment": {
+      "n": 4,
+      "correct": 4,
+      "predicted": 5,
+      "precision": 0.8,
+      "recall": 1.0
+    },
+    "gambling_like": {
+      "n": 9,
+      "correct": 8,
+      "predicted": 8,
+      "precision": 1.0,
+      "recall": 0.8889
+    },
+    "crypto_like": {
+      "n": 9,
+      "correct": 9,
+      "predicted": 9,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    "suspicious_wording": {
+      "n": 3,
+      "correct": 2,
+      "predicted": 7,
+      "precision": 0.2857,
+      "recall": 0.6667
+    },
+    "other": {
+      "n": 17,
+      "correct": 12,
+      "predicted": 13,
+      "precision": 0.9231,
+      "recall": 0.7059
+    }
+  },
+  "by_source": {
+    "generator": {
+      "n": 28,
+      "correct": 23,
+      "accuracy": 0.8214
+    },
+    "handwritten": {
+      "n": 18,
+      "correct": 16,
+      "accuracy": 0.8889
+    }
+  },
+  "by_method": {
+    "RULE": 0,
+    "LLM": 46,
+    "FALLBACK": 0
+  },
+  "confusion": {
+    "other": {
+      "other": 12,
+      "suspicious_wording": 4,
+      "loan_repayment": 1
+    },
+    "salary": {
+      "salary": 4
+    },
+    "loan_repayment": {
+      "loan_repayment": 4
+    },
+    "gambling_like": {
+      "gambling_like": 8,
+      "suspicious_wording": 1
+    },
+    "crypto_like": {
+      "crypto_like": 9
+    },
+    "suspicious_wording": {
+      "other": 1,
+      "suspicious_wording": 2
+    }
+  },
+  "errors": [
+    {
+      "memo": "Gửi tiền tiết kiệm",
+      "expected": "other",
+      "predicted": "suspicious_wording",
+      "method": "LLM"
+    },
+    {
+      "memo": "Đóng tiền bảo hiểm",
+      "expected": "other",
+      "predicted": "suspicious_wording",
+      "method": "LLM"
+    },
+    {
+      "memo": "Góp tiền quỹ lớp",
+      "expected": "other",
+      "predicted": "suspicious_wording",
+      "method": "LLM"
+    },
+    {
+      "memo": "Hoàn tiền cho bạn",
+      "expected": "other",
+      "predicted": "suspicious_wording",
+      "method": "LLM"
+    },
+    {
+      "memo": "Trả tiền thuê nhà tháng này",
+      "expected": "other",
+      "predicted": "loan_repayment",
+      "method": "LLM"
+    },
+    {
+      "memo": "chung do bong da toi qua",
+      "expected": "gambling_like",
+      "predicted": "suspicious_wording",
+      "method": "LLM"
+    },
+    {
+      "memo": "khong ghi noi dung theo yeu cau",
+      "expected": "suspicious_wording",
+      "predicted": "other",
+      "method": "LLM"
+    }
+  ],
+  "gold": {
+    "path": "docs/eval/memo_gold_v1.csv",
+    "sha256": "31f8d4036666eda8d08b7b30d7f63ffa113966f01529280654f8c4b67907686f",
+    "rows": 46
+  },
+  "meta": {
+    "seed": 42,
+    "command": "aml memo eval"
+  }
+}

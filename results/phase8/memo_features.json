@@ -1,0 +1,164 @@
+{
+  "memo": {
+    "version": "memo/v1",
+    "model": "qwen2.5:3b-instruct",
+    "keys": 66,
+    "labels_rev": 0,
+    "by_method": {
+      "RULE": 27,
+      "LLM": 39,
+      "HUMAN": 0,
+      "FALLBACK": 0
+    },
+    "by_category": {
+      "salary": 1,
+      "loan_repayment": 2,
+      "gambling_like": 6,
+      "crypto_like": 6,
+      "suspicious_wording": 31,
+      "other": 20
+    }
+  },
+  "data": {
+    "cases": 234,
+    "suspicious": 200,
+    "false_positive": 34,
+    "cases_with_memo": 97,
+    "nonzero": {
+      "memo_txns": 97,
+      "memo_salary": 0,
+      "memo_loan_repayment": 45,
+      "memo_gambling_like": 31,
+      "memo_crypto_like": 26,
+      "memo_suspicious_wording": 3
+    }
+  },
+  "base": {
+    "features": 35,
+    "cv": {
+      "n": 234,
+      "n_suspicious": 200,
+      "n_false_positive": 34,
+      "prevalence": 0.8547,
+      "roc_auc": 0.9599,
+      "pr_auc": 0.9865,
+      "precision_at": {
+        "0.1": 0.9583,
+        "0.2": 0.9787,
+        "0.5": 0.9915
+      },
+      "recall_at": {
+        "0.1": 0.115,
+        "0.2": 0.23,
+        "0.5": 0.58
+      },
+      "tail_false_positive_share": {
+        "0.1": 0.6765,
+        "0.2": 0.9118,
+        "0.5": 0.9706
+      },
+      "tail_suspicious": {
+        "0.1": 1,
+        "0.2": 16,
+        "0.5": 84
+      }
+    },
+    "holdout": {
+      "n": 101,
+      "n_suspicious": 91,
+      "n_false_positive": 10,
+      "prevalence": 0.901,
+      "roc_auc": 0.9868,
+      "pr_auc": 0.9985,
+      "precision_at": {
+        "0.1": 1.0,
+        "0.2": 1.0,
+        "0.5": 1.0
+      },
+      "recall_at": {
+        "0.1": 0.1209,
+        "0.2": 0.2308,
+        "0.5": 0.5604
+      },
+      "tail_false_positive_share": {
+        "0.1": 0.8,
+        "0.2": 1.0,
+        "0.5": 1.0
+      },
+      "tail_suspicious": {
+        "0.1": 3,
+        "0.2": 11,
+        "0.5": 41
+      },
+      "excluded_trained": 0
+    }
+  },
+  "with_memo": {
+    "features": 41,
+    "dropped_features": [],
+    "cv": {
+      "n": 234,
+      "n_suspicious": 200,
+      "n_false_positive": 34,
+      "prevalence": 0.8547,
+      "roc_auc": 0.9579,
+      "pr_auc": 0.9788,
+      "precision_at": {
+        "0.1": 0.9583,
+        "0.2": 0.9787,
+        "0.5": 0.9915
+      },
+      "recall_at": {
+        "0.1": 0.115,
+        "0.2": 0.23,
+        "0.5": 0.58
+      },
+      "tail_false_positive_share": {
+        "0.1": 0.6765,
+        "0.2": 0.9118,
+        "0.5": 0.9706
+      },
+      "tail_suspicious": {
+        "0.1": 1,
+        "0.2": 16,
+        "0.5": 84
+      }
+    },
+    "holdout": {
+      "n": 101,
+      "n_suspicious": 91,
+      "n_false_positive": 10,
+      "prevalence": 0.901,
+      "roc_auc": 0.9868,
+      "pr_auc": 0.9985,
+      "precision_at": {
+        "0.1": 1.0,
+        "0.2": 1.0,
+        "0.5": 1.0
+      },
+      "recall_at": {
+        "0.1": 0.1209,
+        "0.2": 0.2308,
+        "0.5": 0.5604
+      },
+      "tail_false_positive_share": {
+        "0.1": 0.8,
+        "0.2": 1.0,
+        "0.5": 1.0
+      },
+      "tail_suspicious": {
+        "0.1": 3,
+        "0.2": 11,
+        "0.5": 41
+      },
+      "excluded_trained": 0
+    }
+  },
+  "delta": {
+    "cv_roc_auc": -0.002,
+    "cv_pr_auc": -0.0077,
+    "holdout_roc_auc": 0.0,
+    "holdout_pr_auc": 0.0
+  },
+  "population": "alerted cases only; below-the-line customers are not sampled (Phase 7b)"
+}
