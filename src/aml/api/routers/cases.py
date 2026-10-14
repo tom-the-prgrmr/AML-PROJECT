@@ -10,11 +10,11 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 from aml.api import envelope
 from aml.api.constants import API_PREFIX
-from aml.api.decisions import audit_pii_view, record_case_decision
+from aml.api.decisions import audit_pii_view, pii_viewed, record_case_decision
 from aml.api.deps import current_user, get_app_settings, get_database
-from aml.api.errors import ApiError
 from aml.api.identity import User
-from aml.api.reads.cases import case_subjects, list_cases
+from aml.api.paging import check_offset, resolve_limit
+from aml.api.reads.cases import case_detail, case_subjects, case_transactions, list_cases
 from aml.cases.dispositions import DISPOSITIONS
 from aml.common.config import Settings
 from aml.common.db import Database
@@ -55,13 +55,45 @@ def get_cases(
     limit: Annotated[int | None, Query()] = None,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> JSONResponse:
-    limit = settings.ui.page_size if limit is None else limit
-    if not 1 <= limit <= settings.ui.max_page_size:
-        raise ApiError(
-            422, "invalid_request", f"limit must be between 1 and {settings.ui.max_page_size}"
-        )
+    limit = resolve_limit(settings, limit)
+    check_offset(offset)
     rows, meta = list_cases(db, status=status, limit=limit, offset=offset)
     return envelope.live(FEATURE, rows, **meta)
+
+
+@router.get("/{case_id}")
+def get_case(
+    case_id: str,
+    db: Annotated[Database, Depends(get_database)],
+    _user: Annotated[User, Depends(current_user)],
+) -> JSONResponse:
+    return envelope.live(FEATURE, case_detail(db, case_id))
+
+
+@router.get("/{case_id}/transactions")
+def get_transactions(
+    case_id: str,
+    settings: Annotated[Settings, Depends(get_app_settings)],
+    db: Annotated[Database, Depends(get_database)],
+    user: Annotated[User, Depends(current_user)],
+    limit: Annotated[int | None, Query()] = None,
+    offset: Annotated[int, Query()] = 0,
+) -> JSONResponse:
+    limit = resolve_limit(settings, limit)
+    check_offset(offset)
+    rows, total = case_transactions(
+        db, case_id, masked=user.pii == "masked", limit=limit, offset=offset
+    )
+    if user.pii == "full" and rows:
+        pii_viewed(
+            db,
+            user,
+            entity_type="case",
+            entity_id=case_id,
+            what=f"transaction data of case {case_id}",
+            details={"transactions": len(rows)},
+        )
+    return envelope.live(FEATURE, rows, pii=user.pii, total=total, limit=limit, offset=offset)
 
 
 @router.get("/{case_id}/subjects")

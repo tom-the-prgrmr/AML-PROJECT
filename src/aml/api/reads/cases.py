@@ -11,18 +11,14 @@ from typing import Any
 import pandas as pd
 
 from aml.api.errors import ApiError
+from aml.api.values import in_filter, iso_date, iso_seconds, lower_columns, plain
 from aml.cases.runner import CaseError
-from aml.cases.values import iso_date, lower_columns, plain
 from aml.cases.view import load_case
 from aml.common.db import Database
+from aml.dba.masking import mask_name
 
 COUNTS = ("alerts", "rule_alerts", "network_alerts", "screening_alerts")
 TIMES = ("window_start", "first_alert_ts", "last_alert_ts")
-
-
-def _iso_seconds(value: Any) -> str | None:
-    number = plain(value)
-    return None if number is None else pd.Timestamp(number).strftime("%Y-%m-%dT%H:%M:%S")
 
 
 def translate_case_error(exc: CaseError) -> Exception:
@@ -67,7 +63,7 @@ def _case(row: pd.Series) -> dict[str, Any]:
         "status": row["status"],
         **{name: int(row[name]) for name in COUNTS},
         "sources": str(row["sources"]).split("+"),
-        **{name: _iso_seconds(row[name]) for name in TIMES},
+        **{name: iso_seconds(row[name]) for name in TIMES},
         "reason": row["reason"],
         "disposition": disposition,
     }
@@ -95,6 +91,87 @@ def list_cases(
     meta["total"] = len(df)
     page = df.iloc[offset : offset + limit]
     return [_case(row) for _, row in page.iterrows()], meta
+
+
+def _alert(alert: Any) -> dict[str, Any]:
+    return {
+        "item_key": alert.item_key,
+        "source": alert.source,
+        "rule_id": alert.rule_id,
+        "alert_ref": alert.alert_ref,
+        "cif": alert.cif,
+        "event_ts": iso_seconds(alert.event_ts),
+        "end_ts": iso_seconds(alert.end_ts),
+        "amount_vnd": alert.amount_vnd,
+        "reason": alert.reason,
+    }
+
+
+def case_detail(db: Database, case_id: str) -> dict[str, Any]:
+    """One case without subjects and score; identical for every role (nothing here is PII)."""
+    try:
+        view = load_case(db, case_id, masked=True, scored=False)
+    except CaseError as exc:
+        raise translate_case_error(exc) from exc
+    decision = view.disposition
+    disposition = (
+        None
+        if decision is None
+        else {
+            "disposition_id": decision.disposition_id,
+            "disposition": decision.disposition,
+            "reason": decision.reason,
+            "actor": decision.actor,
+            "origin": decision.origin,
+            "decided_on": iso_date(decision.decided_on),
+            "run_id": decision.run_id,
+        }
+    )
+    return {
+        "case_id": view.case_id,
+        "run_id": view.run_id,
+        "golden_customer_id": view.golden_customer_id,
+        "status": view.status,
+        "window_start": iso_seconds(view.window_start),
+        "first_alert_ts": iso_seconds(view.first_alert_ts),
+        "last_alert_ts": iso_seconds(view.last_alert_ts),
+        "reason": view.reason,
+        "alerts": [_alert(a) for a in view.alerts],
+        "enrichment": view.enrichment,
+        "disposition": disposition,
+    }
+
+
+def case_transactions(
+    db: Database, case_id: str, *, masked: bool, limit: int, offset: int
+) -> tuple[list[dict[str, Any]], int]:
+    """Transactions behind the case's alerts, one row per transaction; returns ``(page, total)``."""
+    try:
+        load_case(db, case_id, masked=True, scored=False)
+    except CaseError as exc:
+        raise translate_case_error(exc) from exc
+    text = db.sql_file("api/case_transactions.sql").read_text(encoding="utf-8")
+    one_case = in_filter("ca.case_id", [case_id])  # only this case's evidence leaves the database
+    df = lower_columns(db.query_df(f"{text.strip().rstrip(';')} AND {one_case}"))
+    rows: list[dict[str, Any]] = []
+    for txn_id, group in df.groupby("txn_id", sort=False):
+        first = group.iloc[0]
+        name = plain(first["counterparty_name"])
+        rows.append(
+            {
+                "txn_id": txn_id,
+                "txn_ts": iso_seconds(first["txn_ts"]),
+                "from_account_id": plain(first["from_account_id"]),
+                "to_account_id": plain(first["to_account_id"]),
+                "amount_vnd": plain(first["amount_vnd"]),
+                "channel": plain(first["channel"]),
+                "memo": plain(first["memo"]),
+                "counterparty_name": mask_name(name) if masked else name,
+                "item_keys": sorted(set(group["item_key"])),
+            }
+        )
+    rows.sort(key=lambda r: (r["txn_ts"], r["txn_id"]))
+    return rows[offset : offset + limit], len(rows)
 
 
 def _plain_subject(row: dict[str, Any]) -> dict[str, Any]:

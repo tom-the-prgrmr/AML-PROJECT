@@ -1,0 +1,10 @@
+.case-header dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0 0 8px; }
+.case-header dt { font-weight: 600; }
+.case-header dd { margin: 0; }
+.enrich-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.enrich-block { border: 1px solid #d9e2ec; border-radius: 6px; padding: 8px 12px; }
+.enrich-block h3 { margin: 0 0 8px; font-size: 1rem; }
+.enrich-block dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; }
+.enrich-block dl > div { display: contents; }
+.enrich-block dd { margin: 0; }
+.memo-cell { white-space: pre-wrap; word-break: break-word; max-width: 360px; }

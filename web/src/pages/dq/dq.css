@@ -1,0 +1,59 @@
+.dq-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin: 0 0 1rem;
+}
+
+.dq-ids {
+  font-family: monospace;
+  font-size: 0.85em;
+}
+
+.dq-delta-up {
+  color: #b42318;
+}
+
+.dq-delta-down {
+  color: #1a7f37;
+}
+
+.dq-trend {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 56px;
+}
+
+.dq-bar {
+  position: relative;
+  flex: 0 0 22px;
+  min-height: 2px;
+  background: #b42318;
+}
+
+.dq-bar.pass {
+  background: #1a7f37;
+}
+
+.dq-bar-label {
+  position: absolute;
+  top: -1.1em;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.7em;
+}
+
+.dq-bar-run {
+  position: absolute;
+  bottom: -1.2em;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.7em;
+}
+
+.dq-trend-box {
+  padding: 1.4em 0 1.4em;
+}

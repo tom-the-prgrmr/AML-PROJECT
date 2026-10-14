@@ -13,6 +13,23 @@ from aml.common.config import Settings
 from aml.common.db import Database
 
 
+def pii_viewed(
+    db: Database, user: User, *, entity_type: str, entity_id: str, what: str, details: dict
+) -> None:
+    """One ``PII_VIEWED`` row for any response that carried unmasked data (``what`` names it)."""
+    audit(
+        db,
+        module="ui",
+        entity_type=entity_type,
+        entity_id=entity_id,
+        decision="PII_VIEWED",
+        reason=f"unmasked {what} shown to {user.actor} (role {user.role})",
+        version=API_VERSION,
+        actor=user.actor,
+        details=details,
+    )
+
+
 def record_case_decision(
     db: Database, settings: Settings, user: User, case_id: str, disposition: str, reason: str
 ) -> int:

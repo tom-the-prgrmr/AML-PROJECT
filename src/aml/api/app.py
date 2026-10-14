@@ -6,7 +6,7 @@ from fastapi import FastAPI
 
 from aml.api.constants import API_PREFIX, API_VERSION
 from aml.api.errors import install_error_handlers
-from aml.api.routers import cases, sample, system
+from aml.api.routers import benchmark, cases, dq, graph, sample, screening, system, trace
 from aml.common.config import Settings, get_settings
 from aml.common.db import Database
 
@@ -23,7 +23,16 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None) 
     app.state.settings = settings or get_settings()
     app.state.db = db
     install_error_handlers(app)
-    for router in (system.router, cases.router, sample.router):
+    for router in (
+        system.router,
+        cases.router,
+        graph.router,
+        trace.router,
+        screening.router,
+        dq.router,
+        benchmark.router,
+        sample.router,
+    ):
         # Not include_router: newer FastAPI wraps an included router in a lazy node, and the
         # routes must be plain top-level entries with their full /api/v1 paths.
         app.router.routes.extend(router.routes)

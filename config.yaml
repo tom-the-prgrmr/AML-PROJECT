@@ -197,5 +197,6 @@ ui:                          # Phase 9a investigator UI (aml ui); FastAPI serves
   default_user: analyst01    # actor of a request without X-AML-User; null = the header is required
   page_size: 50              # default page size of list endpoints; 1..max_page_size
   max_page_size: 200
+  graph_max_counterparties: 50   # most counterparties (by total VND) drawn in a case graph; 1..500
   mock:                      # one flag per sample-data feature; true = the endpoint returns a labelled fixture
     sample: true

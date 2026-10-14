@@ -1,0 +1,5 @@
+.screening-why { max-width: 360px; white-space: normal; }
+.screening-review { display: grid; gap: 4px; min-width: 220px; }
+.screening-note { font-size: 0.85rem; }
+.screening-filter button { margin-right: 6px; }
+.screening-filter button[aria-pressed="true"] { font-weight: 700; }

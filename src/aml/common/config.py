@@ -515,6 +515,7 @@ class UiConfig(BaseModel):
     )  # actor when a request has no X-AML-User header; None = header required
     page_size: int  # default page size of list endpoints
     max_page_size: int
+    graph_max_counterparties: int  # counterparties drawn in the case graph
     mock: MockConfig
 
     @model_validator(mode="after")
@@ -527,6 +528,8 @@ class UiConfig(BaseModel):
             raise ValueError("ui default_user must be one of ui users")
         if not 1 <= self.page_size <= self.max_page_size:
             raise ValueError("ui page_size must be between 1 and max_page_size")
+        if not 1 <= self.graph_max_counterparties <= 500:
+            raise ValueError("ui graph_max_counterparties must be between 1 and 500")
         return self
 
 

@@ -1,0 +1,24 @@
+.trace-method {
+  display: block;
+  margin: 0.25rem 0;
+}
+
+.trace-method.disabled {
+  opacity: 0.6;
+}
+
+.trace-reason {
+  margin-left: 1.5rem;
+}
+
+.trace-summary {
+  margin: 0.75rem 0 0.25rem;
+}
+
+.trace-row {
+  cursor: pointer;
+}
+
+.trace-row.cycle td {
+  font-weight: 600;
+}

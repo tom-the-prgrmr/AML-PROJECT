@@ -1,0 +1,33 @@
+.bench-block {
+  margin-bottom: 1.5rem;
+}
+
+.bench-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.15rem 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.bench-meta dt {
+  font-weight: 600;
+}
+
+.bench-meta dd {
+  margin: 0;
+}
+
+.bench-warning {
+  border-left: 4px solid #b54708;
+  padding: 0.4rem 0.75rem;
+  margin: 0.75rem 0;
+  background: #fffaeb;
+}
+
+.bench-notes {
+  font-size: 0.9em;
+}
+
+.num {
+  text-align: right;
+}
