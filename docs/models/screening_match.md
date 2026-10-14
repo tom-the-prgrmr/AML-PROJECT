@@ -7,7 +7,7 @@
 | Model | screening_match |
 | Version | scrml/logreg/1 |
 | Kind | logreg |
-| Trained | 2026-10-14T12:20:33Z |
+| Trained | 2026-10-14T12:38:11Z |
 | Seed | 42 |
 | Data hash | edec89b3a6579ce6 |
 | Feature set | screening-ml-features/v1 (19 features) |

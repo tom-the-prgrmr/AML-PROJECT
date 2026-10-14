@@ -7,7 +7,7 @@
 | Model | prioritization |
 | Version | prio/logreg+btl/5 |
 | Kind | logreg |
-| Trained | 2026-10-14T12:21:58Z |
+| Trained | 2026-10-14T12:39:27Z |
 | Seed | 42 |
 | Data hash | 50f693c56dabbf50 |
 | Feature set | features/v1+memo/v1 (41 features) |

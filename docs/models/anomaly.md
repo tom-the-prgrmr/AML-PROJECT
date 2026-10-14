@@ -7,7 +7,7 @@
 | Model | anomaly |
 | Version | anomaly/v1/1 |
 | Kind | isolation_forest |
-| Trained | 2026-10-14T12:20:29Z |
+| Trained | 2026-10-14T12:38:07Z |
 | Seed | 42 |
 | Data hash | 9923d5cc70b485ff |
 | Feature set | anomaly/v1 (14 features) |
