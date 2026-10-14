@@ -3,6 +3,9 @@ import { useParams } from "react-router-dom";
 import ApiPanel from "../components/ApiPanel";
 import type { CaseDetail } from "../api/types";
 import { CaseHighlightContext } from "./caseHighlight";
+import AssistantPanel from "./case/AssistantPanel";
+import CaseScorePanel from "./case/CaseScorePanel";
+import CaseSummaryPanel from "./case/CaseSummaryPanel";
 import CaseEnrichment from "./case/CaseEnrichment";
 import CaseEvidence from "./case/CaseEvidence";
 import CaseGraphPanel from "./case/CaseGraphPanel";
@@ -10,40 +13,29 @@ import CaseHeader from "./case/CaseHeader";
 import DispositionForm from "./case/DispositionForm";
 import TracePanel from "./case/TracePanel";
 
-interface Props {
-  scoreSlot?: ReactNode;
-  summarySlot?: ReactNode;
-  assistantSlot?: ReactNode;
-}
-
 interface SlotProps {
   testId: string;
   title: string;
   children?: ReactNode;
 }
 
-/** An empty titled frame; the content comes from another spec through the page props. */
+/** A titled frame for one panel of the case page. */
 function Slot({ testId, title, children }: SlotProps) {
   return (
     <div className="slot" data-testid={testId}>
       <h3>{title}</h3>
-      {children ?? <span className="empty-slot">Chưa có nội dung</span>}
+      {children}
     </div>
   );
 }
 
 /** Keyed by case id: going to another case starts from a clean page (no highlight, no trace). */
-export default function CaseDetailPage(props: Props) {
+export default function CaseDetailPage() {
   const { caseId = "" } = useParams();
-  return <CaseDetailBody key={caseId} caseId={caseId} {...props} />;
+  return <CaseDetailBody key={caseId} caseId={caseId} />;
 }
 
-function CaseDetailBody({
-  caseId,
-  scoreSlot,
-  summarySlot,
-  assistantSlot,
-}: Props & { caseId: string }) {
+function CaseDetailBody({ caseId }: { caseId: string }) {
   const [highlightIds, setHighlightIds] = useState<string[]>([]);
   const setHighlight = useCallback((ids: string[]) => setHighlightIds(ids), []);
   const clearHighlight = useCallback(() => setHighlightIds([]), []);
@@ -59,10 +51,10 @@ function CaseDetailBody({
           <div>
             <CaseHeader detail={detail} />
             <Slot testId="slot-case-score" title="Điểm ưu tiên">
-              {scoreSlot}
+              <CaseScorePanel caseId={detail.case_id} />
             </Slot>
             <Slot testId="slot-case-summary" title="Tóm tắt case">
-              {summarySlot}
+              <CaseSummaryPanel caseId={detail.case_id} />
             </Slot>
             <CaseEnrichment detail={detail} />
             <CaseEvidence detail={detail} />
@@ -70,7 +62,7 @@ function CaseDetailBody({
             <div className="two-col">
               <CaseGraphPanel caseId={detail.case_id} />
               <Slot testId="slot-assistant" title="Trợ lý điều tra">
-                {assistantSlot}
+                <AssistantPanel caseId={detail.case_id} />
               </Slot>
             </div>
             <TracePanel accounts={detail.enrichment.linked_cifs.accounts} />

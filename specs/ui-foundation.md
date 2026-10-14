@@ -171,7 +171,7 @@ def list_cases(
 - **Envelope thành công** (HTTP 2xx): `{"source": "live" | "mock", "feature": "<tên tính năng>", "data": <object |
   array>, "meta": {}}` — bốn khoá luôn có mặt. Response mock có thêm `meta.mock = {"fixture": "<tên file>", "notice":
   MOCK_NOTICE}`. Header `X-AML-Source` mang cùng giá trị với `source` (dùng cho luồng SSE và file tải về, nơi không có
-  thân JSON). Luồng SSE (thuộc `ui-mock-pages`) mở đầu bằng sự kiện `event: meta` có `data` = `{"source", "feature"}`.
+  thân JSON). Luồng SSE (thuộc `ui-mock-pages`) mở đầu bằng sự kiện `event: meta` có `data` = `{"source", "feature"}`. _(Sửa bởi `ui-mock-pages` S3, 2026-10-14: 9c không dùng SSE; hỏi đáp trả JSON thường)_
 - **Envelope lỗi** (HTTP 4xx / 5xx): `{"error": {"code": "<mã>", "message": "<tiếng Anh>"}}`, không có `source` /
   `data`, không có header `X-AML-Source`. Mã: `missing_user` 401, `unknown_user` 401, `not_found` 404,
   `method_not_allowed` 405, `invalid_request` 422 (mọi lỗi kiểm tra đầu vào), `not_implemented` 501, `unavailable` 503
@@ -189,7 +189,7 @@ def list_cases(
 - **Che PII phía server**: thuộc tính khách hàng chỉ được đọc từ `customers_masked` khi `user.pii == "masked"`. Mức
   đã áp được ghi ở `meta.pii`. Không có tham số request nào bật được bản không che. Mỗi response trả PII không che ghi
   1 dòng audit `PII_VIEWED` (Q3).
-- **Quy ước endpoint quyết định** (mọi `POST` ghi một quyết định của người): thân JSON bắt buộc có `reason` khác
+- **Quy ước endpoint quyết định** (mọi `POST` ghi một quyết định của người): thân JSON bắt buộc có `reason` khác _(Sửa bởi `ui-mock-pages` S2, 2026-10-14: chỉ áp cho `POST` ghi quyết định về case / screening hit; ba `POST` của assistant không bắt buộc `reason`, vẫn từ chối `actor` và vẫn ghi audit)_
   rỗng sau khi bỏ khoảng trắng; **không nhận** trường `actor` (trường lạ → 422) — actor luôn là `User.actor` của
   request; kết quả là ít nhất 1 dòng `audit_log` có `actor` đó và `reason` đó, ghi qua `aml.common.audit.audit()`
   (trực tiếp, hoặc do hàm nghiệp vụ được gọi tự ghi — không ghi hai lần); trả 201; lỗi thì không ghi gì.
@@ -270,10 +270,10 @@ disposition. Còn lại suy ra từ thiết kế, chưa đo. -->
 <!-- Không có test tự động (Q9). Người dùng tự kiểm khi demo, sau `make ui` (hoặc `.\tasks.ps1 ui`) trên dữ liệu đã
 `aml cases build`, cấu hình mặc định. Mỗi dòng: thao tác -> kết quả mong đợi. -->
 - M1: Mở `http://127.0.0.1:8000/` -> trình duyệt chuyển sang `/cases`; menu có 6 mục dẫn tới `/cases`, `/screening`, `/data-quality`, `/benchmark`, `/metrics`, `/system`.
-- M2: Ở `/cases` -> bảng liệt kê case của lần chạy mới nhất (mã case, trạng thái, số alert, nguồn, alert cuối), case có alert mới nhất đứng đầu; **không có cột điểm** và **không có nhãn `Dữ liệu mẫu`** ở đâu trên trang.
+- M2: Ở `/cases` -> bảng liệt kê case của lần chạy mới nhất (mã case, trạng thái, số alert, nguồn, alert cuối), case có alert mới nhất đứng đầu; **không có cột điểm** và **không có nhãn `Dữ liệu mẫu`** ở đâu trên trang. _(Sửa bởi `ui-mock-pages` S3, 2026-10-14: từ 9c `/cases` có cột điểm ưu tiên)_
 - M3: Mở `/system` -> thấy backend (`duckdb` hoặc `oracle`), danh sách cờ mock, và panel mẫu có 2 dòng `S-001`, `S-002` kèm **đúng một nhãn `Dữ liệu mẫu`** nằm ngay trên panel đó.
 - M4: Dừng server, chạy lại với `AML__UI__MOCK__SAMPLE=false`, mở `/system` -> panel mẫu báo `Chưa có dữ liệu` (kèm mã `not_implemented`), **không hiện `S-001`, `S-002` hay con số nào**, không có nhãn `Dữ liệu mẫu`; phần trạng thái ghi cờ `sample` đang tắt.
-- M5: Mở lần lượt `/screening`, `/data-quality`, `/benchmark`, `/metrics`, `/cases/<một mã case>` -> mỗi trang có tiêu đề và dòng `Chưa triển khai`, không có số liệu nào; trang chi tiết hiện đúng mã case trên URL.
+- M5: Mở lần lượt `/screening`, `/data-quality`, `/benchmark`, `/metrics`, `/cases/<một mã case>` -> mỗi trang có tiêu đề và dòng `Chưa triển khai`, không có số liệu nào; trang chi tiết hiện đúng mã case trên URL. _(Sửa bởi `ui-mock-pages` S3, 2026-10-14: từ 9b / 9c các trang này đã có nội dung; `/metrics` có bốn panel)_
 - M6: Mở `/khong-co-trang-nay` -> trang "không tìm thấy" của SPA (không phải JSON, không phải trang trắng); tải lại (F5) ở `/metrics` vẫn ra trang đó.
 - M7: Header hiện `analyst01` và role `analyst`; chọn `supervisor01` ở ô đổi người dùng -> header đổi thành `supervisor01` / `supervisor`, tải lại trang vẫn giữ lựa chọn.
 - M8: Mở DevTools, tab Network, tải lại `/system` -> request `/api/v1/sample` có response header `X-AML-Source: mock`, request `/api/v1/status` có `X-AML-Source: live`, và mọi request tới `/api/v1/` mang header `X-AML-User` đúng người đang chọn.

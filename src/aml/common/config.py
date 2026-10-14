@@ -676,6 +676,22 @@ class MemoConfig(BaseModel):  # Phase 8d
         return self
 
 
+class MetricsConfig(BaseModel):  # Phase 9c
+    minutes_per_alert: int  # the stated assumption behind every "hours saved" figure
+    sample_size: int  # default size of the below-the-line samples
+    max_sample_size: int
+
+    @model_validator(mode="after")
+    def _in_range(self) -> MetricsConfig:
+        if self.minutes_per_alert < 1:
+            raise ValueError("metrics minutes_per_alert must be >= 1")
+        if self.max_sample_size < 1:
+            raise ValueError("metrics max_sample_size must be >= 1")
+        if not 1 <= self.sample_size <= self.max_sample_size:
+            raise ValueError("metrics sample_size must be between 1 and max_sample_size")
+        return self
+
+
 class MockConfig(BaseModel):
     """One bool per mock feature (``ui.mock.<name>``); ``aml.api.mock`` pairs it with a fixture."""
 
@@ -736,6 +752,7 @@ class Settings(BaseModel):
     bench: BenchConfig
     rag_eval: RagEvalConfig
     ui: UiConfig
+    metrics: MetricsConfig
 
     @model_validator(mode="after")
     def _bench_within_trace(self) -> Settings:

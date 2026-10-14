@@ -5,7 +5,7 @@ import CaseDetailPage from "./pages/CaseDetailPage";
 import CasesPage from "./pages/CasesPage";
 import DataQualityPage from "./pages/DataQualityPage";
 import NotFoundPage from "./pages/NotFoundPage";
-import Placeholder from "./pages/Placeholder";
+import MetricsPage from "./pages/MetricsPage";
 import ScreeningPage from "./pages/ScreeningPage";
 import SystemPage from "./pages/SystemPage";
 
@@ -19,7 +19,7 @@ export default function App() {
         <Route path="/screening" element={<ScreeningPage />} />
         <Route path="/data-quality" element={<DataQualityPage />} />
         <Route path="/benchmark" element={<BenchmarkPage />} />
-        <Route path="/metrics" element={<Placeholder title="Chỉ số" />} />
+        <Route path="/metrics" element={<MetricsPage />} />
         <Route path="/system" element={<SystemPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

@@ -1,0 +1,23 @@
+/* Metrics dashboard. Colours, spacing and type come from the tokens in styles.css. */
+.metrics-unavailable {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+.metrics-note {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.metrics-origins {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: var(--space-4);
+}
+.metrics-origin h4 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-base);
+}
+.metrics-panels > .panel h3 {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: var(--text-base);
+}

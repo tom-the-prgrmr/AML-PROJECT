@@ -287,7 +287,7 @@ Không phải AC, không có test tự động. Người dùng tự kiểm khi d
   `POST /cases/{id}/disposition`; thành công → tải lại case và hiện disposition mới; lỗi 422 hiện thông điệp.
 - [ ] U8. Đổi sang `supervisor01` ở header → tên và số giấy tờ hiện đầy đủ; đổi lại `analyst01` → bản che. Không có
   nút nào ở giao diện bật được bản không che cho analyst.
-- [ ] U9. **Chỗ chừa cho `ui-mock-pages`** (spec đó sở hữu nội dung; spec này chỉ render khung rỗng có tiêu đề): ba
+- [ ] U9. **Chỗ chừa cho `ui-mock-pages`** (spec đó sở hữu nội dung; spec này chỉ render khung rỗng có tiêu đề): ba _(Sửa bởi `ui-mock-pages` S3, 2026-10-14: từ 9c ba slot có nội dung thật)_
   vùng `data-testid="slot-case-score"` (cạnh đầu trang), `slot-case-summary` (trên các panel enrichment),
   `slot-assistant` (cột phải, cạnh đồ thị). `CaseDetailPage` nhận nội dung của ba vùng qua props / children, không
   import gì từ code của `ui-mock-pages`.

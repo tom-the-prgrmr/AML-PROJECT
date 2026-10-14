@@ -647,7 +647,7 @@ Mọi giá trị suy ra bằng tay; chưa chạy. -->
   explainer lấy từ đó; `issues`, `discarded`, `context`, `retrieval`, `transactions_total`, `knowledge` là trường nội bộ,
   không có trong `as_dict()`. Hợp đồng đó đòi `node_ids` của citation giao dịch chỉ gồm tài khoản nội bộ và khác rỗng;
   8c chép mọi trích dẫn `account:` của 8b (có thể gồm tài khoản ngoài, có thể rỗng với giao dịch tiền mặt một đầu) —
-  phần lọc thuộc bộ nối của Phase 9.
+  phần lọc thuộc bộ nối của Phase 9. _(Sửa bởi `ui-mock-pages` S4, 2026-10-14: 9c không lọc tài khoản ngoài khỏi `node_ids`, vì đồ thị 9b có node `external_account` cùng khoá)_
 - Câu hỏi do investigator gõ là đầu vào tin cậy (không lọc), được lưu nguyên văn trong `details` của audit.
 - Prompt hệ thống viết bằng tiếng Anh cho cả hai ngôn ngữ trả lời; yêu cầu mô hình viết ngày dạng `YYYY-MM-DD` và tiền
   dạng `390,000,000 VND`.

@@ -260,3 +260,8 @@ ui:                          # Phase 9a investigator UI (aml ui); FastAPI serves
   graph_max_counterparties: 50   # most counterparties (by total VND) drawn in a case graph; 1..500
   mock:                      # one flag per sample-data feature; true = the endpoint returns a labelled fixture
     sample: true
+
+metrics:                     # Phase 9c dashboard (GET /api/v1/metrics/*); every figure is read from tables or a real run
+  minutes_per_alert: 15      # >= 1; the stated assumption behind "hours saved", always shown next to the figure
+  sample_size: 20            # 1..max_sample_size; default size of the below-the-line samples
+  max_sample_size: 200       # >= 1

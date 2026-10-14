@@ -30,7 +30,14 @@ OTHERS_GET = [
 ]
 REVIEW_URL = f"{V1}/screening/hits/C05/WL2/review"
 REVIEW_BODY = {"decision": "FALSE_MATCH", "reason": "different year of birth"}
-ALLOWED_CASES_NAMES = {"load_case", "record_disposition", "CaseError", "DISPOSITIONS"}
+ALLOWED_CASES_NAMES = {
+    "load_case",
+    "record_disposition",
+    "CaseError",
+    "DISPOSITIONS",
+    "summarize",
+    "NarrativeError",
+}
 
 
 def _call_all(c: Any) -> list[Any]:

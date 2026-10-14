@@ -213,6 +213,7 @@ export const ERROR_CODE_LABELS: Labels = {
   not_found: "Không tìm thấy",
   invalid_request: "Yêu cầu không hợp lệ",
   unavailable: "Dịch vụ chưa sẵn sàng",
+  model_error: "Mô hình trả kết quả không dùng được",
   not_implemented: "Tính năng chưa có bản thật",
   unknown_user: "Người dùng không tồn tại",
   missing_user: "Thiếu thông tin người dùng",
@@ -273,3 +274,126 @@ export const BACKEND_LABELS: Labels = {
 export const graphEdgeTypeLabel = lookup(GRAPH_EDGE_TYPE_LABELS);
 export const graphSourceLabel = lookup(GRAPH_SOURCE_LABELS);
 export const backendLabel = lookup(BACKEND_LABELS);
+
+// --- Priority scores, summary, assistant and metrics (specs/ui-mock-pages.md) ---
+/** The 35 case features of `src/aml/cases/features.py::FEATURES`, shown in `top_features`. */
+export const FEATURE_LABELS: Labels = {
+  alerts: "Số cảnh báo",
+  rule_alerts: "Số cảnh báo luật giao dịch",
+  network_alerts: "Số cảnh báo mạng lưới",
+  screening_alerts: "Số cảnh báo sàng lọc",
+  distinct_rules: "Số luật khác nhau",
+  has_structuring: "Có chia nhỏ giao dịch",
+  has_rapid_movement: "Có chuyển tiền nhanh",
+  has_high_velocity: "Có tần suất giao dịch cao",
+  has_fan_in: "Có nhiều nguồn dồn về một tài khoản",
+  has_fan_out: "Có một tài khoản chia ra nhiều nơi",
+  has_dormant_reactivation: "Có tài khoản ngủ đông hoạt động lại",
+  has_net_shared_attribute: "Có dùng chung thông tin định danh",
+  has_net_cycle: "Có dòng tiền quay vòng",
+  has_net_hub: "Có tài khoản trung tâm",
+  has_screening_alert: "Có cảnh báo sàng lọc",
+  has_screening_review: "Có sàng lọc cần rà soát",
+  has_sanctions_hit: "Có khớp danh sách trừng phạt",
+  max_screening_score: "Điểm sàng lọc cao nhất",
+  alert_amount_log: "Giá trị cảnh báo (log)",
+  kyc_risk_level: "Mức rủi ro KYC",
+  cifs: "Số mã khách hàng",
+  accounts: "Số tài khoản",
+  dq_issues: "Số lỗi chất lượng dữ liệu",
+  txn_count: "Số giao dịch",
+  in_vnd_log: "Tiền vào (log)",
+  out_vnd_log: "Tiền ra (log)",
+  cash_share: "Tỷ trọng tiền mặt",
+  counterparties: "Số đối tác",
+  pass_through: "Tỷ lệ tiền đi qua",
+  in_degree: "Bậc vào",
+  out_degree: "Bậc ra",
+  pagerank_ratio: "Tỷ lệ PageRank",
+  shared_cluster_size: "Số khách hàng trong cụm",
+  prior_cases: "Số case trước đó",
+  prior_false_positives: "Số báo động giả trước đó",
+};
+/** `Stage.tool` of the metrics funnel. */
+export const STAGE_LABELS: Labels = {
+  screening_tuning: "Tinh chỉnh sàng lọc",
+  suppression: "Loại trừ (good-guy, ngủ đông)",
+  consolidation: "Gộp thành case",
+};
+/** `part` of an `unavailable` row of the metrics endpoints. */
+export const METRIC_PART_LABELS: Labels = {
+  screening_tuning: "Tinh chỉnh sàng lọc",
+  suppression: "Loại trừ",
+  consolidation: "Gộp thành case",
+  network: "Phân tích mạng lưới",
+  screening: "Sàng lọc danh sách",
+};
+export const RATING_LABELS: Labels = {
+  up: "Hữu ích",
+  down: "Chưa đúng",
+};
+/** `meta.knowledge` of the narrative and typology endpoints. */
+export const KNOWLEDGE_LABELS: Labels = {
+  ok: "Có tài liệu tham chiếu",
+  unavailable: "Không tra được tài liệu tham chiếu",
+};
+export const CITATION_KIND_LABELS: Labels = {
+  node: "Nút đồ thị",
+  transaction: "Giao dịch",
+  chunk: "Đoạn tài liệu",
+  alert: "Cảnh báo",
+};
+export const ANSWER_STATUS_LABELS: Labels = {
+  answered: "Đã trả lời",
+  insufficient_evidence: "Không đủ bằng chứng",
+};
+/** `truth` of the auto-cleared and suppression samples (from ground truth). */
+export const TRUTH_LABELS: Labels = {
+  TRUE_HIT: "Khớp thật",
+  NOT_A_HIT: "Không phải khớp thật",
+  SUSPICIOUS: "Đáng ngờ",
+  NOT_SUSPICIOUS: "Không đáng ngờ",
+};
+export const SUPPRESSION_RULE_LABELS: Labels = {
+  GOOD_GUY: "Danh sách tin cậy (good-guy)",
+  HIBERNATION: "Ngủ đông",
+};
+export const featureLabel = lookup(FEATURE_LABELS);
+export const stageLabel = lookup(STAGE_LABELS);
+export const metricPartLabel = lookup(METRIC_PART_LABELS);
+export const ratingLabel = lookup(RATING_LABELS);
+export const knowledgeLabel = lookup(KNOWLEDGE_LABELS);
+export const citationKindLabel = lookup(CITATION_KIND_LABELS);
+export const answerStatusLabel = lookup(ANSWER_STATUS_LABELS);
+export const truthLabel = lookup(TRUTH_LABELS);
+export const suppressionRuleLabel = lookup(SUPPRESSION_RULE_LABELS);
+
+/** Typology ids of the knowledge base (`aml.assistant.knowledge.model.TYPOLOGY_IDS`). */
+export const TYPOLOGY_LABELS: Labels = {
+  structuring: "Chia nhỏ giao dịch",
+  rapid_movement: "Chuyển tiền nhanh qua tài khoản",
+  mule_ring: "Đường dây tài khoản thuê",
+  round_tripping: "Dòng tiền quay vòng",
+  sanctions_hit: "Trùng danh sách trừng phạt",
+  pep_hit: "Trùng danh sách người có ảnh hưởng chính trị (PEP)",
+};
+export const typologyLabel = lookup(TYPOLOGY_LABELS);
+
+/** The fixed unit labels of a funnel stage (`aml.metrics`), e.g. "fuzzy baseline pairs". */
+export const STAGE_UNIT_LABELS: Labels = {
+  "fuzzy baseline pairs": "Cặp khớp của cách so mờ cơ sở",
+  "two-tier ALERT + REVIEW pairs": "Cặp cảnh báo + rà soát của sàng lọc hai tầng",
+  "alert items": "Mục cảnh báo",
+  "active alert items": "Mục cảnh báo còn hiệu lực",
+  cases: "Case",
+};
+export const stageUnitLabel = lookup(STAGE_UNIT_LABELS);
+
+/** Screening methods compared by `aml.screening.evaluate` (rows of the detections table). */
+export const SCREENING_METHOD_LABELS: Labels = {
+  exact: "So khớp chính xác",
+  fuzzy: "So mờ (một tầng)",
+  two_tier_alert: "Hai tầng, chỉ cảnh báo",
+  two_tier: "Hai tầng, cảnh báo + rà soát",
+};
+export const screeningMethodLabel = lookup(SCREENING_METHOD_LABELS);
