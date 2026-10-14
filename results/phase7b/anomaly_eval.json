@@ -1,0 +1,112 @@
+{
+  "command": "aml anomaly run --eval-out results/phase7b/anomaly_eval.json",
+  "run_id": 1,
+  "model_version": "anomaly/v1/1",
+  "as_of": "2026-06-30",
+  "samples": 27589,
+  "alerts": 138,
+  "alert_top_fraction": 0.005,
+  "threshold": 0.654278,
+  "suspicious": {
+    "scenarios": 60,
+    "flagged_rules": 60,
+    "flagged_anomaly": 28,
+    "new_by_anomaly": 0,
+    "accounts": 335,
+    "accounts_rules": 271,
+    "accounts_anomaly": 130,
+    "accounts_new": 6
+  },
+  "benign": {
+    "scenarios": 10,
+    "flagged_anomaly": 3,
+    "accounts_anomaly": 6
+  },
+  "alerts_by_kind": {
+    "suspicious": 131,
+    "benign": 6,
+    "scenario_other_month": 0,
+    "none": 1
+  },
+  "alerts_on_rule_alerted_customers": 125,
+  "coverage": [
+    {
+      "typology": "structuring",
+      "is_suspicious": true,
+      "scenarios": 20,
+      "flagged_rules": 20,
+      "flagged_anomaly": 8,
+      "flagged_any": 20,
+      "new_by_anomaly": 0,
+      "accounts": 20,
+      "accounts_rules": 20,
+      "accounts_anomaly": 8,
+      "accounts_new": 0
+    },
+    {
+      "typology": "rapid_movement",
+      "is_suspicious": true,
+      "scenarios": 20,
+      "flagged_rules": 20,
+      "flagged_anomaly": 10,
+      "flagged_any": 20,
+      "new_by_anomaly": 0,
+      "accounts": 127,
+      "accounts_rules": 71,
+      "accounts_anomaly": 17,
+      "accounts_new": 6
+    },
+    {
+      "typology": "mule_ring",
+      "is_suspicious": true,
+      "scenarios": 5,
+      "flagged_rules": 5,
+      "flagged_anomaly": 5,
+      "flagged_any": 5,
+      "new_by_anomaly": 0,
+      "accounts": 136,
+      "accounts_rules": 128,
+      "accounts_anomaly": 98,
+      "accounts_new": 0
+    },
+    {
+      "typology": "round_tripping",
+      "is_suspicious": true,
+      "scenarios": 15,
+      "flagged_rules": 15,
+      "flagged_anomaly": 5,
+      "flagged_any": 15,
+      "new_by_anomaly": 0,
+      "accounts": 52,
+      "accounts_rules": 52,
+      "accounts_anomaly": 7,
+      "accounts_new": 0
+    },
+    {
+      "typology": "benign_payroll",
+      "is_suspicious": false,
+      "scenarios": 5,
+      "flagged_rules": 0,
+      "flagged_anomaly": 0,
+      "flagged_any": 0,
+      "new_by_anomaly": 0,
+      "accounts": 127,
+      "accounts_rules": 0,
+      "accounts_anomaly": 0,
+      "accounts_new": 0
+    },
+    {
+      "typology": "benign_merchant",
+      "is_suspicious": false,
+      "scenarios": 5,
+      "flagged_rules": 0,
+      "flagged_anomaly": 3,
+      "flagged_any": 3,
+      "new_by_anomaly": 3,
+      "accounts": 180,
+      "accounts_rules": 0,
+      "accounts_anomaly": 6,
+      "accounts_new": 6
+    }
+  ]
+}

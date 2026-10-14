@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 An interview demo: an AML investigation toolkit that runs on **synthetic data only**. It covers Vietnamese-name screening, entity resolution, transaction monitoring, SQL-vs-graph network analysis, alert consolidation and prioritization, and a local GraphRAG assistant. [PROJECT_BRIEF.md](PROJECT_BRIEF.md) is the full requirements document, and it defines the phases (0–10). Read the section for the current phase before you start work on it. Specs for individual phases sit in [specs/](specs/). They are written in Vietnamese, have frontmatter with `status: approved`, and contain acceptance criteria that tests should implement.
 
-Current state: Phases 0 to 8 are done (through `src/aml/cases/`, `src/aml/memo/` and the GraphRAG assistant in `src/aml/assistant/`: knowledge layer, retrievers, cited answers, evaluation). Phase 7b, 9 and 10 remain; the `ui` command is still a stub in [src/aml/cli.py](src/aml/cli.py) and exits with "arrives in Phase N".
+Current state: Phases 0 to 9 and 7b are done (`src/aml/datagen/` through `src/aml/cases/`, `src/aml/memo/`, the GraphRAG assistant in `src/aml/assistant/`, the FastAPI + React UI in `src/aml/api/` and `web/`, and the Phase 7b ML additions in `src/aml/ml/anomaly/`, `src/aml/screening/ml/`, `src/aml/cases/btl*.py` and `src/aml/governance/`). Phase 10 (documentation and the interview walkthrough) remains.
 
 ## Working rules (from the brief, non-negotiable)
 

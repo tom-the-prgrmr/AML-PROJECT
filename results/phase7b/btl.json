@@ -1,0 +1,1360 @@
+{
+  "sample": {
+    "sample_id": 1,
+    "run_id": 10,
+    "as_of": "2026-06-30",
+    "seed": 42,
+    "requested": 200,
+    "population": 4199,
+    "size": 200,
+    "suspicious": 4,
+    "not_suspicious": 196,
+    "estimated_missed": 84,
+    "prevalence_ci95": [
+      0.0078,
+      0.0503
+    ],
+    "reused": false,
+    "members": [
+      {
+        "golden_customer_id": "G-CIF00000032",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000101",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000135",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000151",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000163",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000188",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000258",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000275",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000293",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000331",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000348",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000369",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000385",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000395",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000400",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000404",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000405",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000407",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000428",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000483",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000514",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000542",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000563",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000573",
+        "label": "SUSPICIOUS",
+        "typologies": [
+          "rapid_movement"
+        ],
+        "reason": "below-the-line sample: not alerted in case run 10, but in a suspicious scenario (rapid_movement)"
+      },
+      {
+        "golden_customer_id": "G-CIF00000578",
+        "label": "SUSPICIOUS",
+        "typologies": [
+          "rapid_movement"
+        ],
+        "reason": "below-the-line sample: not alerted in case run 10, but in a suspicious scenario (rapid_movement)"
+      },
+      {
+        "golden_customer_id": "G-CIF00000625",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000628",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000684",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000696",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000718",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000733",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000739",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000762",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000810",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000852",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000869",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000890",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000903",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00000982",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001011",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001021",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001073",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001087",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001109",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001120",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001240",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001262",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001269",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001293",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001307",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001350",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001393",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001401",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001417",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001473",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001489",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001497",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001553",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001583",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001596",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001601",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001645",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001660",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001661",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001678",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001689",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001769",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001780",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001807",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001866",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001891",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001892",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001906",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001940",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001947",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001968",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00001998",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002002",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002004",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002023",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002024",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002027",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002031",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002032",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002036",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002101",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002121",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002124",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002130",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002153",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002171",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002187",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002188",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002194",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002279",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002287",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002338",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002352",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002358",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002359",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002374",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002380",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002396",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002494",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002515",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002536",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002595",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002599",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002615",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002626",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002631",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002649",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002652",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002658",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002696",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002856",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002915",
+        "label": "SUSPICIOUS",
+        "typologies": [
+          "mule_ring"
+        ],
+        "reason": "below-the-line sample: not alerted in case run 10, but in a suspicious scenario (mule_ring)"
+      },
+      {
+        "golden_customer_id": "G-CIF00002922",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002948",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002972",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00002995",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003009",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003010",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003036",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003106",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003149",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003151",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003166",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003173",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003178",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003192",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003200",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003231",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003235",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003278",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003314",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003320",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003337",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003360",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003373",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003377",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003423",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003472",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003501",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003503",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003515",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003547",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003560",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003577",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003602",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003660",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003668",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003676",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003681",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003682",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003742",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003749",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003759",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003771",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003780",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003807",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003817",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003839",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003849",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003858",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003874",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003910",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003952",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003973",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003982",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003987",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00003992",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004002",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004031",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004038",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004066",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004147",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004164",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004181",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004221",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004262",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004332",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004339",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004399",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004422",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004444",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004510",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004541",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004637",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004648",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004654",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004658",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004776",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004795",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004833",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004868",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004888",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004931",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      },
+      {
+        "golden_customer_id": "G-CIF00004984",
+        "label": "SUSPICIOUS",
+        "typologies": [
+          "rapid_movement"
+        ],
+        "reason": "below-the-line sample: not alerted in case run 10, but in a suspicious scenario (rapid_movement)"
+      },
+      {
+        "golden_customer_id": "G-CIF00004996",
+        "label": "NOT_SUSPICIOUS",
+        "typologies": [],
+        "reason": "below-the-line sample: not alerted in case run 10 and in no suspicious scenario"
+      }
+    ]
+  },
+  "evaluation": {
+    "eval_id": 2,
+    "sample_id": 1,
+    "model_id": 5,
+    "version": "prio/logreg+btl/5",
+    "metrics": {
+      "n": 200,
+      "n_suspicious": 4,
+      "n_false_positive": 196,
+      "prevalence": 0.02,
+      "roc_auc": 0.9962,
+      "pr_auc": 0.8167,
+      "precision_at": {
+        "0.1": 0.2,
+        "0.2": 0.1,
+        "0.5": 0.04
+      },
+      "recall_at": {
+        "0.1": 1.0,
+        "0.2": 1.0,
+        "0.5": 1.0
+      },
+      "tail_false_positive_share": {
+        "0.1": 0.102,
+        "0.2": 0.2041,
+        "0.5": 0.5102
+      },
+      "tail_suspicious": {
+        "0.1": 0,
+        "0.2": 0,
+        "0.5": 0
+      },
+      "population": 4199,
+      "estimated_missed": 84,
+      "prevalence_ci95": [
+        0.0078,
+        0.0503
+      ]
+    }
+  },
+  "model": {
+    "version": "prio/logreg+btl/5",
+    "kind": "logreg",
+    "model_id": 5,
+    "cv": {
+      "n": 483,
+      "n_suspicious": 253,
+      "n_false_positive": 230,
+      "prevalence": 0.5238,
+      "roc_auc": 0.9956,
+      "pr_auc": 0.9956,
+      "precision_at": {
+        "0.1": 1.0,
+        "0.2": 1.0,
+        "0.5": 0.9793
+      },
+      "recall_at": {
+        "0.1": 0.1937,
+        "0.2": 0.3834,
+        "0.5": 0.9368
+      },
+      "tail_false_positive_share": {
+        "0.1": 0.213,
+        "0.2": 0.4217,
+        "0.5": 0.9783
+      },
+      "tail_suspicious": {
+        "0.1": 0,
+        "0.2": 0,
+        "0.5": 17
+      },
+      "by_population": {
+        "alerted": {
+          "n": 283,
+          "n_suspicious": 249,
+          "n_false_positive": 34,
+          "prevalence": 0.8799,
+          "roc_auc": 0.9757,
+          "pr_auc": 0.9963,
+          "precision_at": {
+            "0.1": 1.0,
+            "0.2": 1.0,
+            "0.5": 1.0
+          },
+          "recall_at": {
+            "0.1": 0.1165,
+            "0.2": 0.2289,
+            "0.5": 0.5703
+          },
+          "tail_false_positive_share": {
+            "0.1": 0.7353,
+            "0.2": 0.9706,
+            "0.5": 1.0
+          },
+          "tail_suspicious": {
+            "0.1": 4,
+            "0.2": 24,
+            "0.5": 108
+          }
+        },
+        "below_the_line": {
+          "n": 200,
+          "n_suspicious": 4,
+          "n_false_positive": 196,
+          "prevalence": 0.02,
+          "roc_auc": 0.9943,
+          "pr_auc": 0.7333,
+          "precision_at": {
+            "0.1": 0.2,
+            "0.2": 0.1,
+            "0.5": 0.04
+          },
+          "recall_at": {
+            "0.1": 1.0,
+            "0.2": 1.0,
+            "0.5": 1.0
+          },
+          "tail_false_positive_share": {
+            "0.1": 0.102,
+            "0.2": 0.2041,
+            "0.5": 0.5102
+          },
+          "tail_suspicious": {
+            "0.1": 0,
+            "0.2": 0,
+            "0.5": 0
+          }
+        }
+      }
+    }
+  }
+}
