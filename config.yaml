@@ -180,6 +180,9 @@ cases:                       # Phase 7a alert consolidation into cases (aml case
     top_fractions: [0.1, 0.2, 0.5]   # each in (0, 1]; head / tail shares of the queue for the metrics
     logreg: {c: 1.0, max_iter: 1000}
     lightgbm: {n_estimators: 100, num_leaves: 15, learning_rate: 0.1, min_child_samples: 5}
+    below_the_line:          # Phase 7b-iii: seeded sample of customers with no alert, labelled from ground truth
+      enabled: false         # true: aml score draws the sample and trains the +btl variant instead of the 7c model
+      sample_size: 200       # >= 1; customers per sample (capped by the population)
   summary:                   # Phase 7d case summary (aml cases summary); read-only, nothing stored
     generator: template      # registered NarrativeGenerator; "template" uses no LLM
     language: en             # the template generator is English only
@@ -256,6 +259,9 @@ ml:                          # Phase 7b models (one sub-section per model)
     logreg:
       c: 1.0                 # > 0; inverse regularisation strength
       max_iter: 1000         # >= 1
+  governance:                # Phase 7b-iii model cards (aml models card)
+    cards_dir: docs/models   # relative to the project root
+    models: [prioritization, memo_classifier, anomaly, screening_match]   # card order; no repeats
 
 bench:                       # Phase 6c trace benchmark (aml bench); measures the state a backend is in
   hops: [2, 4, 6]            # increasing, each 1..trace.max_hops

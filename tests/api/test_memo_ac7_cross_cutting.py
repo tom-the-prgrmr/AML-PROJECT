@@ -16,7 +16,8 @@ from .helpers import API_SRC, ROOT, WEB, count
 from .memo_helpers import MEMOS_URL, TXN, api_memo
 from .test_live_ac10_cross_cutting import ALLOWED_CASES_NAMES
 
-BASE_COMMIT = "e71eb63"
+BASE_COMMIT = "e71eb63"  # main before 9d
+MERGE_COMMIT = "aff6d91"  # 9d merged; later phases (7b-iii) edit aml.memo on purpose
 ALLOWED_MEMO_NAMES = {
     "relabel_memo",
     "list_labels",
@@ -120,7 +121,7 @@ def test_ac7_routers_stay_thin(needle: str) -> None:
 
 def test_ac7_memo_package_is_untouched_and_api_free() -> None:
     proc = subprocess.run(
-        ["git", "diff", "--stat", BASE_COMMIT, "--", "src/aml/memo"],
+        ["git", "diff", "--stat", BASE_COMMIT, MERGE_COMMIT, "--", "src/aml/memo"],
         capture_output=True,
         text=True,
         cwd=ROOT,
@@ -141,6 +142,7 @@ def test_ac7_memo_ddl_unchanged() -> None:
             "diff",
             "--stat",
             BASE_COMMIT,
+            MERGE_COMMIT,
             "--",
             "sql/duckdb/ddl/190_memo_analysis.sql",
             "sql/oracle/ddl/190_memo_analysis.sql",

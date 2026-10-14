@@ -344,7 +344,7 @@ def decision_write_violations(
 - **Lưu và audit** (một giao dịch): 1 dòng `btl_samples(sample_id, run_id, as_of, seed, requested, population, size,
   suspicious, not_suspicious, estimated_missed, ci_low, ci_high, version, sampled_ts UTC, actor)`; mỗi thành viên 1 dòng
   `btl_members(sample_id, golden_customer_id, label, typologies JSON, reason)`; audit `module='cases'`, `version='btl/v1'`,
-  `actor = simulated_actor` (vai người kiểm tra mô phỏng, như 7c): mỗi thành viên `entity_type='customer'`,
+  `actor`: dòng `BTL_SAMPLED` và `btl_samples.actor` mang actor của người gọi (mặc định `simulated_actor`), còn mỗi dòng `BTL_LABELLED` luôn mang `simulated_actor` (vai người kiểm tra mô phỏng, như 7c): mỗi thành viên `entity_type='customer'`,
   `entity_id=golden_customer_id`, `decision='BTL_LABELLED'`, `reason` = `reason` của nhãn, `details = {sample_id, run_id,
   label, typologies}`; cộng 1 dòng `entity_type='btl_sample'`, `entity_id=str(sample_id)`, `decision='BTL_SAMPLED'`,
   `reason` = `sampled {size} of {population} customer(s) with no alert in case run {run_id} (seed {seed}): {suspicious} in a suspicious scenario, estimated {estimated_missed} missed (95% CI {ci_low}-{ci_high}); measurement only`,
@@ -480,6 +480,19 @@ trả về, lọc audit theo id / mốc thời gian vừa tạo; dọn dispositi
   `aml cases btl --train --eval-out results/phase7b/btl.json` và `aml models card` trên `small`, chạy thật rồi mới ghi).
 
 ## Tác động lên spec khác
+- **Ghi chú hiện thực (2026-10-14)** — sai lệch có chủ ý so với mục Thiết kế: cột `btl_samples.sample_size` thay cho
+  `size` (`SIZE` là từ khoá Oracle; trường `BtlSample.size` giữ nguyên); `AuditCoverage` thêm trường tuỳ chọn `version`
+  để dòng `monitoring/ALERT` của card anomaly in `ML_ANOMALY/<model_version>`; AC10 so `reason` của thành viên sau khi
+  che số `case run N` (run id Oracle và DuckDB khác nhau); `--size N` ghi đè `below_the_line.sample_size` trong settings
+  nên huấn luyện và đo dùng cùng một mẫu; `--train` in `btl-eval` hai lần (trước và sau huấn luyện, lần đầu `skipped`
+  khi chưa có model); `train_with_btl` không dùng hai cột bất thường của 7b-i (biến thể `+btl` có 35 hoặc 41 feature;
+  `evaluate_btl` gán 0 cho cột bất thường của model có chúng và ghi `anomaly_features: "zeros"`); card không có
+  dòng trống sau tiêu đề `##`; nhãn quần thể trong card ưu tiên: `cross-validation`, `cross-validation (alerted)`,
+  `cross-validation (below_the_line)`, `holdout`, `below-the-line`. Test cũ đã cập nhật:
+  `tests/cases/test_summary_unit.py::test_ac1_no_new_schema_script` (thêm `220`),
+  `tests/cases/test_prio_review_fixes.py` (`POPULATION` = `alerted cases only; below-the-line sample: run `aml cases
+  btl` (Phase 7b)`), `tests/api/test_memo_ac7_cross_cutting.py` (so `src/aml/memo` trong khoảng `e71eb63..aff6d91`
+  của 9d thay vì tới HEAD, vì G2 và `case_memos` công khai sửa package đó).
 - `specs/case-prioritization.md` (7c, đã duyệt): `fit_model` thêm tham số tuỳ chọn `populations` (mặc định giữ đúng
   kết quả cũ, AC5 khẳng định); `insert_model` nhận phiên bản biến thể `prio/<kind>+btl/<id>`; `PrioritizationConfig` thêm
   `below_the_line`; `NOTE` của `aml score` đổi chữ (không test 7c nào khẳng định chuỗi này; `POPULATION` vẫn bắt đầu bằng

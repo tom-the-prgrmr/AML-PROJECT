@@ -78,7 +78,7 @@ def _windows(db: Database, run_id: int) -> dict[str, tuple[list[str], date, date
     return out
 
 
-def _case_memos(db: Database, cifs: list[str], start: date, end: date) -> list[Any]:
+def case_memos(db: Database, cifs: list[str], start: date, end: date) -> list[Any]:
     """The memo of every transaction of the CIFs in [start, end]; one item per transaction."""
     sql = (
         sql_statement(db, "memo/case_memos.sql")
@@ -134,7 +134,7 @@ def write_memo_features(db: Database, settings: Settings, run_id: int) -> int:
     }
     rows: list[dict[str, Any]] = []
     for case_id, window in _windows(db, run_id).items():
-        memos = _case_memos(db, *window) if window else []
+        memos = case_memos(db, *window) if window else []
         counts = count_memos(memos, labels, settings.memo.max_chars)
         if counts is None:
             return 0  # all or nothing
@@ -218,21 +218,28 @@ def fit_guarded(
     seed: int,
     kind: str | None = None,
     non_negative: Sequence[str] = NON_NEGATIVE,
+    populations: pd.Series | None = None,
 ) -> tuple[TrainedModel, tuple[str, ...]]:
     """`fit_model`, but a ``non_negative`` column never gets a negative weight.
 
     Logistic regression: fit, drop the guarded columns whose coefficient is negative, fit again,
     until none is left. LightGBM has no coefficient to check, so every guarded column is dropped
-    before the fit. Returns the model and the dropped columns.
+    before the fit. ``populations`` is passed to `fit_model` (metrics per population).
+    Returns the model and the dropped columns.
     """
     kind = kind or cfg.model
     guarded = _guarded(list(X.columns), non_negative)
     if kind == "lightgbm":
-        model = fit_model(X.drop(columns=guarded), y, groups, cfg, seed=seed, kind=kind)
+        model = fit_model(
+            X.drop(columns=guarded), y, groups, cfg, seed=seed, kind=kind, populations=populations
+        )
         return model, tuple(guarded)
     dropped: set[str] = set()
     while True:
-        model = fit_model(X.drop(columns=sorted(dropped)), y, groups, cfg, seed=seed, kind=kind)
+        model = fit_model(
+            X.drop(columns=sorted(dropped)), y, groups, cfg, seed=seed, kind=kind,
+            populations=populations,
+        )  # fmt: skip
         artifact = json.loads(model.artifact)
         coef = dict(zip(artifact["features"], artifact["coef"], strict=True))
         negative = {c for c in guarded if c not in dropped and float(coef[c]) < 0}

@@ -25,14 +25,18 @@ def scalar(db: Database, sql: str) -> int:
     return int(db.query_df(sql).iloc[0, 0])
 
 
-def _text(value: Any) -> str:
+def text_column(value: Any) -> str:
     """A CLOB column as text (DuckDB returns str, Oracle a LOB)."""
     return str(value.read()) if hasattr(value, "read") else str(value)
 
 
-def _json(value: Any) -> Any:
+def json_column(value: Any) -> Any:
     """A JSON column: DuckDB gives text, Oracle may give text or the parsed value."""
-    parsed = json.loads(_text(value)) if isinstance(value, str) or hasattr(value, "read") else value
+    parsed = (
+        json.loads(text_column(value))
+        if isinstance(value, str) or hasattr(value, "read")
+        else value
+    )
     return floats(parsed)
 
 
@@ -63,14 +67,16 @@ def insert_model(
     model: TrainedModel,
     actor: str,
     feature_version: str = FEATURE_VERSION,
+    variant: str = "",
 ) -> tuple[int, str]:
     """Store a trained model under the next ``model_id``; return the id and its version.
 
     ``feature_version`` names the feature set the model was trained on (Phase 8d adds a second one:
-    the Phase 7c features plus the memo columns).
+    the Phase 7c features plus the memo columns). ``variant`` is added to the kind in the
+    version (Phase 7b-iii: ``+btl`` gives ``prio/logreg+btl/<model_id>``).
     """
     model_id = 1 + scalar(db, "SELECT COALESCE(MAX(model_id), 0) FROM case_models")
-    version = f"prio/{kind}/{model_id}"
+    version = f"prio/{kind}{variant}/{model_id}"
     cases, suspicious, false_positive = counts
     row = {
         "model_id": model_id,
@@ -104,10 +110,10 @@ def read_model(db: Database, model_id: int | None) -> tuple[int, str, TrainedMod
     r = df.iloc[0]
     model = TrainedModel(
         kind=str(r["kind"]),
-        features=tuple(_json(r["features"])),
-        artifact=_text(r["artifact"]),
-        params=_json(r["params"]),
-        metrics=_json(r["metrics"]),
+        features=tuple(json_column(r["features"])),
+        artifact=text_column(r["artifact"]),
+        params=json_column(r["params"]),
+        metrics=json_column(r["metrics"]),
         data_hash=str(r["data_hash"]),
         feature_version=str(r["feature_version"]),
     )

@@ -468,6 +468,17 @@ class LightGbmConfig(BaseModel):
         return self
 
 
+class BelowTheLineConfig(BaseModel):  # Phase 7b-iii
+    enabled: bool  # aml score: draw the sample and train the +btl variant instead of the 7c model
+    sample_size: int  # >= 1; customers per sample (capped by the population)
+
+    @model_validator(mode="after")
+    def _in_range(self) -> BelowTheLineConfig:
+        if self.sample_size < 1:
+            raise ValueError("below_the_line sample_size must be >= 1")
+        return self
+
+
 class PrioritizationConfig(BaseModel):
     model: Literal["logreg", "lightgbm"]
     simulate_dispositions: bool  # does `aml score` run the simulation step
@@ -478,6 +489,7 @@ class PrioritizationConfig(BaseModel):
     top_fractions: list[float]  # head / tail shares of the queue used for precision and recall
     logreg: LogRegConfig
     lightgbm: LightGbmConfig
+    below_the_line: BelowTheLineConfig
 
     @model_validator(mode="after")
     def _in_range(self) -> PrioritizationConfig:
@@ -752,9 +764,27 @@ class ScreeningMlConfig(BaseModel):  # Phase 7b-ii; kept out of `screening` so c
         return self
 
 
+MODEL_CARD_NAMES = ("prioritization", "memo_classifier", "anomaly", "screening_match")
+
+
+class GovernanceConfig(BaseModel):  # Phase 7b-iii
+    cards_dir: str  # where `aml models card` writes; relative to the project root
+    models: list[str]  # order of the cards; each one of MODEL_CARD_NAMES, no repeats
+
+    @model_validator(mode="after")
+    def _in_range(self) -> GovernanceConfig:
+        for name in self.models:
+            if name not in MODEL_CARD_NAMES:
+                raise ValueError(f"unknown model card '{name}'")
+        if len(set(self.models)) != len(self.models):
+            raise ValueError("governance models must not repeat")
+        return self
+
+
 class MlConfig(BaseModel):  # Phase 7b; the sibling specs add their own fields
     anomaly: AnomalyConfig
     screening: ScreeningMlConfig
+    governance: GovernanceConfig
 
 
 class MetricsConfig(BaseModel):  # Phase 9c

@@ -20,7 +20,7 @@ from typing import Any
 import pandas as pd
 
 from aml.cases.dispositions import SUSPICIOUS
-from aml.cases.features import FEATURE_VERSION, read_features, write_features
+from aml.cases.features import FEATURE_VERSION, FEATURES, read_features, write_features
 from aml.cases.labels import case_groups
 from aml.cases.model import (
     PrioritizationError,
@@ -122,19 +122,27 @@ class LabelledSet:
     false_positive: int
 
 
-def labelled_set(db: Database, settings: Settings) -> LabelledSet:
-    """Read the training set; raises `PrioritizationError` before anything is written."""
+def labelled_set(db: Database, settings: Settings, *, check: bool = True) -> LabelledSet:
+    """Read the training set; raises `PrioritizationError` before anything is written.
+
+    With ``check`` off the class counts and the group count are not checked (and no decided case
+    gives an empty set): the below-the-line variant checks them over cases and sample together.
+    """
     cfg = settings.cases.prioritization
     decided = latest_dispositions(db)
     suspicious = int((decided["disposition"] == SUSPICIOUS).sum())
     false_positive = len(decided) - suspicious
-    if min(suspicious, false_positive) < cfg.cv_folds:  # checked before anything is written
+    if not check and decided.empty:
+        empty = pd.DataFrame(columns=list(FEATURES), dtype=float)
+        return LabelledSet(empty, pd.Series(dtype=int), pd.Series(dtype=object), decided, 0, 0)
+    if check and min(suspicious, false_positive) < cfg.cv_folds:  # checked before any write
         raise PrioritizationError(
             f"not enough labelled cases: need at least {cfg.cv_folds} per class, "
             f"got SUSPICIOUS={suspicious} FALSE_POSITIVE={false_positive}"
         )
     groups = _decided_groups(db, decided)
-    check_groups(groups, cfg.cv_folds)  # also before anything is written
+    if check:
+        check_groups(groups, cfg.cv_folds)  # also before anything is written
     X, y = _training_set(db, decided)
     return LabelledSet(X, y, groups, decided, suspicious, false_positive)
 

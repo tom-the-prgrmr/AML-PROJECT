@@ -305,6 +305,7 @@ Test LightGBM dùng `pytest.importorskip("lightgbm")`. Mọi giá trị suy ra t
 
 ## Ngoài phạm vi
 - **Phase 7b của brief**: Isolation Forest / điểm bất thường làm nguồn alert và feature; mô hình screening học được; **mẫu below-the-line** và báo cáo thiên lệch chọn mẫu; **model card**; phân loại memo bằng LLM làm feature. Điểm mở rộng để lại: `case_features` dạng dài + `FEATURES` / `FEATURE_VERSION` (thêm feature không đổi DDL), `case_models.kind` nhận model mới, `case_models.metrics` / `params` là JSON, `model_version` nằm trên mọi dòng `case_scores` và mọi dòng audit `PRIORITIZED`.
+- Mẫu below-the-line và model card được xây ở `specs/ml-governance.md` (2026-10-14).
 - **Tự đóng / tự clear / tự suppress theo điểm**: không ngưỡng điểm nào sinh disposition, không lọc case điểm thấp khỏi hàng đợi, không đổi `cases.status`. Model chỉ sắp thứ tự.
 - Tinh chỉnh siêu tham số, chọn feature tự động, calibration xác suất, ensemble, giải thích bằng thư viện `shap`, giám sát drift, tự huấn luyện lại theo lịch, champion / challenger, phê duyệt model trước khi kích hoạt (model mới nhất là model hiệu lực).
 - Disposition mô phỏng có nhiễu / lỗi của investigator, độ trễ xử lý, nhiều mức (`ESCALATED`, `STR_FILED`); nhãn theo từng alert; trọng số theo mức độ nghiêm trọng của typology.
