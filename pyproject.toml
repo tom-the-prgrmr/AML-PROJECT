@@ -12,7 +12,7 @@ dependencies = [
     "pyarrow>=16.0",
     "duckdb>=1.1",
     "oracledb>=2.4",
-    "neo4j>=5.20",
+    "neo4j>=6.3.1",
     "python-dotenv>=1.2.4",
     "rapidfuzz>=3.9",
     "splink>=5.0,<6",
@@ -20,6 +20,7 @@ dependencies = [
     "scipy>=1.13",
     "matplotlib>=3.11.2",
     "scikit-learn>=1.5",
+    "neo4j-graphrag>=1.22,<2",
 ]
 
 [project.optional-dependencies]
