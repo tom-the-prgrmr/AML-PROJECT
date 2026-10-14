@@ -67,6 +67,7 @@ from aml.monitoring.evaluate import evaluate_rules, typology_coverage
 from aml.monitoring.runner import MonitoringError, run_monitoring
 from aml.screening.evaluate import evaluate, truth_pairs
 from aml.screening.incremental import run_incremental
+from aml.screening.ml.cli import screen_ml_app
 from aml.screening.runner import ScreeningError, run_screening
 from aml.screening.sql_compare import compare_sql_python
 
@@ -1099,6 +1100,7 @@ def _command_line() -> str:
 
 app.add_typer(memo_app, name="memo")  # Phase 8d: the commands live in aml.memo.cli
 app.add_typer(anomaly_app, name="anomaly")  # Phase 7b-i: the commands live in aml.ml.anomaly.cli
+app.add_typer(screen_ml_app, name="screen-ml")  # Phase 7b-ii: aml.screening.ml.cli
 
 rag_app = typer.Typer(add_completion=False, help="Knowledge layer for the assistant (Phase 8).")
 app.add_typer(rag_app, name="rag")

@@ -247,6 +247,15 @@ ml:                          # Phase 7b models (one sub-section per model)
     top_deviations: 3        # 1..14; features with the largest deviation named in an alert reason
     features: auto           # auto | off; auto = case ranking adds the 2 anomaly columns once a run exists
     results_dir: results/phase7b   # anomaly_eval.json (aml anomaly eval)
+  screening:                 # Phase 7b-ii learned screening-hit model (aml screen-ml); ranks hits, never clears one
+    simulate_fraction: 0.7   # (0, 1]; share of the watchlist entries that get simulated investigator labels
+    simulated_actor: simulated_analyst   # actor of the simulated labels; differs from audit.system_actor
+    use_human_reviews: true  # a person's TRUE_MATCH / FALSE_MATCH review is a label and beats a simulated one
+    cv_folds: 5              # >= 2; grouped by watchlist entry
+    top_features: 3          # >= 1; contributing features stored with each score
+    logreg:
+      c: 1.0                 # > 0; inverse regularisation strength
+      max_iter: 1000         # >= 1
 
 bench:                       # Phase 6c trace benchmark (aml bench); measures the state a backend is in
   hops: [2, 4, 6]            # increasing, each 1..trace.max_hops

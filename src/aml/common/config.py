@@ -724,8 +724,37 @@ class AnomalyConfig(BaseModel):  # Phase 7b-i
         return self
 
 
+class ScreeningMlLogRegConfig(BaseModel):
+    c: float  # inverse regularisation strength, > 0
+    max_iter: int  # >= 1
+
+
+class ScreeningMlConfig(BaseModel):  # Phase 7b-ii; kept out of `screening` so config_hash is stable
+    simulate_fraction: float  # (0, 1]; share of the watchlist entries that get simulated labels
+    simulated_actor: str  # actor of the simulated labels; differs from audit.system_actor
+    use_human_reviews: bool  # a person's TRUE_MATCH / FALSE_MATCH review is a label and wins
+    cv_folds: int  # >= 2
+    top_features: int  # >= 1; contributing features stored with each score
+    logreg: ScreeningMlLogRegConfig
+
+    @model_validator(mode="after")
+    def _in_range(self) -> ScreeningMlConfig:
+        if not 0 < self.simulate_fraction <= 1:
+            raise ValueError("simulate_fraction must be in (0, 1]")
+        if self.cv_folds < 2:
+            raise ValueError("cv_folds must be >= 2")
+        if self.top_features < 1:
+            raise ValueError("top_features must be >= 1")
+        if self.logreg.c <= 0:
+            raise ValueError("logreg c must be > 0")
+        if self.logreg.max_iter < 1:
+            raise ValueError("logreg max_iter must be >= 1")
+        return self
+
+
 class MlConfig(BaseModel):  # Phase 7b; the sibling specs add their own fields
     anomaly: AnomalyConfig
+    screening: ScreeningMlConfig
 
 
 class MetricsConfig(BaseModel):  # Phase 9c
@@ -819,6 +848,8 @@ class Settings(BaseModel):
     @model_validator(mode="after")
     def _simulated_actor_is_not_the_system(self) -> Settings:
         if self.cases.prioritization.simulated_actor == self.audit.system_actor:
+            raise ValueError("simulated_actor must differ from audit.system_actor")
+        if self.ml.screening.simulated_actor == self.audit.system_actor:
             raise ValueError("simulated_actor must differ from audit.system_actor")
         return self
 
