@@ -332,7 +332,7 @@ export default function CaseGraph({ nodes, edges, highlightIds }: CaseGraphProps
       // Without a cap, fitting a graph of one or two nodes blows them up to fill the whole canvas.
       minZoom: 0.25,
       maxZoom: 1.6,
-      wheelSensitivity: 0.2,
+      wheelSensitivity: 0.35, // Cytoscape default is 1; 0.2 felt sluggish, 0.35 is quicker but still controllable
     });
     cy.on("tap", "node", (ev) => {
       const node = nodes.find((n) => n.id === ev.target.id());
