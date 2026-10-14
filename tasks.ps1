@@ -18,8 +18,10 @@ $amlCommands = @("status", "retention", "data", "load", "screen", "er", "monitor
 
 switch ($Target) {
     "up"   {
-        $files = if ($Gpu) { @("-f", "docker-compose.yml", "-f", "docker-compose.gpu.yml") } else { @() }
-        Invoke-Step docker (@("compose") + $files + @("--profile", $ComposeProfile, "up", "-d"))
+        $composeArgs = @("compose")
+        if ($Gpu) { $composeArgs += @("-f", "docker-compose.yml", "-f", "docker-compose.gpu.yml") }
+        $composeArgs += @("--profile", $ComposeProfile, "up", "-d")
+        Invoke-Step docker $composeArgs
     }
     "down" { Invoke-Step docker @("compose", "--profile", "full", "down") }
     "init" { Invoke-Step uv @("run", "aml", "init-db") }
