@@ -16,6 +16,9 @@ from typing import Annotated
 import pandas as pd
 import typer
 
+from aml.assistant import rag_cli
+from aml.assistant.knowledge.model import KnowledgeError
+from aml.assistant.llm import LLMError, OllamaUnavailableError
 from aml.cases.chain import ACTOR, NOTE, label_line, run_chain, train_line
 from aml.cases.dispositions import DISPOSITIONS, record_disposition
 from aml.cases.labels import simulate_dispositions
@@ -1093,8 +1096,61 @@ def _not_yet(phase: int) -> None:
     raise typer.Exit(code=1)
 
 
+rag_app = typer.Typer(add_completion=False, help="Knowledge layer for the assistant (Phase 8).")
+app.add_typer(rag_app, name="rag")
+
+
+@rag_app.command("build")
+def rag_build(
+    full: Annotated[
+        bool, typer.Option("--full", help="Wipe and rebuild the knowledge layer.")
+    ] = False,
+    dry_run: Annotated[
+        bool, typer.Option("--dry-run", help="Only read the documents and print the counts.")
+    ] = False,
+) -> None:
+    """Build the knowledge layer in Neo4j from docs/knowledge/ and the cases."""
+    if dry_run and full:
+        typer.echo("--dry-run cannot be combined with --full", err=True)
+        raise typer.Exit(code=2)
+    s = get_settings()
+    try:
+        if dry_run:
+            out, err = [rag_cli.dry_run_line(s)], []
+        else:
+            out, err = rag_cli.build_lines(s, full=full, actor=ACTOR)
+    except (KnowledgeError, LLMError) as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    except OllamaUnavailableError as exc:
+        typer.echo(f"ollama not available: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except ServiceUnavailableError as exc:
+        typer.echo(f"neo4j not available: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    for line in out:
+        typer.echo(line)
+    for line in err:
+        typer.echo(line, err=True)
+
+
+@rag_app.command("status")
+def rag_status() -> None:
+    """Show what the knowledge layer holds and whether it is up to date (read-only)."""
+    try:
+        lines = rag_cli.status_lines(get_settings())
+    except (KnowledgeError, LLMError) as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    except ServiceUnavailableError as exc:
+        typer.echo(f"neo4j not available: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    for line in lines:
+        typer.echo(line)
+
+
 for _name, _phase in {
-    "rag": 8, "ui": 9,
+    "ui": 9,
 }.items():  # fmt: skip
     app.command(_name, help=f"(Phase {_phase})")(lambda p=_phase: _not_yet(p))
 

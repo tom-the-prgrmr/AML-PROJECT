@@ -161,8 +161,16 @@ def sync_mod() -> Any:
     return mod("aml.graph.neo4j.sync")
 
 
-def read(driver: Any, settings: Settings, cypher: str, params: Any = None) -> pd.DataFrame:
-    return client().run_read(driver, settings, cypher, params)
+def read(
+    driver: Any,
+    settings: Settings,
+    cypher: str,
+    params: Any = None,
+    procedures: Sequence[str] | None = None,
+) -> pd.DataFrame:
+    if procedures is None:
+        return client().run_read(driver, settings, cypher, params)
+    return client().run_read(driver, settings, cypher, params, procedures=procedures)
 
 
 def one(driver: Any, settings: Settings, cypher: str, params: Any = None) -> Any:

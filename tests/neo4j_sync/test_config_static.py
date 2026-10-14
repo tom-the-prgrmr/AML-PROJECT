@@ -116,8 +116,8 @@ def test_ac1_merge_files_are_single_unwind_merge_statements() -> None:
 
 def test_ac1_wipe_deletes_relationships_first_in_batches() -> None:
     statements = mod("aml.graph.neo4j.client").load_statements("sync/wipe.cypher")
-    assert len(statements) == 12
-    for statement in statements[:6]:
+    assert len(statements) == 13
+    for statement in statements[:7]:
         assert "DELETE r" in statement
         assert "DETACH" not in statement
     assert all("IN TRANSACTIONS" in s for s in statements)

@@ -1,6 +1,11 @@
 // Empty the projection in batches. Relationships go first, one type at a time, then the nodes
 // one label at a time: removing nodes together with all their relationships in one big
-// transaction ran out of memory on the `small` profile. Other labels are left alone.
+// transaction ran out of memory on the `small` profile. Other labels are left alone, except that
+// the `ABOUT` links from the knowledge layer's `Case` nodes go first: a Customer cannot be deleted
+// while one still points at it (the Case nodes stay; `aml rag build` links them again).
+MATCH ()-[r:ABOUT]->()
+CALL (r) { DELETE r } IN TRANSACTIONS OF 10000 ROWS;
+
 MATCH ()-[r:SENT_TO]->()
 CALL (r) { DELETE r } IN TRANSACTIONS OF 10000 ROWS;
 

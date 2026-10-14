@@ -180,6 +180,23 @@ cases:                       # Phase 7a alert consolidation into cases (aml case
     generator: template      # registered NarrativeGenerator; "template" uses no LLM
     language: en             # the template generator is English only
 
+assistant:                   # Phase 8 local assistant; Ollama only, no hosted provider
+  provider: ollama           # ollama | fake (fake = deterministic, for tests and offline builds)
+  request_timeout_seconds: 300   # > 0; per HTTP call to Ollama
+  num_ctx: 4096              # >= 512; context window sent on every chat call (larger costs VRAM and time)
+  keep_alive_chat: 5m        # passed verbatim to Ollama; use 0s on small GPUs
+  keep_alive_embed: 5m
+  cache:
+    enabled: true            # cache chat and embed responses on disk (deterministic: temperature 0, seed)
+    dir: data/llm_cache
+  embedding:
+    dimensions: 1024         # 1..4096; bge-m3 = 1024
+    batch_size: 16           # 1..256; texts per /api/embed call
+  knowledge:
+    dir: docs/knowledge
+    chunk_max_chars: 1200    # >= 200
+  vector_procedures: [db.index.vector.queryNodes]   # allow-list for vector queries, apart from neo4j.read_procedures
+
 bench:                       # Phase 6c trace benchmark (aml bench); measures the state a backend is in
   hops: [2, 4, 6]            # increasing, each 1..trace.max_hops
   hours: [72, 720]           # window T; increasing, each 1..trace.max_hours (72 = aml trace default, 720 = ceiling)

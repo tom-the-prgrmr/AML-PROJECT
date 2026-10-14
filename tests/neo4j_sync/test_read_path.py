@@ -119,4 +119,4 @@ def test_ac8_open_driver_without_neo4j_raises_service_unavailable() -> None:
 
 def test_ac8_write_prefixes() -> None:
     prefixes: Any = client().WRITE_PREFIXES
-    assert tuple(prefixes) == ("schema.cypher", "sync/")
+    assert tuple(prefixes) == ("schema.cypher", "sync/", "knowledge/")

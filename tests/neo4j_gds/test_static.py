@@ -154,7 +154,7 @@ def test_ac1_projections_are_blocked_with_the_ordinary_allowlist(name: str) -> N
 
 
 def test_ac1_write_prefixes_unchanged_and_guard_version() -> None:
-    assert tuple(client().WRITE_PREFIXES) == ("schema.cypher", "sync/")
+    assert tuple(client().WRITE_PREFIXES) == ("schema.cypher", "sync/", "knowledge/")
     assert _guard().GUARD_VERSION == "guard/v2"
 
 

@@ -26,7 +26,7 @@ from aml.graph.neo4j.guard import (
 )
 
 CYPHER_ROOT = Path(__file__).resolve().parent / "cypher"
-WRITE_PREFIXES: tuple[str, ...] = ("schema.cypher", "sync/")
+WRITE_PREFIXES: tuple[str, ...] = ("schema.cypher", "sync/", "knowledge/")
 COUNTERS = (
     "nodes_created", "nodes_deleted", "relationships_created", "relationships_deleted",
     "properties_set",

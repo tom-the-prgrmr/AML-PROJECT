@@ -23,7 +23,7 @@ from typing import Any, Literal
 
 import yaml
 from dotenv import dotenv_values
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config.yaml"
@@ -497,6 +497,35 @@ class CasesConfig(BaseModel):
         return self
 
 
+class LlmCacheConfig(BaseModel):
+    enabled: bool
+    dir: str  # git-ignored under data/
+
+
+class EmbeddingConfig(BaseModel):
+    dimensions: int = Field(ge=1, le=4096)  # bge-m3 = 1024
+    batch_size: int = Field(ge=1, le=256)  # texts per /api/embed call
+
+
+class KnowledgeConfig(BaseModel):
+    dir: str
+    chunk_max_chars: int = Field(ge=200)
+
+
+class AssistantConfig(BaseModel):
+    provider: Literal["ollama", "fake"]
+    request_timeout_seconds: float = Field(gt=0)
+    num_ctx: int = Field(ge=512)  # context window sent to Ollama on every chat call
+    keep_alive_chat: str  # passed verbatim to Ollama
+    keep_alive_embed: str
+    cache: LlmCacheConfig
+    embedding: EmbeddingConfig
+    knowledge: KnowledgeConfig
+    vector_procedures: list[
+        str
+    ]  # separate allow-list for vector queries; not neo4j.read_procedures
+
+
 class Settings(BaseModel):
     seed: int
     db: DbConfig
@@ -516,6 +545,7 @@ class Settings(BaseModel):
     graph_queries: GraphQueryConfig
     gds: GdsConfig
     cases: CasesConfig
+    assistant: AssistantConfig
     bench: BenchConfig
 
     @model_validator(mode="after")

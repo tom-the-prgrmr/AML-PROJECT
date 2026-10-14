@@ -41,6 +41,7 @@ def synced_cli(
     settings = neo_settings()
     driver = client().open_driver(settings)
     try:
+        client().run_write_file(driver, settings, "knowledge/wipe.cypher")
         client().run_write_file(driver, settings, "sync/wipe.cypher")
     finally:
         driver.close()

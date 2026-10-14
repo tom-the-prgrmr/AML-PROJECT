@@ -1,0 +1,10 @@
+# Optional override: run Ollama on an NVIDIA GPU (Docker Desktop with the WSL2 backend).
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml --profile llm up -d
+#   make up PROFILE=llm GPU=1        (Windows: tasks.ps1 up -ComposeProfile llm -Gpu)
+# Without this file the stack runs on CPU, so a machine with no GPU can still start every profile.
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: all, capabilities: [gpu]}]

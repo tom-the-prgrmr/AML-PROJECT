@@ -89,6 +89,7 @@ def synced_db(
     try:
         if load is not None:
             load(db)
+        client().run_write_file(driver, settings, "knowledge/wipe.cypher")
         client().run_write_file(driver, settings, "sync/wipe.cypher")
         run = run_sync(db, settings, full=True)
         assert run.in_sync is True
