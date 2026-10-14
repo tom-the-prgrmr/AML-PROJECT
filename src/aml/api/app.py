@@ -6,7 +6,7 @@ from fastapi import FastAPI
 
 from aml.api.constants import API_PREFIX, API_VERSION
 from aml.api.errors import install_error_handlers
-from aml.api.routers import benchmark, cases, dq, graph, sample, screening, system, trace
+from aml.api.routers import benchmark, cases, dq, graph, memos, sample, screening, system, trace
 from aml.common.config import Settings, get_settings
 from aml.common.db import Database
 
@@ -26,6 +26,7 @@ def create_app(settings: Settings | None = None, *, db: Database | None = None) 
     for router in (
         system.router,
         cases.router,
+        memos.router,
         graph.router,
         trace.router,
         screening.router,

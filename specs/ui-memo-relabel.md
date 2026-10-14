@@ -86,22 +86,37 @@ Neo4j / Oracle). Hành vi giao diện nằm ở "Yêu cầu giao diện (kiểm 
 ```python
 # src/aml/api/reads/memos.py  (đọc; gọi hàm nghiệp vụ 8d, không SQL riêng)
 def list_memo_labels(
-    db: Database, settings: Settings, *, category: str | None, method: str | None, limit: int, offset: int
-) -> tuple[list[dict[str, Any]], dict[str, Any]]: ...  # list_labels(db, settings, …) -> cắt trang; (rows, meta)
+    db: Database,
+    settings: Settings,
+    *,
+    category: str | None,
+    method: str | None,
+    limit: int,
+    offset: int,
+) -> tuple[
+    list[dict[str, Any]], dict[str, Any]
+]: ...  # list_labels(db, settings, …) -> cắt trang; (rows, meta)
 
-def labels_by_key(db: Database, settings: Settings) -> dict[str, tuple[str, str]]: ...  # memo_key -> (category, method)
+
+def labels_by_key(
+    db: Database, settings: Settings
+) -> dict[str, tuple[str, str]]: ...  # memo_key -> (category, method)
 
 
 # src/aml/api/reads/cases.py  (mở rộng; thêm tham số settings)
 def case_transactions(
     db: Database, settings: Settings, case_id: str, *, masked: bool, limit: int, offset: int
-) -> tuple[list[dict[str, Any]], int]: ...  # mỗi dòng 12 khoá: 9 của 9b + memo_key, memo_category, memo_method
+) -> tuple[
+    list[dict[str, Any]], int
+]: ...  # mỗi dòng 12 khoá: 9 của 9b + memo_key, memo_category, memo_method
 
 
 # src/aml/api/memos.py  (bộ nối quyết định, như aml.api.reviews; không SQL, không audit( )
 def record_memo_relabel(
     db: Database, settings: Settings, user: User, key: str, category: str, reason: str
-) -> Relabel: ...  # relabel_memo(db, settings, key, category, reason=reason, actor=user.actor); dịch lỗi (Q2)
+) -> (
+    Relabel
+): ...  # relabel_memo(db, settings, key, category, reason=reason, actor=user.actor); dịch lỗi (Q2)
 
 
 # src/aml/api/routers/memos.py  (router mỏng; FEATURE = "memos"; prefix /api/v1/memos)

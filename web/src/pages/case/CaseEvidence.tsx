@@ -6,7 +6,16 @@ import RuleLabel from "../../components/RuleLabel";
 import StatusBadge from "../../components/StatusBadge";
 import type { CaseTransaction } from "../../api/caseTypes";
 import type { CaseAlert, CaseDetail } from "../../api/types";
-import { DASH, channelLabel, dash, formatDateTime, formatVnd, ruleName } from "../../i18n";
+import {
+  DASH,
+  channelLabel,
+  dash,
+  formatDateTime,
+  formatVnd,
+  memoCategoryLabel,
+  memoMethodLabel,
+  ruleName,
+} from "../../i18n";
 import "./overview.css";
 
 /** An item key is "<rule id>|<subject>|<time>": the rule in words, the rest as the identifier it is. */
@@ -59,7 +68,26 @@ function AlertTable({ alerts }: { alerts: CaseAlert[] }) {
   );
 }
 
-function TransactionTable({ rows }: { rows: CaseTransaction[] }) {
+/** Memo class of a transaction: no memo -> dash; a memo without a label -> "Chưa phân loại". */
+function MemoClass({ t }: { t: CaseTransaction }) {
+  if (t.memo === null) return <>{DASH}</>;
+  if (t.memo_category === null) return <span title="Chạy aml memo classify">Chưa phân loại</span>;
+  return (
+    <>
+      {memoCategoryLabel(t.memo_category)}{" "}
+      {t.memo_method !== null && (
+        <span className="badge badge-neutral">{memoMethodLabel(t.memo_method)}</span>
+      )}
+    </>
+  );
+}
+
+interface TableProps {
+  rows: CaseTransaction[];
+  onRelabel: (memoKey: string) => void;
+}
+
+function TransactionTable({ rows, onRelabel }: TableProps) {
   return (
     <div className="table-wrap">
       <table className="data">
@@ -72,6 +100,7 @@ function TransactionTable({ rows }: { rows: CaseTransaction[] }) {
             <th className="num">Số tiền (VND)</th>
             <th>Kênh</th>
             <th>Nội dung</th>
+            <th>Phân loại nội dung</th>
             <th>Tên đối tác</th>
             <th>Cảnh báo liên quan</th>
           </tr>
@@ -86,6 +115,17 @@ function TransactionTable({ rows }: { rows: CaseTransaction[] }) {
               <td className="num">{formatVnd(t.amount_vnd)}</td>
               <td>{channelLabel(t.channel)}</td>
               <td className="memo-cell">{dash(t.memo)}</td>
+              <td>
+                <MemoClass t={t} />
+                {t.memo_key !== null && (
+                  <>
+                    {" "}
+                    <button type="button" className="btn btn-ghost" onClick={() => onRelabel(t.memo_key as string)}>
+                      Gán lại nhãn
+                    </button>
+                  </>
+                )}
+              </td>
               <td>{dash(t.counterparty_name)}</td>
               <td>
                 {t.item_keys.length === 0
@@ -100,7 +140,14 @@ function TransactionTable({ rows }: { rows: CaseTransaction[] }) {
   );
 }
 
-export default function CaseEvidence({ detail }: { detail: CaseDetail }) {
+interface Props {
+  detail: CaseDetail;
+  /** Bumped after a relabel: remounts the transaction panel so it reloads. */
+  txnVersion: number;
+  onRelabel: (memoKey: string) => void;
+}
+
+export default function CaseEvidence({ detail, txnVersion, onRelabel }: Props) {
   const [offset, setOffset] = useState(0);
   const txnPath = `/cases/${encodeURIComponent(detail.case_id)}/transactions?offset=${offset}`;
   return (
@@ -113,7 +160,7 @@ export default function CaseEvidence({ detail }: { detail: CaseDetail }) {
           <AlertTable alerts={detail.alerts} />
         )}
       </section>
-      <ApiPanel<CaseTransaction[]> path={txnPath} title="Giao dịch bằng chứng">
+      <ApiPanel<CaseTransaction[]> key={txnVersion} path={txnPath} title="Giao dịch bằng chứng">
         {(rows, meta) => (
           <>
             {rows.length === 0 ? (
@@ -122,7 +169,7 @@ export default function CaseEvidence({ detail }: { detail: CaseDetail }) {
                 hint="Các cảnh báo của case này không gắn với giao dịch nào."
               />
             ) : (
-              <TransactionTable rows={rows} />
+              <TransactionTable rows={rows} onRelabel={onRelabel} />
             )}
             <Pager
               offset={Number(meta.offset ?? 0)}
