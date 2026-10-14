@@ -17,6 +17,7 @@ import pandas as pd
 import typer
 
 from aml.assistant import rag_cli
+from aml.assistant.answering import LANGUAGES, AssistantError, AssistantInputError
 from aml.assistant.eval import cli as eval_cli
 from aml.assistant.eval.model import EvalError, GoldenError
 from aml.assistant.evidence import RetrievalError, RetrievalUnavailableError
@@ -1189,6 +1190,117 @@ def rag_retrieve(
     sys.stdout.flush()
     sys.stdout.buffer.write(text.encode("utf-8"))
     sys.stdout.buffer.flush()
+
+
+def _assistant_exit(exc: Exception) -> typer.Exit:
+    """Print why an assistant command stopped: exit 2 for bad input, 1 for a failed run."""
+    code = 1
+    if isinstance(exc, OllamaUnavailableError):
+        message = f"ollama not available: {exc}"
+    elif isinstance(exc, ServiceUnavailableError):
+        message = f"service not available: {exc}"
+    elif isinstance(exc, GraphError):
+        message = f"graph query failed: {exc}"
+    else:
+        message = str(exc)
+        bad_input = isinstance(exc, RetrievalError) and not isinstance(
+            exc, RetrievalUnavailableError
+        )
+        code = 2 if bad_input or isinstance(exc, AssistantInputError) else 1
+    typer.echo(message, err=True)
+    return typer.Exit(code=code)
+
+
+_ASSISTANT_ERRORS = (
+    AssistantError,
+    CaseError,
+    NarrativeError,
+    RetrievalError,
+    GraphError,
+    ServiceUnavailableError,
+)
+
+
+def _check_language(language: str | None) -> None:
+    if language is not None and language not in LANGUAGES:
+        typer.echo(f"language '{language}' is not available; choose vi or en", err=True)
+        raise typer.Exit(code=2)
+
+
+def _write_stdout(data: bytes) -> None:
+    # bytes, not text: a Windows console code page cannot encode Vietnamese
+    sys.stdout.flush()
+    sys.stdout.buffer.write(data)
+    sys.stdout.buffer.flush()
+
+
+@rag_app.command("ask")
+def rag_ask(
+    question: Annotated[str, typer.Argument(help="The question about a case or the knowledge.")],
+    case_id: Annotated[
+        str | None, typer.Option("--case", help="Case the question is about.")
+    ] = None,
+    lang: Annotated[
+        str | None, typer.Option("--lang", help="vi or en (default: assistant.answering).")
+    ] = None,
+    mode: Annotated[
+        str | None, typer.Option(help="graphrag or vector (default: assistant.answering).")
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Print the answer as JSON.")] = False,
+) -> None:
+    """Answer with citations; every sentence is checked against the evidence (read-only)."""
+    _check_language(lang)
+    try:
+        data, summary = rag_cli.ask_output(
+            get_settings(), question, case_id=case_id, language=lang, mode=mode,
+            as_json=as_json, actor=ACTOR,
+        )  # fmt: skip
+    except _ASSISTANT_ERRORS as exc:
+        raise _assistant_exit(exc) from exc
+    _write_stdout(data)
+    typer.echo(summary, err=True)
+
+
+@rag_app.command("narrative")
+def rag_narrative(
+    case_id: Annotated[str, typer.Argument(help="Case to draft a narrative for.")],
+    lang: Annotated[
+        str | None, typer.Option("--lang", help="vi or en (default: assistant.answering).")
+    ] = None,
+    out: Annotated[
+        Path | None, typer.Option(help="Write the markdown to this file instead of stdout.")
+    ] = None,
+) -> None:
+    """Draft a cited case narrative with the local model (a DRAFT for the investigator)."""
+    _check_language(lang)
+    try:
+        data = rag_cli.narrative_output(get_settings(), case_id, language=lang, actor=ACTOR)
+    except _ASSISTANT_ERRORS as exc:
+        raise _assistant_exit(exc) from exc
+    if out is None:
+        _write_stdout(data)
+        return
+    try:
+        out.write_bytes(data)
+    except OSError as exc:
+        typer.echo(f"cannot write to {out}: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"wrote {out}")
+
+
+@rag_app.command("explain")
+def rag_explain(
+    case_id: Annotated[str, typer.Argument(help="Case to explain.")],
+    typology: Annotated[
+        str | None, typer.Option(help="Only this typology (default: every one the case matches).")
+    ] = None,
+) -> None:
+    """Why a case matches its typologies: rules, evidence transactions, knowledge (no LLM text)."""
+    try:
+        lines = rag_cli.explain_lines(get_settings(), case_id, typology=typology)
+    except _ASSISTANT_ERRORS as exc:
+        raise _assistant_exit(exc) from exc
+    _write_stdout(("\n".join(lines) + "\n").encode("utf-8"))
 
 
 @rag_app.command("eval")

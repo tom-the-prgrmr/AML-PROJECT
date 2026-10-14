@@ -62,15 +62,15 @@ def test_ac1_protocol_is_checkable_at_run_time() -> None:
     assert not isinstance(object(), n.NarrativeGenerator)
 
 
-def test_ac1_template_generator_is_registered_and_llm_is_not() -> None:
+def test_ac1_template_generator_is_registered_and_nope_is_not() -> None:
     n = narrative()
     settings = load_settings(environ={})
     template = n.get_generator("template", settings)
     assert template.name == "template"
     assert template.version == "summary/v1"
     with pytest.raises(n.NarrativeError) as err:
-        n.get_generator("llm", settings)
-    assert "unknown narrative generator 'llm'" in str(err.value)
+        n.get_generator("nope", settings)
+    assert "unknown narrative generator 'nope'" in str(err.value)
     assert "template" in str(err.value)  # the list of available names
 
 

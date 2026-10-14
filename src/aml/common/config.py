@@ -596,6 +596,14 @@ class Text2CypherConfig(BaseModel):  # Phase 8b
         return self
 
 
+class AnsweringConfig(BaseModel):  # Phase 8c
+    language: Literal["vi", "en"]  # default answer language
+    mode: str  # passed verbatim to retrieve() (8b checks it)
+    max_retries: int = Field(ge=0)  # extra chat calls when the reply is not valid JSON
+    explain_max_transactions: int = Field(ge=1)  # transactions listed per typology by the explainer
+    explain_chunks: int = Field(ge=0)  # knowledge chunks listed per typology by the explainer
+
+
 class AssistantConfig(BaseModel):
     provider: Literal["ollama", "fake"]
     request_timeout_seconds: float = Field(gt=0)
@@ -610,6 +618,7 @@ class AssistantConfig(BaseModel):
     ]  # separate allow-list for vector queries; not neo4j.read_procedures
     retrieval: RetrievalConfig  # Phase 8b
     text2cypher: Text2CypherConfig  # Phase 8b
+    answering: AnsweringConfig  # Phase 8c
 
 
 class RagEvalConfig(BaseModel):

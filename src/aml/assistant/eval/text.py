@@ -33,7 +33,13 @@ COMPLIANCE_MARKERS = (
 TYPOLOGY_ALIASES: dict[str, tuple[str, ...]] = {
     "structuring": ("structuring", "chia nho giao dich", "smurfing"),
     "rapid_movement": ("rapid movement", "rapid_movement", "chuyen tien nhanh", "pass-through"),
-    "round_tripping": ("round tripping", "round-tripping", "round_tripping", "quay vong"),
+    "round_tripping": (
+        "round tripping",
+        "round-tripping",
+        "round_tripping",
+        "quay vong",
+        "vong tron",
+    ),
     "mule_ring": ("mule ring", "mule_ring", "mule", "tai khoan trung gian"),
 }
 

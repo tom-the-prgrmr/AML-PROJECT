@@ -378,7 +378,7 @@ def knowledge_support(
   cleared", "da xoa alert", "hop le", "khong bao cao", "khong can bao cao")`. `names_typology` = `fold(text)` chứa một
   bí danh của mã: `structuring` → `structuring`, `chia nho giao dich`, `smurfing`; `rapid_movement` → `rapid movement`,
   `rapid_movement`, `chuyen tien nhanh`, `pass-through`; `round_tripping` → `round tripping`, `round-tripping`,
-  `round_tripping`, `quay vong`; `mule_ring` → `mule ring`, `mule_ring`, `mule`, `tai khoan trung gian`.
+  `round_tripping`, `quay vong`, `vong tron` (thêm 2026-10-14: tên tiếng Việt của 8a là "Chuyển tiền vòng tròn"); `mule_ring` → `mule ring`, `mule_ring`, `mule`, `tai khoan trung gian`.
 - **Chấm một câu** (`score_item`), với `found` = `extract_ids(answer.text)` ∪ `answer.citations`:
   - `refused = is_refusal(answer.text)`; `refusal_flag_agrees = (refused == answer.refused)`; `refusal_ok = (refused ==
     item.expect_refusal)`.

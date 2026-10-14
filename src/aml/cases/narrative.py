@@ -108,6 +108,9 @@ def _check_contract(narrative: Narrative, case_id: str) -> None:
         )
 
 
+check_contract = _check_contract  # public name for the assistant's audited path (Phase 8c)
+
+
 def summarize(
     db: Database,
     settings: Settings,
@@ -154,6 +157,7 @@ __all__ = [
     "NarrativeGenerator",
     "TemplateNarrativeGenerator",
     "as_file_bytes",
+    "check_contract",
     "escape_md",
     "get_generator",
     "register_generator",

@@ -66,3 +66,4 @@ def test_ac5_names_typology() -> None:
     assert names_typology("Chuyển tiền nhanh qua tài khoản", "rapid_movement") is True
     assert names_typology("khớp structuring", "rapid_movement") is False
     assert names_typology("quay vòng tiền", "round_tripping") is True
+    assert names_typology("Chuyển tiền vòng tròn qua ba tài khoản", "round_tripping") is True

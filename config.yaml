@@ -219,6 +219,12 @@ assistant:                   # Phase 8 local assistant; Ollama only, no hosted p
     max_path_length: 3       # 1..5; upper bound of a variable-length pattern
     max_query_chars: 2000    # 100..10000
     max_attempts: 2          # 1..3; generations per question (a rejected query is regenerated)
+  answering:                 # Phase 8c cited answers, LLM narrative drafts, typology explainer
+    language: vi             # vi | en; default language of answers and narrative drafts
+    mode: graphrag           # retrieval mode handed to retrieve(): graphrag | vector
+    max_retries: 1           # >= 0; extra chat calls when the model's reply is not valid JSON
+    explain_max_transactions: 20   # >= 1; evidence transactions listed per typology by `aml rag explain`
+    explain_chunks: 3        # >= 0; knowledge chunks listed per typology by `aml rag explain`
 
 memo:                        # Phase 8d memo classification with the local LLM (aml memo); labels are ranking features only
   max_chars: 200             # 20..1000; a normalised memo is cut at this many characters

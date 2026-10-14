@@ -51,7 +51,7 @@ def test_ac4_summarize_writes_nothing(mn: DuckDb) -> None:
     for call in (
         lambda: summarize(mn, settings, CASE_C01_A, language="vi"),
         lambda: summarize(mn, settings, "C-NOPE-20260101"),
-        lambda: summarize(mn, settings, CASE_C01_A, generator="llm"),
+        lambda: summarize(mn, settings, CASE_C01_A, generator="nope"),
     ):
         with pytest.raises(Exception):  # noqa: B017 - the failures are checked in other tests
             call()
@@ -72,8 +72,8 @@ def test_ac4_unknown_case_raises_case_error(mn: DuckDb) -> None:
 
 def test_ac4_unknown_generator_name(mn: DuckDb) -> None:
     with pytest.raises(narrative().NarrativeError) as err:
-        summarize(mn, duck_settings(), CASE_C01_A, generator="llm")
-    assert "unknown narrative generator 'llm'" in str(err.value)
+        summarize(mn, duck_settings(), CASE_C01_A, generator="nope")
+    assert "unknown narrative generator 'nope'" in str(err.value)
 
 
 def test_ac4_registered_generator_is_used_by_name(mn: DuckDb) -> None:

@@ -83,3 +83,67 @@ def retrieve_text(
     ]
     lines += [f"note: {n.retriever} {n.status}: {n.message}" for n in r.notes]
     return "\n".join([*lines, "", render_evidence(r.evidence)]) + "\n"
+
+
+# ---------------------------------------------------------------- Phase 8c: ask, narrative, explain
+def ask_output(
+    settings: Settings,
+    question: str,
+    *,
+    case_id: str | None,
+    language: str | None,
+    mode: str | None,
+    as_json: bool,
+    actor: str,
+) -> tuple[bytes, str]:
+    """Body of `aml rag ask`: (stdout as UTF-8 bytes, the summary line for stderr)."""
+    import json
+
+    from aml.assistant.answering import answer_question, render_answer
+
+    with get_db(settings) as db:
+        a = answer_question(
+            db, settings, question, case_id=case_id, language=language, mode=mode, actor=actor
+        )
+    text = json.dumps(a.as_dict(), ensure_ascii=False) if as_json else render_answer(a)
+    v = a.validation
+    summary = (
+        f"answer_id={a.answer_id} status={a.status} supported={v['supported']} "
+        f"unsupported={v['unsupported']}"
+    )
+    if a.refusal_reason is not None:
+        summary += f" refusal={a.refusal_reason}"
+    return (text + "\n").encode("utf-8"), summary
+
+
+def narrative_output(
+    settings: Settings, case_id: str, *, language: str | None, actor: str
+) -> bytes:
+    """Body of `aml rag narrative`: the markdown draft as file bytes (also what stdout gets)."""
+    from aml.assistant.narrative import draft_narrative
+    from aml.cases.narrative import as_file_bytes
+
+    with get_db(settings) as db:
+        d = draft_narrative(db, settings, case_id, language=language, actor=actor)
+    return as_file_bytes(d.narrative.markdown)
+
+
+def explain_lines(settings: Settings, case_id: str, *, typology: str | None) -> list[str]:
+    """Body of `aml rag explain`: one header line, then a block per typology."""
+    from aml.assistant.explainer import explain_typology
+
+    with get_db(settings) as db:
+        x = explain_typology(db, settings, case_id, typology=typology)
+    lines = [f"case={x.case_id} typologies={len(x.typologies)} knowledge={x.knowledge}"]
+    for t in x.typologies:
+        lines.append(
+            f"typology={t.typology} rules={','.join(t.rule_ids)} "
+            f"transactions={t.transactions_total} chunks={len(t.chunks)}"
+        )
+        lines += [f"  definition: {line}" for line in t.definition.split("\n") if line]
+        for r in t.transactions:
+            when = r["txn_ts"].replace("T", " ")
+            src, dst = r["from_account_id"] or "-", r["to_account_id"] or "-"
+            lines.append(f"  {r['txn_id']} {when} {src} -> {dst} {r['amount_vnd']} {r['channel']}")
+        lines += [f"  chunk {c['chunk_id']}" for c in t.chunks]
+    return lines
