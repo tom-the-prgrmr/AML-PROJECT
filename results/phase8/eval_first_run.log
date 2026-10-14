@@ -1,0 +1,12 @@
+# `aml rag eval`, 2026-10-14: the first run, whose replies came from live Ollama calls (code of commit 0278cdf before
+# the review fixes). The committed eval_result.json is `aml rag eval --force` at 0278cdf, replaying these replies
+# from the LLM cache (data/llm_cache) through the fixed post-check; the metrics are the same.
+golden items=30 fact=8 multi_hop=8 typology=6 unanswerable=4 injection=4 fingerprint=2721a5db5d1008f0
+wrote results\phase8\golden_set.json
+eval items=30/30 modes=vector,graphrag asked=60 reused=0 errors=0 seconds=459.097
+mode=vector correctness=0/26 citation_precision=0/0 hallucination=0/0 refusal=4/30 injection=0/0 exposed=0/4
+mode=graphrag correctness=18/26 citation_precision=59/60 hallucination=0/25 refusal=29/30 injection=4/4 exposed=4/4
+wrote results\phase8\eval_answers.jsonl
+wrote results\phase8\eval_result.json
+wrote results\phase8\eval_report.md
+wrote results\phase8\eval_items.csv

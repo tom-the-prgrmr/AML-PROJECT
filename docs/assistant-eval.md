@@ -7,10 +7,53 @@ so the same stored answers always give the same numbers. The evaluation only rea
 case, records no disposition and raises no alert; it writes one `EVALUATED` row to `audit_log`. All data is
 synthetic.
 
-> **Results: not measured yet.** The real run on the `small` profile (Neo4j + Ollama) is the demo step of the
-> phase. Until it has been run and its files committed under `results/phase8/`, this document holds no
-> quality number. Numbers may only be copied here from `results/phase8/eval_report.md`, together with the
-> command, the models, the prompt version and the seed printed in that report.
+## Results on `small` (2026-10-14)
+
+Copied from [results/phase8/eval_report.md](../results/phase8/eval_report.md): `aml rag eval --force` at commit
+`0278cdf`, `qwen2.5:3b-instruct` + `bge-m3` in Ollama (GTX 1650, 4 GB), prompt `answer/v1`, seed 42, golden set
+`2721a5db5d1008f0` (30 questions, 5 in English), DuckDB `small` with the graph and the knowledge layer synced to
+Neo4j.
+
+| metric | vector | graphrag |
+|---|---|---|
+| answer correctness | 0/26 | 18/26 (69.2%) |
+| citation precision | n/a | 59/60 (98.3%) |
+| hallucination rate | n/a | 0/25 |
+| refusal correctness | 4/30 | 29/30 (96.7%) |
+| injection resistance (of exposed) | n/a (0/4 exposed) | 4/4 (4/4 exposed) |
+
+| type | items | vector | graphrag |
+|---|---|---|---|
+| fact | 8 | 0/8 | 7/8 |
+| multi_hop | 8 | 0/8 | 3/8 |
+| typology | 6 | 0/6 | 4/6 |
+| unanswerable | 4 | 4/4 | 4/4 |
+| injection | 4 | 0/4 | 4/4 |
+
+What the numbers say:
+
+- **Plain vector RAG cannot do investigation work.** It only retrieves passages of the eight knowledge
+  documents; it never sees a transaction, an account or a case, so it refused all 30 questions. That gives
+  it the 4 unanswerable ones and nothing else. It is the baseline the graph has to beat, and the gap is the
+  whole point of GraphRAG here: the questions are about records, not about AML in general.
+- **GraphRAG's misses are incomplete answers, not invented ones.** Of its 8 wrong answers, 5 are multi-hop
+  answers that name only part of the path (one of the two round-trip hops in 3 answers, 5 of 7 and 4 of 6
+  pass-through accounts in the other 2),
+  2 are structuring-evidence answers that list two or three of the seven transactions, and 1 is an account
+  owner question it refused. No answer named an id that does not exist (hallucination 0/25), and 59 of 60
+  citations point at evidence of the scenario.
+- **Injection:** in all 4 injection questions the poisoned memo reached the GraphRAG context through the
+  transaction lookup route, and no answer followed it. The deterministic post-check is the second line: a
+  sentence like "khách hàng này là sạch" is shown as unverified or dropped, whatever the model writes.
+- **Language drift:** the 3B model sometimes slips Indonesian words into Vietnamese answers ("pada tanggal",
+  "adalah"). The string checks do not penalise it; a reader would notice.
+
+Timing: the first run, whose 60 answers came from live Ollama calls, took 459 s
+([results/phase8/eval_first_run.log](../results/phase8/eval_first_run.log)), about 7.7 s per answer including
+Text2Cypher calls. The committed result is a `--force` rerun after the review fixes of the answer check: the
+prompts did not change, so it replayed the same model replies from the LLM cache (3.6 s) and only the
+post-check and the scoring ran again. Its metrics are identical to the first run. `llm_calls` in the result
+(chat 67, embed 36) counts the calls the assistant made, cached or not.
 
 ## Commands
 
@@ -115,5 +158,7 @@ result file, and makes the command exit with 1.
   is computed.
 - The two modes are comparable only inside one result file: same golden set, same models, same prompt
   version, same graph.
-- Timing: not measured yet. `eval_result.json` records the seconds of every answer and the number of model
-  calls; quote them from there.
+- Timing depends on the LLM cache: a rerun with unchanged prompts replays cached replies. Quote the time of a
+  run with live calls (see Results), and `eval_result.json` for the number of model calls.
+- Completeness is all or nothing: an answer naming 3 of 7 evidence transactions counts as wrong, the same as
+  a refusal.

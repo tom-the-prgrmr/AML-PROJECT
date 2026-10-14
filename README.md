@@ -5,7 +5,7 @@ Vietnamese-name screening, entity resolution, transaction monitoring, SQL-vs-gra
 analysis, alert consolidation/prioritization, and a local GraphRAG investigator assistant.
 Oracle is the system of record; Neo4j is a read-only investigation projection.
 
-> Status: **Phases 0 to 7 done** (scaffold through alert consolidation, suppression, prioritization and case summaries). Results tables are added phase by phase, each generated
+> Status: **Phases 0 to 8 done** (scaffold through case prioritization and the local GraphRAG assistant). Results tables are added phase by phase, each generated
 > from an actual run with the command that produced it.
 
 ## Quick start
@@ -106,3 +106,87 @@ ID numbers are masked); the full evaluation is in [results/phase7/eval.json](res
 specs with the rules and acceptance criteria are [case-consolidation](specs/case-consolidation.md),
 [case-suppression](specs/case-suppression.md), [case-prioritization](specs/case-prioritization.md) and
 [case-summary](specs/case-summary.md).
+
+## Investigator assistant: local GraphRAG with cited, checked answers (Phase 8)
+
+A question about a case goes through a deterministic router to the retrievers it needs (case graph, transaction
+lookup, knowledge passages, guarded Text2Cypher). It is answered by `qwen2.5:3b-instruct` running locally in
+Ollama, and every sentence is checked before anyone reads it. The model may answer only in a JSON schema whose
+citations are limited to the evidence items of that turn. Code then checks each sentence:
+
+- it cites at least one item;
+- every amount and date it states appears in trusted evidence;
+- it carries no verdict ("the customer is clean", "close the case").
+
+A sentence that fails is shown as `[CHƯA KIỂM CHỨNG]`. If no sentence passes, the answer is "Không đủ bằng
+chứng." Transaction memos are untrusted. They reach the model wrapped as data, never as instructions, and never
+enter `audit_log`. The assistant only reads and drafts. It does not clear, close or file anything, and every
+answer, refusal and failure writes one audit row.
+
+```powershell
+uv run aml graph sync --full ; uv run aml rag build --full   # Neo4j projection + knowledge layer (docs/knowledge/)
+uv run aml rag ask "Case này khớp typology nào và vì sao?" --case C-CIF00000028-20260327
+uv run aml rag narrative C-CIF00000028-20260327              # draft SAR-style narrative, watermarked DRAFT
+uv run aml rag explain C-CIF00000028-20260327                # rules + evidence transactions + knowledge, no LLM
+uv run aml rag eval                                          # golden set, vector vs GraphRAG
+```
+
+**Vector RAG vs GraphRAG.** The result is from `aml rag eval --force` at commit `0278cdf` on `small` (seed 42).
+It used 30 golden questions built from the generator's ground truth: 8 fact, 8 multi-hop, 6 typology,
+4 unanswerable and 4 whose transaction memo carries a prompt injection. The models were
+`qwen2.5:3b-instruct` + `bge-m3` on a GTX 1650 (4 GB). Scoring is deterministic id and amount matching; no
+model grades an answer.
+
+| metric | vector | GraphRAG |
+|---|---|---|
+| answer correctness | 0/26 | 18/26 (69.2%) |
+| citation precision | n/a | 59/60 (98.3%) |
+| hallucination rate | n/a | 0/25 |
+| refusal correctness | 4/30 | 29/30 (96.7%) |
+| injection resistance (memo reached the context) | n/a (0 of 4 reached) | 4/4 |
+
+- **Plain vector RAG cannot answer investigation questions.** It only retrieves passages of the knowledge
+  documents and never sees a transaction, an account or a case, so it refused all 30 questions. It is right
+  only on the 4 that should be refused.
+- **GraphRAG's 8 misses are incomplete, not invented.**
+  - 5 multi-hop answers name only part of the money path.
+  - 2 answers list 2 or 3 of the 7 structuring transactions.
+  - 1 account-owner question was refused.
+  - No answer named a non-existent id.
+- **Prompt injection:** all 4 injected memos reached the GraphRAG context, and no answer followed them.
+- **Run cost:** the first run made live Ollama calls: 60 answers in 459 s, about 7.7 s each
+  ([log](results/phase8/eval_first_run.log)).
+- **The committed result** is a `--force` rerun after review fixes to the answer check. The prompts did not
+  change, so it replayed the cached model replies, and its metrics are identical.
+- **Limits:**
+  - 30 questions is a small sample.
+  - A partly complete answer counts as wrong.
+  - The 3B model sometimes slips Indonesian words into Vietnamese answers.
+
+Details are in [docs/assistant-eval.md](docs/assistant-eval.md) and
+[results/phase8/eval_report.md](results/phase8/eval_report.md).
+
+**Memo analysis.** Each distinct transaction memo is classified once into a closed set (salary, loan
+repayment, gambling-like, crypto-like, suspicious wording, other). Rules handle injection-like memos; the local
+model handles the rest; a human relabel always wins. These numbers come from the run on `small` of
+2026-10-14:
+
+```powershell
+uv run aml memo classify   # 66 distinct memo keys: 27 by rule, 39 by the model, 28.5 s; a rerun made 0 model calls
+uv run aml memo eval       # results/phase8/memo_eval.json
+uv run aml memo compare    # results/phase8/memo_features.json
+```
+
+| Check | Result |
+|---|---|
+| Gold set (46 memos, 28 from the generator, 18 written by hand) | 39/46 correct (84.8%) |
+| Weakest class | "suspicious wording": precision 2/7. Ordinary memos such as "Gửi tiền tiết kiệm" were over-flagged |
+| Ranking model with the 6 memo features (234 cases, 5 grouped folds) | CV ROC-AUC 0.9599 → 0.9579, PR-AUC 0.9865 → 0.9788; held-out queue unchanged (0.9868 / 0.9985) |
+
+The memo features did not improve the ranking, and they are reported as such. The gambling-like and crypto-like
+memos are planted by the generator ([datagen-memos](specs/datagen-memos.md)). Any signal they carry is one we
+put there ourselves, so even a gain would not be evidence that memo analysis works on real data.
+
+The specs are [assistant-knowledge](specs/assistant-knowledge.md),
+[assistant-retrievers](specs/assistant-retrievers.md), [assistant-answering](specs/assistant-answering.md),
+[memo-analysis](specs/memo-analysis.md) and [assistant-eval](specs/assistant-eval.md).
