@@ -12,7 +12,7 @@ import {
 import UserSwitch from "./UserSwitch";
 import "./Layout.css";
 
-const PRODUCT = "AML – Bàn điều tra";
+const PRODUCT = "AML - Chống rửa tiền";
 
 const MENU: { to: string; label: string; icon: ReactNode }[] = [
   { to: "/cases", label: "Hàng đợi case", icon: <IconCases /> },
