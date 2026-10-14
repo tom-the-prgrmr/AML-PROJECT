@@ -23,7 +23,20 @@ from aml.assistant.eval.model import EvalError, GoldenError
 from aml.assistant.evidence import RetrievalError, RetrievalUnavailableError
 from aml.assistant.knowledge.model import KnowledgeError
 from aml.assistant.llm import LLMError, OllamaUnavailableError
-from aml.cases.chain import ACTOR, NOTE, label_line, run_chain, train_line
+from aml.cases.btl import draw_sample
+from aml.cases.btl_model import train_with_btl
+from aml.cases.chain import (
+    ACTOR,
+    BTL_LAST_LINE,
+    NOTE,
+    btl_evaluation,
+    btl_line,
+    evaluation_payload,
+    label_line,
+    run_chain,
+    sample_payload,
+    train_line,
+)
 from aml.cases.dispositions import DISPOSITIONS, record_disposition
 from aml.cases.labels import simulate_dispositions
 from aml.cases.model import PrioritizationError
@@ -45,6 +58,7 @@ from aml.dba.tuning import has_cursor_stats_access, median_ms, render_evidence, 
 from aml.dq.runner import label_agreement, run_dq
 from aml.entity_resolution.evaluate import evaluate_er
 from aml.entity_resolution.runner import ErError, explain_cluster, run_er
+from aml.governance.cli import models_app
 from aml.graph.bench.model import STATUS_OK, BenchError
 from aml.graph.bench.report import path_mismatches, write_report, write_result
 from aml.graph.bench.runner import run_bench
@@ -62,10 +76,12 @@ from aml.graph.network.runner import NetworkError, run_network
 from aml.graph.trace import METHODS, TraceError, TraceResult
 from aml.graph.trace import trace as run_trace
 from aml.memo.cli import memo_app
+from aml.ml.anomaly.cli import anomaly_app
 from aml.monitoring.evaluate import evaluate_rules, typology_coverage
 from aml.monitoring.runner import MonitoringError, run_monitoring
 from aml.screening.evaluate import evaluate, truth_pairs
 from aml.screening.incremental import run_incremental
+from aml.screening.ml.cli import screen_ml_app
 from aml.screening.runner import ScreeningError, run_screening
 from aml.screening.sql_compare import compare_sql_python
 
@@ -1023,6 +1039,63 @@ def cases_train(
     _write_json(eval_out, {"model": {"version": run.version, "kind": run.kind}, "cv": run.metrics})
 
 
+@cases_app.command("btl")
+def cases_btl(
+    size: Annotated[
+        int | None, typer.Option(min=1, help="Customers to sample (default: from config).")
+    ] = None,
+    train_: Annotated[
+        bool, typer.Option("--train", help="Also train the +btl model variant on the sample.")
+    ] = False,
+    model: Annotated[
+        str | None, typer.Option(help="logreg or lightgbm.", callback=_check_kind)
+    ] = None,
+    eval_out: Annotated[Path | None, typer.Option(help="Write the result as JSON.")] = None,
+) -> None:
+    """Sample customers with no alert, label them from the ground truth and measure the model."""
+    s = get_settings()
+    if size is not None:  # the training and the measurement must use the same sample
+        below = s.cases.prioritization.below_the_line.model_copy(update={"sample_size": size})
+        cfg = s.cases.prioritization.model_copy(update={"below_the_line": below})
+        s = s.model_copy(update={"cases": s.cases.model_copy(update={"prioritization": cfg})})
+    result: dict[str, object] = {}
+    with get_db(s) as db:
+        try:
+            sample = draw_sample(db, s, actor=ACTOR)
+            typer.echo(btl_line(sample))
+            result["sample"] = sample_payload(sample)
+            evaluation = btl_evaluation(db, s, typer.echo)
+            result["evaluation"] = None if evaluation is None else evaluation_payload(evaluation)
+            if train_:
+                run = train_with_btl(db, s, kind=model, actor=ACTOR)
+                m, by = run.training.metrics, run.training.metrics["by_population"]
+                typer.echo(
+                    f"model version={run.training.version} rows={run.training.cases} "
+                    f"roc_auc={m['roc_auc']} pr_auc={m['pr_auc']} prevalence={m['prevalence']}"
+                )
+                typer.echo(
+                    "by-population "
+                    + " ".join(
+                        f"{name} n={by[name]['n']} roc_auc={by[name]['roc_auc']}"
+                        for name in ("alerted", "below_the_line")
+                        if name in by
+                    )
+                )
+                after = btl_evaluation(db, s, typer.echo)
+                result["model"] = {
+                    "version": run.training.version,
+                    "kind": run.training.kind,
+                    "model_id": run.training.model_id,
+                    "cv": m,
+                }
+                result["evaluation"] = None if after is None else evaluation_payload(after)
+        except (CaseError, PrioritizationError) as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(code=1) from exc
+    typer.echo(BTL_LAST_LINE)
+    _write_json(eval_out, result)
+
+
 @app.command()
 def score(
     as_of: Annotated[
@@ -1097,6 +1170,9 @@ def _command_line() -> str:
 
 
 app.add_typer(memo_app, name="memo")  # Phase 8d: the commands live in aml.memo.cli
+app.add_typer(models_app, name="models")  # Phase 7b-iii: aml.governance.cli
+app.add_typer(anomaly_app, name="anomaly")  # Phase 7b-i: the commands live in aml.ml.anomaly.cli
+app.add_typer(screen_ml_app, name="screen-ml")  # Phase 7b-ii: aml.screening.ml.cli
 
 rag_app = typer.Typer(add_completion=False, help="Knowledge layer for the assistant (Phase 8).")
 app.add_typer(rag_app, name="rag")

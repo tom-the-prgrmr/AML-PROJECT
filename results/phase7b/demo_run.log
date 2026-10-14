@@ -1,0 +1,67 @@
+== aml init-db
+backend=duckdb: audit_log ready, 17411 row(s)
+== aml anomaly run --eval-out results/phase7b/anomaly_eval.json
+run_id=1 model_version=anomaly/v1/1 as_of=2026-06-30 samples=27589 customers=5000 months=6 alerts=138 threshold=0.6543 graph_source=gds monitoring_run_id=4
+structuring      scenarios=20 rules=20 anomaly=8 new=0 accounts=20 accounts_rules=20 accounts_anomaly=8 accounts_new=0
+rapid_movement   scenarios=20 rules=20 anomaly=10 new=0 accounts=127 accounts_rules=71 accounts_anomaly=17 accounts_new=6
+mule_ring        scenarios=5 rules=5 anomaly=5 new=0 accounts=136 accounts_rules=128 accounts_anomaly=98 accounts_new=0
+round_tripping   scenarios=15 rules=15 anomaly=5 new=0 accounts=52 accounts_rules=52 accounts_anomaly=7 accounts_new=0
+benign_payroll   scenarios=5 rules=0 anomaly=0 new=0 accounts=127 accounts_rules=0 accounts_anomaly=0 accounts_new=0
+benign_merchant  scenarios=5 rules=0 anomaly=3 new=3 accounts=180 accounts_rules=0 accounts_anomaly=6 accounts_new=6
+anomaly alerts are signals for review: no case is closed or cleared by this model
+== aml screen-ml run --eval-out results/phase7b/screening_ml.json
+labels groups=673 labelled_groups=472 labelled=4453 TRUE_MATCH=15 FALSE_MATCH=4438 held_out=1827 skipped=0
+model version=scrml/logreg/1 pairs=4453 TRUE_MATCH=15 FALSE_MATCH=4438 human=0 roc_auc=0.9998 pr_auc=0.9358
+cv two_tier_alert pairs=4453 positives=15 rule_flagged=23 rule_precision=0.6522 model_flagged=17 model_precision=0.8824 recall=1.0 reduction=26.09
+cv two_tier pairs=4453 positives=15 rule_flagged=42 rule_precision=0.3571 model_flagged=17 model_precision=0.8824 recall=1.0 reduction=59.52
+holdout two_tier_alert pairs=1827 positives=10 rule_flagged=18 rule_precision=0.5556 model_flagged=13 model_precision=0.7692 recall=1.0 reduction=27.78
+holdout two_tier pairs=1827 positives=10 rule_flagged=30 rule_precision=0.3333 model_flagged=13 model_precision=0.7692 recall=1.0 reduction=56.67
+scored pairs=6280 model=scrml/logreg/1
+1 0.999899 CIF00004579:WL001286 ALERT top=dob_within_tolerance,name_score,coverage
+2 0.999775 CIF00002676:WL001001 ALERT top=dob_within_tolerance,name_score,coverage
+3 0.999657 CIF00004058:WL000936 ALERT top=dob_within_tolerance,name_score,coverage
+4 0.999657 CIF00004983:WL000936 ALERT top=dob_within_tolerance,name_score,coverage
+5 0.999653 CIF00001528:WL000773 ALERT top=dob_within_tolerance,name_score,coverage
+6 0.999653 CIF00002975:WL000773 ALERT top=dob_within_tolerance,name_score,coverage
+7 0.999270 CIF00004901:WL001730 ALERT top=dob_within_tolerance,name_score,coverage
+8 0.998626 CIF00002179:WL000773 ALERT top=dob_within_tolerance,name_score,coverage
+9 0.998457 CIF00000492:WL000409 ALERT top=dob_within_tolerance,name_score,coverage
+10 0.998448 CIF00001310:WL001896 ALERT top=dob_within_tolerance,name_score,coverage
+ranking only: no screening hit was cleared or closed by the model
+== aml cases build
+run_id=8 as_of=2026-06-30 items=613 alerts=477 suppressed=36 active=577 cases=322 opened=74 reopened=46 closed=0 graph_features=gds
+GOOD_GUY suppressed=36
+HIBERNATION suppressed=0
+== aml score --eval-out results/phase7b/prio.json
+cases run_id=9 as_of=2026-06-30 cases=322 opened=0 reopened=0 closed=0 suppressed=36
+labels labelled=49 SUSPICIOUS=49 FALSE_POSITIVE=0 held_out=114 skipped=159
+cases run_id=10 as_of=2026-06-30 cases=322 opened=0 reopened=0 closed=49 suppressed=36
+model version=prio/logreg/4 cases=283 roc_auc=0.9466 pr_auc=0.9878 prevalence=0.8799
+scored cases=322 queue=160 model=prio/logreg/4 score_run_id=4
+holdout n=114 roc_auc=0.8617 pr_auc=0.9697 prevalence=0.8509 population=alerted-cases-only
+1 1.0000 C-CIF00002224-20260226 top=pagerank_ratio,anomaly_flagged_months,distinct_rules
+2 1.0000 C-CIF00000955-20260427 top=has_net_cycle,has_sanctions_hit,pagerank_ratio
+3 1.0000 C-CIF00001710-20260413 top=has_net_cycle,pagerank_ratio,distinct_rules
+4 1.0000 C-CIF00000911-20260316 top=memo_gambling_like,pass_through,out_degree
+5 1.0000 C-CIF00001961-20260510 top=pagerank_ratio,memo_gambling_like,distinct_rules
+6 0.9999 C-CIF00002128-20260508 top=pagerank_ratio,pass_through,out_vnd_log
+7 0.9999 C-CIF00001839-20260529 top=has_net_cycle,pagerank_ratio,distinct_rules
+8 0.9999 C-CIF00004269-20260506 top=has_net_cycle,pagerank_ratio,distinct_rules
+9 0.9999 C-CIF00003781-20260529 top=has_net_cycle,pagerank_ratio,distinct_rules
+10 0.9999 C-CIF00001724-20260218 top=cifs,has_net_cycle,pagerank_ratio
+note metrics cover alerted cases only; below-the-line sample: run `aml cases btl`
+ranking only: no case was closed or cleared by the model
+== aml cases btl --train --eval-out results/phase7b/btl.json
+btl sample_id=1 run_id=10 population=4199 size=200 suspicious=4 not_suspicious=196 estimated_missed=84 ci95=0.0078-0.0503 reused=False
+btl-eval model=prio/logreg/4 n=200 n_suspicious=4 roc_auc=0.9592 pr_auc=0.2381 prevalence=0.02
+model version=prio/logreg+btl/5 rows=483 roc_auc=0.9956 pr_auc=0.9956 prevalence=0.5238
+by-population alerted n=283 roc_auc=0.9757 below_the_line n=200 roc_auc=0.9943
+btl-eval model=prio/logreg+btl/5 n=200 n_suspicious=4 roc_auc=0.9962 pr_auc=0.8167 prevalence=0.02
+below-the-line sample is measurement only: no customer was alerted, closed or cleared
+== aml models card
+card prioritization -> D:\Works\AML-PROJECT\.claude\worktrees\phase7b\docs\models\prioritization.md
+card memo_classifier -> D:\Works\AML-PROJECT\.claude\worktrees\phase7b\docs\models\memo_classifier.md
+card anomaly -> D:\Works\AML-PROJECT\.claude\worktrees\phase7b\docs\models\anomaly.md
+card screening_match -> D:\Works\AML-PROJECT\.claude\worktrees\phase7b\docs\models\screening_match.md
+== aml models audit-check
+memo/MEMO_EVAL_COMPLETED 31f8d4036666eda8 missing details.model

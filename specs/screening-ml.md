@@ -403,6 +403,12 @@ Giá trị ghi "đã đo" lấy từ prototype; còn lại suy ra từ luật. T
   vì tham số nằm ở `ml.screening` (AC1). Mục "Ngoài phạm vi" của 3b đã dẫn tới phase này.
 - **`specs/ui-live-pages.md`**: `latest_reviews` / API review không đổi; nhãn mô phỏng không bao giờ hiện như review (AC4).
 - **Spec anomaly (7b-i, DDL `200`)**: độc lập; nếu được hiện thực trước thì `210` đứng sau `200` trong `SCHEMA_SCRIPTS`.
+- **`specs/case-summary.md`** (7d): AC1 của 7d ghim danh sách script giữa `180` và `050` →
+  `tests/cases/test_summary_unit.py::test_ac1_no_new_schema_script` nhận thêm `ddl/210_screening_ml.sql` (đã sửa khi
+  hiện thực, 2026-10-14).
+- Module phụ không có trong Interface: `src/aml/screening/ml/store.py` (chạy file SQL theo tên, cấp id `MAX + 1`, đọc
+  CLOB / JSON) và `sql/common/screening_ml/truth_typologies.sql` (cùng điều kiện với `truth_pairs`, thêm cột typology
+  cho `reason` của nhãn) — thêm khi hiện thực.
 - `sql/common/assistant_eval/decision_tables.sql` (8e) không đổi; có thể thêm `screening_ml_labels` vào danh sách bảng
   quyết định trong spec sau.
 

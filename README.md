@@ -90,8 +90,8 @@ How to read these numbers:
   normal behaviour, so about 86% of cases are truly suspicious and the minority class is the false
   positive. With that prevalence a random ordering already has about 0.9 precision at the top, so the
   useful measure is how far down the queue the false positives are pushed, not precision at the top.
-- **Metrics cover alerted cases only.** Customers who never raised an alert are not sampled, so this says
-  nothing about what the rules miss (selection bias; the below-the-line sample is Phase 7b).
+- **Metrics cover alerted cases only.** Customers who never raised an alert are not in this run, so it says
+  nothing about what the rules miss (selection bias). The below-the-line sample of Phase 7b below measures that.
 - **Labels are simulated.** Dispositions are derived from the generator's ground truth, not from analysts,
   so they are noise-free; real dispositions would be less separable.
 - **Hibernation had nothing to act on:** this data has too few repeated false-positive rule alerts. Its
@@ -194,3 +194,49 @@ put there ourselves, so even a gain would not be evidence that memo analysis wor
 The specs are [assistant-knowledge](specs/assistant-knowledge.md),
 [assistant-retrievers](specs/assistant-retrievers.md), [assistant-answering](specs/assistant-answering.md),
 [memo-analysis](specs/memo-analysis.md) and [assistant-eval](specs/assistant-eval.md).
+
+## ML additions: anomaly source, learned screening model, below-the-line sample, model cards (Phase 7b)
+
+Four pieces on top of the rules and the Phase 7 ranking model: an unsupervised **Isolation Forest** per
+customer-month that is both a fourth alert source and a ranking feature; a **learned screening match model**
+compared against the fixed thresholds at the same recall; a **below-the-line sample** of customers who never
+raised an alert, labelled from the generator's ground truth, to measure what the alerted-only metrics cannot
+see; and a **model card per model**, generated from stored metadata. No model closes, clears or dispositions
+anything. The numbers come from one run on the `small` profile (DuckDB, seed 42, `as_of` 2026-06-30) on
+2026-10-14, on the database left by the Phase 7 and 8 runs above; the full terminal output is in
+[results/phase7b/demo_run.log](results/phase7b/demo_run.log):
+
+```powershell
+uv run aml init-db                                                      # DDL 200, 210, 220 on an existing database
+uv run aml anomaly run --eval-out results/phase7b/anomaly_eval.json     # 27,589 customer-months -> 138 ANOMALY alerts
+uv run aml screen-ml run --eval-out results/phase7b/screening_ml.json   # simulate labels, train, score, compare
+uv run aml cases build; uv run aml score --eval-out results/phase7b/prio.json   # ANOMALY items join the cases
+uv run aml cases btl --train --eval-out results/phase7b/btl.json        # sample, measure, train the +btl variant
+uv run aml models card; uv run aml models audit-check                   # docs/models/*.md; version on every scored audit row
+```
+
+| Step | Result |
+|---|---|
+| Isolation Forest `anomaly/v1/1` (14 features: velocity, cash ratio, counterparties, night ratio, 90-day baseline deviations, GDS graph features) | 138 alerts = the top 0.5% of customer-months. **0 suspicious scenarios the rules missed**: RULE + NETWORK already touch all 60. At account level 6 `rapid_movement` accounts the rules did not touch; 3 of 5 `benign_merchant` scenarios flagged (false positives the rules did not have) |
+| ANOMALY as a fourth case source | 613 items -> 322 cases (Phase 7: 475 -> 309): 74 cases opened, 46 reopened, because an ANOMALY alert can open a case or move its window like any other alert |
+| Ranking model `prio/logreg/4` with the 2 anomaly columns and the 6 memo columns (283 labelled cases) | CV ROC-AUC 0.9466, PR-AUC 0.9878 at 88.0% prevalence; held-out queue (114 open cases) ROC-AUC 0.8617, PR-AUC 0.9697. Not comparable with the Phase 7 figures: the case set and the labelled set changed with the new source |
+| Screening match model `scrml/logreg/1` (19 match features, 4,453 simulated labels in 70% of the entries, 15 true pairs) | At the rules' recall of 1.0: cross-validation needs 17 hits for precision 0.88 against 23 (ALERT, 0.65) and 42 (ALERT + REVIEW, 0.36); held-out 1,827 pairs with 10 true pairs: 13 hits at 0.77 against 18 (0.56) and 30 (0.33). The data holds 25 true pairs in total, so the comparison moves with the seed |
+| Below-the-line sample (200 of the 4,199 golden customers with no alert) | 4 are in a suspicious scenario -> an estimated 84 missed customers (95% CI 0.8%-5.0% of 4,199). The active model ranks the sample at ROC-AUC 0.9592, PR-AUC 0.2381 at 2% prevalence |
+| Variant `prio/logreg+btl/5` (283 cases + the 200 sampled customers) | Per-population CV ROC-AUC: alerted 0.9757, below-the-line 0.9943. The pooled figures (0.9956) are inflated, since every sampled customer has zero alerts and every case has at least one; the second `btl-eval` line measures the variant on the sample it was trained on |
+| Model cards and audit check | [docs/models/](docs/models/) holds one card per model, written from stored tables and audit rows. `aml models audit-check` exits 1 with one gap: the memo evaluation audit row written before this phase has no `details.model`. Old audit rows are reported, never rewritten |
+
+How to read these numbers:
+
+- **The rules already cover every planted typology.** On this synthetic data the anomaly model cannot show the
+  "caught what the rules missed" number the brief asks for, so it is reported as 0 at scenario level, with the
+  account-level count and the benign scenarios it flags beside it.
+- **The fixed screening thresholds already reach recall 1.0.** The learned model can only win on precision
+  (fewer hits to read for the same true matches), and with 25 true pairs the margin depends on the split.
+- **The below-the-line sample is a measurement, not an action.** No sampled customer is alerted or cased; the
+  estimate of missed customers carries a wide interval because 4 positives in 200 is all the sample holds.
+- **The `+btl` variant is opt-in** (`aml cases btl --train` or `cases.prioritization.below_the_line.enabled`);
+  `aml score` keeps the Phase 7 behaviour by default. Once trained it is the newest model and therefore the
+  active one: there is no approval step, and the card says so.
+
+The specs are [ml-anomaly](specs/ml-anomaly.md), [screening-ml](specs/screening-ml.md) and
+[ml-governance](specs/ml-governance.md).

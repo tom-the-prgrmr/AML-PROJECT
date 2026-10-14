@@ -173,12 +173,16 @@ def fit_model(
     *,
     seed: int,
     kind: str | None = None,
+    populations: pd.Series | None = None,
 ) -> TrainedModel:
     """Fit a model on labelled cases and measure it by grouped cross-validation.
 
     ``X`` is indexed by case id, ``y`` is 1 for SUSPICIOUS and 0 for FALSE_POSITIVE, ``groups``
     ties together the cases that share alerts. Rows are sorted by case id first, so the order the
     caller passes them in changes neither the folds nor the model.
+
+    ``populations`` (same index as ``X``; a name per row) adds ``by_population`` to the metrics:
+    the ranking metrics of each population's own out-of-fold scores. It changes nothing else.
     """
     kind = kind or cfg.model
     X = X.sort_index()
@@ -192,6 +196,13 @@ def fit_model(
         )
     check_groups(groups, cfg.cv_folds)
     oof = _cross_validate(kind, X, y, groups, cfg, seed)
+    metrics = ranking_metrics(y, oof, cfg.top_fractions)
+    if populations is not None:
+        named = populations.loc[X.index]
+        metrics["by_population"] = {
+            name: ranking_metrics(y[named == name], oof[named == name], cfg.top_fractions)
+            for name in sorted(set(named))
+        }
     params: dict[str, Any] = {"class_weight": "balanced", "cv_folds": cfg.cv_folds}
     params |= cfg.lightgbm.model_dump() if kind == "lightgbm" else cfg.logreg.model_dump()
     params |= _versions(kind)
@@ -200,7 +211,7 @@ def fit_model(
         features=tuple(X.columns),
         artifact=_fit_artifact(kind, X, y, cfg, seed),
         params=params,
-        metrics=ranking_metrics(y, oof, cfg.top_fractions),
+        metrics=metrics,
         data_hash=_data_hash(X, y),
     )
 

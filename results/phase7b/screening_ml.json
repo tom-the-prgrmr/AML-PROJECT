@@ -1,0 +1,78 @@
+{
+  "model": {
+    "model_id": 1,
+    "version": "scrml/logreg/1",
+    "pairs": 4453,
+    "true_match": 15,
+    "false_match": 4438,
+    "human_labels": 0,
+    "metrics": {
+      "n": 4453,
+      "n_true": 15,
+      "n_false": 4438,
+      "prevalence": 0.0034,
+      "roc_auc": 0.9998,
+      "pr_auc": 0.9358
+    }
+  },
+  "cv": [
+    {
+      "baseline": "two_tier_alert",
+      "pairs": 4453,
+      "positives": 15,
+      "rule_flagged": 23,
+      "rule_tp": 15,
+      "rule_precision": 0.6522,
+      "rule_recall": 1.0,
+      "model_flagged": 17,
+      "model_tp": 15,
+      "model_precision": 0.8824,
+      "model_recall": 1.0,
+      "flagged_reduction_pct": 26.09
+    },
+    {
+      "baseline": "two_tier",
+      "pairs": 4453,
+      "positives": 15,
+      "rule_flagged": 42,
+      "rule_tp": 15,
+      "rule_precision": 0.3571,
+      "rule_recall": 1.0,
+      "model_flagged": 17,
+      "model_tp": 15,
+      "model_precision": 0.8824,
+      "model_recall": 1.0,
+      "flagged_reduction_pct": 59.52
+    }
+  ],
+  "holdout": [
+    {
+      "baseline": "two_tier_alert",
+      "pairs": 1827,
+      "positives": 10,
+      "rule_flagged": 18,
+      "rule_tp": 10,
+      "rule_precision": 0.5556,
+      "rule_recall": 1.0,
+      "model_flagged": 13,
+      "model_tp": 10,
+      "model_precision": 0.7692,
+      "model_recall": 1.0,
+      "flagged_reduction_pct": 27.78
+    },
+    {
+      "baseline": "two_tier",
+      "pairs": 1827,
+      "positives": 10,
+      "rule_flagged": 30,
+      "rule_tp": 10,
+      "rule_precision": 0.3333,
+      "rule_recall": 1.0,
+      "model_flagged": 13,
+      "model_tp": 10,
+      "model_precision": 0.7692,
+      "model_recall": 1.0,
+      "flagged_reduction_pct": 56.67
+    }
+  ]
+}

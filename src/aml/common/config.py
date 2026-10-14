@@ -468,6 +468,17 @@ class LightGbmConfig(BaseModel):
         return self
 
 
+class BelowTheLineConfig(BaseModel):  # Phase 7b-iii
+    enabled: bool  # aml score: draw the sample and train the +btl variant instead of the 7c model
+    sample_size: int  # >= 1; customers per sample (capped by the population)
+
+    @model_validator(mode="after")
+    def _in_range(self) -> BelowTheLineConfig:
+        if self.sample_size < 1:
+            raise ValueError("below_the_line sample_size must be >= 1")
+        return self
+
+
 class PrioritizationConfig(BaseModel):
     model: Literal["logreg", "lightgbm"]
     simulate_dispositions: bool  # does `aml score` run the simulation step
@@ -478,6 +489,7 @@ class PrioritizationConfig(BaseModel):
     top_fractions: list[float]  # head / tail shares of the queue used for precision and recall
     logreg: LogRegConfig
     lightgbm: LightGbmConfig
+    below_the_line: BelowTheLineConfig
 
     @model_validator(mode="after")
     def _in_range(self) -> PrioritizationConfig:
@@ -676,6 +688,105 @@ class MemoConfig(BaseModel):  # Phase 8d
         return self
 
 
+class AnomalyConfig(BaseModel):  # Phase 7b-i
+    # baseline_days >= 1: window before the month that a customer is compared with
+    baseline_days: int
+    # 0..baseline_days: a shorter baseline sets the three deviation features to 0
+    min_baseline_days: int
+    night_start_hour: int  # 0..23; an hour >= start or < end counts as night
+    night_end_hour: int  # 0..23, differs from night_start_hour
+    n_estimators: int  # 10..2000; trees of the isolation forest
+    max_samples: int  # >= 2; rows per tree, min(max_samples, rows) is used
+    alert_top_fraction: float  # (0, 0.1]; alerts = ceil(fraction * rows) highest scores
+    min_samples: int  # >= 2; fewer customer-months raise AnomalyError first
+    top_deviations: int  # 1..14; features named in an alert reason
+    # auto: case ranking adds the 2 anomaly columns once a run exists
+    features: Literal["auto", "off"]
+    results_dir: str  # where `aml anomaly eval` writes its JSON
+
+    @model_validator(mode="before")
+    @classmethod
+    def _yaml_off(cls, raw: Any) -> Any:
+        """YAML reads the bare word ``off`` as the boolean False; it means the string here."""
+        if isinstance(raw, dict) and raw.get("features") is False:
+            return {**raw, "features": "off"}
+        return raw
+
+    @model_validator(mode="after")
+    def _in_range(self) -> AnomalyConfig:
+        if self.baseline_days < 1:
+            raise ValueError("ml.anomaly baseline_days must be >= 1")
+        if not 0 <= self.min_baseline_days <= self.baseline_days:
+            raise ValueError("ml.anomaly min_baseline_days must be between 0 and baseline_days")
+        hours = (self.night_start_hour, self.night_end_hour)
+        if not all(0 <= h <= 23 for h in hours) or hours[0] == hours[1]:
+            raise ValueError(
+                "ml.anomaly night_start_hour and night_end_hour must be 0..23 and differ"
+            )
+        if not 10 <= self.n_estimators <= 2000:
+            raise ValueError("ml.anomaly n_estimators must be between 10 and 2000")
+        if self.max_samples < 2:
+            raise ValueError("ml.anomaly max_samples must be >= 2")
+        if not 0 < self.alert_top_fraction <= 0.1:
+            raise ValueError("ml.anomaly alert_top_fraction must be in (0, 0.1]")
+        if self.min_samples < 2:
+            raise ValueError("ml.anomaly min_samples must be >= 2")
+        if not 1 <= self.top_deviations <= 14:
+            raise ValueError("ml.anomaly top_deviations must be between 1 and 14")
+        return self
+
+
+class ScreeningMlLogRegConfig(BaseModel):
+    c: float  # inverse regularisation strength, > 0
+    max_iter: int  # >= 1
+
+
+class ScreeningMlConfig(BaseModel):  # Phase 7b-ii; kept out of `screening` so config_hash is stable
+    simulate_fraction: float  # (0, 1]; share of the watchlist entries that get simulated labels
+    simulated_actor: str  # actor of the simulated labels; differs from audit.system_actor
+    use_human_reviews: bool  # a person's TRUE_MATCH / FALSE_MATCH review is a label and wins
+    cv_folds: int  # >= 2
+    top_features: int  # >= 1; contributing features stored with each score
+    logreg: ScreeningMlLogRegConfig
+
+    @model_validator(mode="after")
+    def _in_range(self) -> ScreeningMlConfig:
+        if not 0 < self.simulate_fraction <= 1:
+            raise ValueError("simulate_fraction must be in (0, 1]")
+        if self.cv_folds < 2:
+            raise ValueError("cv_folds must be >= 2")
+        if self.top_features < 1:
+            raise ValueError("top_features must be >= 1")
+        if self.logreg.c <= 0:
+            raise ValueError("logreg c must be > 0")
+        if self.logreg.max_iter < 1:
+            raise ValueError("logreg max_iter must be >= 1")
+        return self
+
+
+MODEL_CARD_NAMES = ("prioritization", "memo_classifier", "anomaly", "screening_match")
+
+
+class GovernanceConfig(BaseModel):  # Phase 7b-iii
+    cards_dir: str  # where `aml models card` writes; relative to the project root
+    models: list[str]  # order of the cards; each one of MODEL_CARD_NAMES, no repeats
+
+    @model_validator(mode="after")
+    def _in_range(self) -> GovernanceConfig:
+        for name in self.models:
+            if name not in MODEL_CARD_NAMES:
+                raise ValueError(f"unknown model card '{name}'")
+        if len(set(self.models)) != len(self.models):
+            raise ValueError("governance models must not repeat")
+        return self
+
+
+class MlConfig(BaseModel):  # Phase 7b; the sibling specs add their own fields
+    anomaly: AnomalyConfig
+    screening: ScreeningMlConfig
+    governance: GovernanceConfig
+
+
 class MetricsConfig(BaseModel):  # Phase 9c
     minutes_per_alert: int  # the stated assumption behind every "hours saved" figure
     sample_size: int  # default size of the below-the-line samples
@@ -749,6 +860,7 @@ class Settings(BaseModel):
     cases: CasesConfig
     assistant: AssistantConfig
     memo: MemoConfig
+    ml: MlConfig
     bench: BenchConfig
     rag_eval: RagEvalConfig
     ui: UiConfig
@@ -766,6 +878,8 @@ class Settings(BaseModel):
     @model_validator(mode="after")
     def _simulated_actor_is_not_the_system(self) -> Settings:
         if self.cases.prioritization.simulated_actor == self.audit.system_actor:
+            raise ValueError("simulated_actor must differ from audit.system_actor")
+        if self.ml.screening.simulated_actor == self.audit.system_actor:
             raise ValueError("simulated_actor must differ from audit.system_actor")
         return self
 

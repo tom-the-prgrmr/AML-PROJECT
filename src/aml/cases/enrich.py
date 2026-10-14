@@ -29,7 +29,7 @@ _DIMENSION = {rule.rule_id: rule.dimension for rule in RULES}
 
 
 @dataclass(frozen=True)
-class _Reference:
+class Reference:
     """Tables read once per run and looked up per case."""
 
     golden: pd.DataFrame  # cif, golden_customer_id, cluster_size
@@ -47,7 +47,7 @@ def _read(db: Database, sql: str) -> pd.DataFrame:
     return lower_columns(db.query_df(sql))
 
 
-def _reference(db: Database, settings: Settings, run_id: int, as_of: date) -> _Reference:
+def read_reference(db: Database, settings: Settings, run_id: int, as_of: date) -> Reference:
     customers = _read(
         db,
         "SELECT cif, kyc_risk, occupation, nationality, gender, dob, id_type FROM customers",
@@ -72,7 +72,7 @@ def _reference(db: Database, settings: Settings, run_id: int, as_of: date) -> _R
         f"AND (x.run_id IN (SELECT run_id FROM case_runs) OR x.run_id = {run_id}))",
     )
     history["window_start"] = pd.to_datetime(history["window_start"])
-    return _Reference(
+    return Reference(
         golden=_read(db, "SELECT cif, golden_customer_id, cluster_size FROM customer_golden"),
         customers=customers,
         accounts=_read(
@@ -93,7 +93,7 @@ def _reference(db: Database, settings: Settings, run_id: int, as_of: date) -> _R
     )
 
 
-def _kyc(ref: _Reference, cifs: list[str]) -> dict[str, Any]:
+def _kyc(ref: Reference, cifs: list[str]) -> dict[str, Any]:
     rows = []
     for cif in cifs:
         if cif not in ref.customers.index:
@@ -118,7 +118,7 @@ def _kyc(ref: _Reference, cifs: list[str]) -> dict[str, Any]:
     }
 
 
-def _linked_cifs(ref: _Reference, golden_id: str, cifs: list[str]) -> dict[str, Any]:
+def _linked_cifs(ref: Reference, golden_id: str, cifs: list[str]) -> dict[str, Any]:
     sizes = ref.golden[ref.golden["golden_customer_id"] == golden_id]["cluster_size"]
     accounts = ref.accounts[ref.accounts["cif"].isin(cifs)].sort_values("account_id")
     er = None
@@ -144,7 +144,7 @@ def _linked_cifs(ref: _Reference, golden_id: str, cifs: list[str]) -> dict[str, 
     }
 
 
-def _dq_issues(ref: _Reference, cifs: list[str], txn_ids: frozenset[str]) -> dict[str, Any]:
+def _dq_issues(ref: Reference, cifs: list[str], txn_ids: frozenset[str]) -> dict[str, Any]:
     customer = [
         {"cif": cif, "rule_id": rule_id, "dimension": _DIMENSION.get(rule_id)}
         for cif in cifs
@@ -162,12 +162,14 @@ def _dq_issues(ref: _Reference, cifs: list[str], txn_ids: frozenset[str]) -> dic
     }
 
 
-def _history(ref: _Reference, case: Any, cifs: list[str]) -> dict[str, Any]:
+def _history(
+    ref: Reference, golden_id: str, case_id: str, window_start: Any, cifs: list[str]
+) -> dict[str, Any]:
     h = ref.history
     mine = h[
-        (h["golden_customer_id"] == case.golden_customer_id)
-        & (h["case_id"] != case.case_id)
-        & (h["window_start"] < pd.Timestamp(case.window_start))
+        (h["golden_customer_id"] == golden_id)
+        & (h["case_id"] != case_id)
+        & (h["window_start"] < pd.Timestamp(window_start))
     ].sort_values(["window_start", "case_id"])
     prior = [
         {
@@ -183,7 +185,7 @@ def _history(ref: _Reference, case: Any, cifs: list[str]) -> dict[str, Any]:
         "prior_cases": prior,
         "prior_alerts": sum(p["alerts"] for p in prior),
         "screening_auto_cleared": sum(ref.cleared.get(c, 0) for c in cifs),
-        "suppressed_items": ref.suppressed.get(str(case.golden_customer_id), 0),
+        "suppressed_items": ref.suppressed.get(golden_id, 0),
     }
 
 
@@ -197,9 +199,53 @@ def _shared_cases(active: pd.DataFrame) -> dict[str, list[str]]:
     return {case_id: sorted(others) for case_id, others in shared.items()}
 
 
-def _cifs_of(ref: _Reference, golden_id: str) -> list[str]:
+def _cifs_of(ref: Reference, golden_id: str) -> list[str]:
     cifs = ref.golden[ref.golden["golden_customer_id"] == golden_id]["cif"]
     return sorted({str(c) for c in cifs}) or [golden_id.removeprefix("G-")]
+
+
+def customer_blocks(
+    db: Database,
+    settings: Settings,
+    ref: Reference,
+    source: str,
+    features: pd.DataFrame,
+    golden_id: str,
+    *,
+    end: pd.Timestamp,
+    case_id: str,
+    window_start: Any,
+    shared: list[str],
+) -> dict[str, dict[str, Any]]:
+    """The six enrichment sections of one golden customer, for a window that ends on ``end``.
+
+    ``case_id`` and ``window_start`` only pick the history (the cases of the customer whose window
+    began earlier); a case run passes the case, the below-the-line sample passes an empty id and
+    the as-of date. ``shared`` lists the other cases that share an alert with the case.
+    """
+    cifs = _cifs_of(ref, golden_id)
+    accounts = ref.accounts[ref.accounts["cif"].isin(cifs)]["account_id"].astype(str).tolist()
+    activity = txn_activity(
+        db,
+        cifs,
+        golden_id,
+        end,
+        days=settings.cases.txn_summary_days,
+        top_n=settings.cases.top_counterparties,
+    )
+    return {
+        "kyc": _kyc(ref, cifs),
+        "linked_cifs": _linked_cifs(ref, golden_id, cifs),
+        "dq_issues": _dq_issues(ref, cifs, activity.txn_ids),
+        "txn_summary": activity.summary,
+        "network": network_block(
+            source,
+            golden_features(features, accounts),
+            activity.counterparties,
+            shared,
+        ),
+        "history": _history(ref, golden_id, case_id, window_start, cifs),
+    }
 
 
 def enrich_cases(
@@ -215,35 +261,17 @@ def enrich_cases(
     source = choose_source(db, settings.cases.graph_features, as_of)
     if cases.empty:
         return source
-    ref = _reference(db, settings, run_id, as_of)
+    ref = read_reference(db, settings, run_id, as_of)
     features = load_features(db, source)
     shared = _shared_cases(active)
     rows = []
     for case in cases.itertuples():
         golden_id, case_id = str(case.golden_customer_id), str(case.case_id)
-        cifs = _cifs_of(ref, golden_id)
-        accounts = ref.accounts[ref.accounts["cif"].isin(cifs)]["account_id"].astype(str).tolist()
-        activity = txn_activity(
-            db,
-            cifs,
-            golden_id,
-            case.last_alert_ts,
-            days=settings.cases.txn_summary_days,
-            top_n=settings.cases.top_counterparties,
-        )
-        blocks = {
-            "kyc": _kyc(ref, cifs),
-            "linked_cifs": _linked_cifs(ref, golden_id, cifs),
-            "dq_issues": _dq_issues(ref, cifs, activity.txn_ids),
-            "txn_summary": activity.summary,
-            "network": network_block(
-                source,
-                golden_features(features, accounts),
-                activity.counterparties,
-                shared.get(case_id, []),
-            ),
-            "history": _history(ref, case, cifs),
-        }
+        blocks = customer_blocks(
+            db, settings, ref, source, features, golden_id,
+            end=case.last_alert_ts, case_id=case_id, window_start=case.window_start,
+            shared=shared.get(case_id, []),
+        )  # fmt: skip
         for section, content in blocks.items():
             rows.append(
                 {

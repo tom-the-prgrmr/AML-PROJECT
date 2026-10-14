@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+from pathlib import Path
 from typing import Any
 
 from aml.common.config import MockConfig
@@ -56,7 +57,8 @@ def test_ac1_no_mock_flag_for_memos() -> None:
     assert set(MockConfig.model_fields) == {"sample"}
 
 
-def test_ac1_ac7_mock_suite_still_green() -> None:
+def test_ac1_ac7_mock_suite_still_green(tmp_path: Path) -> None:
+    # the nested run gets its own basetemp: the default `.pytest_tmp` is the outer run's
     proc = subprocess.run(
         [
             sys.executable,
@@ -66,6 +68,7 @@ def test_ac1_ac7_mock_suite_still_green() -> None:
             "tests/api/test_ac7_mock.py",
             "-p",
             "no:cacheprovider",
+            f"--basetemp={tmp_path / 'inner'}",
         ],
         capture_output=True,
         text=True,

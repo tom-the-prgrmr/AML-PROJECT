@@ -79,9 +79,10 @@ def _table(header: list[str], rows: list[list[str]]) -> list[str]:
 
 def _header(case: CaseView) -> list[str]:
     linked, kyc = case.enrichment["linked_cifs"], case.enrichment["kyc"]
-    by_source = {source: 0 for source in ("RULE", "NETWORK", "SCREENING")}
+    by_source = {source: 0 for source in ("RULE", "NETWORK", "SCREENING", "ANOMALY")}
     for alert in case.alerts:
         by_source[alert.source] += 1
+    anomaly = f", {by_source['ANOMALY']} ANOMALY" if by_source["ANOMALY"] else ""  # Phase 7b-i
     if case.score is None:
         priority = "not scored"
     else:
@@ -105,7 +106,7 @@ def _header(case: CaseView) -> list[str]:
         f"- Customer: {case.golden_customer_id} ({len(linked['cifs'])} CIF(s), "
         f"{len(linked['accounts'])} account(s)), KYC risk {kyc['risk_rating'] or 'unknown'}",
         f"- Alerts: {len(case.alerts)} ({by_source['RULE']} RULE, {by_source['NETWORK']} NETWORK, "
-        f"{by_source['SCREENING']} SCREENING) between {_ts(case.first_alert_ts)} and "
+        f"{by_source['SCREENING']} SCREENING{anomaly}) between {_ts(case.first_alert_ts)} and "
         f"{_ts(case.last_alert_ts)}",
         f"- Priority: {priority}",
         f"- Disposition: {disposition}",

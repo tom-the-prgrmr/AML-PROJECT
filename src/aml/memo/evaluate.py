@@ -204,6 +204,7 @@ def run_memo_eval(
         details={
             key: result[key]
             for key in ("gold", "n", "correct", "accuracy", "by_category", "by_source", "by_method")
-        },
+        }
+        | {"model": model},  # the LLM is named in the details too, not only in the reason
     )
     return result

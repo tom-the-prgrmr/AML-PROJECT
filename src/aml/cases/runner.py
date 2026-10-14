@@ -30,7 +30,7 @@ OPEN, REOPENED, CLOSED = "OPEN", "REOPENED", "CLOSED"
 ACTIVE, SUPPRESSED = "ACTIVE", "SUPPRESSED"
 SECTIONS = ("kyc", "linked_cifs", "dq_issues", "txn_summary", "network", "history")
 
-_SOURCES = ("RULE", "NETWORK", "SCREENING")
+_SOURCES = ("RULE", "NETWORK", "SCREENING", "ANOMALY")
 _ALERT_COLUMNS = [
     "run_id", "item_key", "golden_customer_id", "case_id", "source", "rule_id", "alert_ref", "cif",
     "entry_id", "event_ts", "end_ts", "amount_vnd", "txn_count", "status", "suppression_rule",
@@ -101,10 +101,11 @@ def _case_rows(run_id: int, active: pd.DataFrame, window_days: int) -> pd.DataFr
         counts = {s: int((g["source"] == s).sum()) for s in _SOURCES}
         golden = str(g["golden_customer_id"].iloc[0])
         first, last = g["event_ts"].min(), g["end_ts"].max()
+        anomaly = f", {counts['ANOMALY']} ANOMALY" if counts["ANOMALY"] else ""  # Phase 7b-i
         reason = (
             f"{len(g)} alert(s) ({counts['RULE']} RULE, {counts['NETWORK']} NETWORK, "
-            f"{counts['SCREENING']} SCREENING) on {golden} between {_ts(first)} and {_ts(last)}; "
-            f"window of {window_days} days from the first alert"
+            f"{counts['SCREENING']} SCREENING{anomaly}) on {golden} between {_ts(first)} and "
+            f"{_ts(last)}; window of {window_days} days from the first alert"
         )
         rows.append(
             {

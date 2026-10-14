@@ -1,0 +1,70 @@
+{
+  "model": {
+    "version": "prio/logreg/4",
+    "kind": "logreg",
+    "model_id": 4,
+    "seed": 42,
+    "cases": 283,
+    "suspicious": 249,
+    "false_positive": 34
+  },
+  "cv": {
+    "n": 283,
+    "n_suspicious": 249,
+    "n_false_positive": 34,
+    "prevalence": 0.8799,
+    "roc_auc": 0.9466,
+    "pr_auc": 0.9878,
+    "precision_at": {
+      "0.1": 1.0,
+      "0.2": 0.9825,
+      "0.5": 0.993
+    },
+    "recall_at": {
+      "0.1": 0.1165,
+      "0.2": 0.2249,
+      "0.5": 0.5663
+    },
+    "tail_false_positive_share": {
+      "0.1": 0.7059,
+      "0.2": 0.8529,
+      "0.5": 0.9706
+    },
+    "tail_suspicious": {
+      "0.1": 5,
+      "0.2": 28,
+      "0.5": 109
+    },
+    "population": "alerted cases only; below-the-line sample: run `aml cases btl` (Phase 7b)"
+  },
+  "holdout": {
+    "n": 114,
+    "n_suspicious": 97,
+    "n_false_positive": 17,
+    "prevalence": 0.8509,
+    "roc_auc": 0.8617,
+    "pr_auc": 0.9697,
+    "precision_at": {
+      "0.1": 1.0,
+      "0.2": 1.0,
+      "0.5": 0.9474
+    },
+    "recall_at": {
+      "0.1": 0.1237,
+      "0.2": 0.2371,
+      "0.5": 0.5567
+    },
+    "tail_false_positive_share": {
+      "0.1": 0.5882,
+      "0.2": 0.7059,
+      "0.5": 0.8235
+    },
+    "tail_suspicious": {
+      "0.1": 2,
+      "0.2": 11,
+      "0.5": 43
+    },
+    "excluded_trained": 46,
+    "population": "alerted cases only; below-the-line sample: run `aml cases btl` (Phase 7b)"
+  }
+}
