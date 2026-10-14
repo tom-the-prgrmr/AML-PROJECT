@@ -94,14 +94,22 @@ class Feedback:
 
 
 def record_feedback(
-    db: Database, settings: Settings, answer_id: str, rating: str, *, comment: str | None, actor: str
+    db: Database,
+    settings: Settings,
+    answer_id: str,
+    rating: str,
+    *,
+    comment: str | None,
+    actor: str,
 ) -> Feedback: ...  # kiểm mọi thứ trước khi ghi; đúng 1 dòng audit ANSWER_RATED
 
 
 # src/aml/metrics/  (chỉ đọc; không import aml.api, fastapi; không audit)
 def funnel(db: Database, settings: Settings) -> dict[str, Any]: ...
 def detections(db: Database, settings: Settings) -> dict[str, Any]: ...
-def auto_cleared_sample(db: Database, settings: Settings, *, size: int | None = None) -> dict[str, Any]: ...
+def auto_cleared_sample(
+    db: Database, settings: Settings, *, size: int | None = None
+) -> dict[str, Any]: ...
 def suppression(db: Database, settings: Settings, *, size: int | None = None) -> dict[str, Any]: ...
 
 
@@ -110,11 +118,17 @@ def case_scores(db: Database) -> dict[str, Any]: ...  # đọc sql/common/api/ca
 
 
 # src/aml/api/assistant.py — bộ nối mỏng: gọi 7d / 8c, dịch lỗi, không SQL, không audit(
-def case_summary(db: Database, settings: Settings, case_id: str, language: str | None) -> dict[str, Any]: ...
+def case_summary(
+    db: Database, settings: Settings, case_id: str, language: str | None
+) -> dict[str, Any]: ...
 def ask(db, settings, user: User, case_id: str, question: str, language: str) -> dict[str, Any]: ...
-def narrative(db, settings, user: User, case_id: str, language: str) -> tuple[dict[str, Any], str]: ...  # (data, knowledge)
+def narrative(
+    db, settings, user: User, case_id: str, language: str
+) -> tuple[dict[str, Any], str]: ...  # (data, knowledge)
 def typologies(db, settings, case_id: str) -> tuple[dict[str, Any], str]: ...
-def feedback(db, settings, user: User, answer_id: str, rating: str, comment: str | None) -> dict[str, Any]: ...
+def feedback(
+    db, settings, user: User, answer_id: str, rating: str, comment: str | None
+) -> dict[str, Any]: ...
 ```
 - Router mới: `routers/case_insights.py` (`/cases/scores`, `/cases/{case_id}/summary`; đăng ký **trước**
   `routers/cases.py` trong `create_app`), `routers/assistant.py` (chat, narrative, typologies, feedback),
