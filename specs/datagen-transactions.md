@@ -97,6 +97,7 @@ structuring_band_pct=0.10, duplicate_rate=0.02, injection_memos=6, typology_coun
 - Ràng buộc counterparty là bất biến cứng cho account `CURRENT` (ở 1b-ii: account `CURRENT` không thuộc `ground_truth`); thiếu giao dịch để đạt mức tối thiểu thì raise `ValueError` (Q8).
 - Mỗi cif 1 `CURRENT`; `SAVINGS` với xác suất 0.35, `CARD` với xác suất 0.45; branch chọn đều trong 50 mã (Q11).
 - Config `data.injection_memos: 30` (Q3).
+- Bổ sung 2026-10-13 (`specs/datagen-memos.md`): `TxnGenParams` có thêm `risk_memo_background_rate`, `risk_memo_typology_rate`, `risk_memo_gambling_share` (mặc định 0.0 / 0.0 / 0.5 nên fixture F không đổi); `memos.py` có thêm `GAMBLING_MEMOS`, `CRYPTO_MEMOS`; khi cài injection, ô memo rỗng (None / NaN / chuỗi rỗng) nhận `Chuyển khoản`.
 
 ## Câu hỏi mở
 - [x] Q1. Tách spec? — đề xuất mặc định: tách 1b-i / 1b-ii. — Trả lời: tách; file này là 1b-i.
