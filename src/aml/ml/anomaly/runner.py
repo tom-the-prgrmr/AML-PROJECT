@@ -22,6 +22,7 @@ from aml.cases.values import lower_columns
 from aml.common.audit import AuditEvent, audit_many
 from aml.common.config import Settings
 from aml.common.db import Database
+from aml.ml.anomaly.case_features import anomaly_schema_ready
 from aml.ml.anomaly.features import (
     ANOMALY_FEATURES,
     ANOMALY_VERSION,
@@ -96,6 +97,8 @@ def _scalar(db: Database, sql: str) -> int:
 
 
 def _check_data(db: Database) -> None:
+    if not anomaly_schema_ready(db):
+        raise AnomalyError("anomaly tables are missing; run `aml init-db` first")
     exists = (
         "SELECT COUNT(*) FROM user_tables WHERE table_name = 'TRANSACTIONS'"
         if db.backend == "oracle"

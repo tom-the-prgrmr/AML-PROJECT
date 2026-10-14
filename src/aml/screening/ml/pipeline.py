@@ -27,7 +27,7 @@ from aml.screening.ml.model import (
     fit_match_model,
     predict,
 )
-from aml.screening.ml.store import count, json_value, next_id, run_query, text
+from aml.screening.ml.store import count, json_value, next_id, require_schema, run_query, text
 
 __all__ = ["MatchScoringRun", "MatchTrainingRun", "read_model", "score", "train"]
 
@@ -149,6 +149,7 @@ def train(db: Database, settings: Settings, *, actor: str | None = None) -> Matc
 
 def read_model(db: Database, model_id: int | None = None) -> tuple[int, str, MatchModel]:
     """A stored model by id, or the newest one; `ScreeningMlError` when there is none."""
+    require_schema(db)
     df = (
         run_query(db, "model_active")
         if model_id is None

@@ -10,6 +10,27 @@ import pandas as pd
 from aml.common.db import Database
 
 VERSION = "screening-ml/v1"  # version of the label / feature steps on audit rows
+TABLES = (
+    "screening_ml_labels",
+    "screening_ml_features",
+    "screening_ml_models",
+    "screening_ml_scores",
+)
+
+
+def schema_ready(db: Database) -> bool:
+    """True when the DDL 210 tables exist; any other database error is not swallowed."""
+    names = ", ".join(f"'{t.upper() if db.backend == 'oracle' else t}'" for t in TABLES)
+    source = "user_tables" if db.backend == "oracle" else "information_schema.tables"
+    n = db.query_df(f"SELECT COUNT(*) FROM {source} WHERE table_name IN ({names})").iloc[0, 0]
+    return int(n) == len(TABLES)
+
+
+def require_schema(db: Database) -> None:
+    from aml.screening.ml.model import ScreeningMlError  # model.py is pure; imported lazily
+
+    if not schema_ready(db):
+        raise ScreeningMlError("screening-ml tables are missing; run `aml init-db` first")
 
 
 def run_query(db: Database, name: str, **ints: int) -> pd.DataFrame:

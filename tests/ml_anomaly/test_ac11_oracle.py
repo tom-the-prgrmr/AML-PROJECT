@@ -43,13 +43,16 @@ def _max(db: Database, table: str) -> int:
 
 
 def _forget(db: Database, monitoring_floor: int, anomaly_floor: int) -> None:
-    """Remove the anomaly rows written after the floors (also those of a run that died half way)."""
+    """Remove the anomaly rows written after the floors (also those of a run that died half way).
+
+    The `monitoring_runs` row stays: its audit rows cannot be removed and name its run id, so
+    freeing the id would make the next monitoring run (another test) inherit those audit rows.
+    """
     alerts = f"SELECT alert_id FROM alerts WHERE source = 'ANOMALY' AND run_id > {monitoring_floor}"
     for sql in (
         f"DELETE FROM alert_evidence WHERE alert_id IN ({alerts})",
         f"DELETE FROM alert_accounts WHERE alert_id IN ({alerts})",
         f"DELETE FROM alerts WHERE source = 'ANOMALY' AND run_id > {monitoring_floor}",
-        f"DELETE FROM monitoring_runs WHERE rule_id = 'ML_ANOMALY' AND run_id > {monitoring_floor}",
         f"DELETE FROM anomaly_scores WHERE run_id > {anomaly_floor}",
         f"DELETE FROM anomaly_runs WHERE run_id > {anomaly_floor}",
     ):

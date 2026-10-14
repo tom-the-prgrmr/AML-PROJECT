@@ -20,7 +20,7 @@ from aml.common.audit import AuditEvent, audit_many
 from aml.common.config import Settings
 from aml.common.db import Database
 from aml.screening.ml.model import ScreeningMlError
-from aml.screening.ml.store import VERSION, count, next_id, run_query
+from aml.screening.ml.store import VERSION, count, next_id, require_schema, run_query
 from aml.screening.review import latest_reviews
 
 __all__ = ["LabelSimulation", "simulate_labels", "training_labels"]
@@ -45,6 +45,7 @@ class LabelSimulation:
 
 
 def _current(db: Database) -> pd.DataFrame:
+    require_schema(db)
     try:
         df = run_query(db, "current_pairs")
     except Exception as exc:  # the table is missing: driver-specific error types

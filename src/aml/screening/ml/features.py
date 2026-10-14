@@ -25,7 +25,7 @@ from aml.screening.matching import (
     load_inputs,
 )
 from aml.screening.ml.model import ScreeningMlError
-from aml.screening.ml.store import run_query
+from aml.screening.ml.store import require_schema, run_query
 from aml.screening.normalize import normalize_name
 from aml.screening.scoring import score_names
 from aml.screening.state import load_token_stats
@@ -158,6 +158,7 @@ def _rows(
 
 def write_features(db: Database, settings: Settings) -> int:
     """Store the features of the current hits that have none yet; return the pairs written."""
+    require_schema(db)
     try:
         stats = load_token_stats(db)
     except Exception as exc:  # the table is missing: driver-specific error types
