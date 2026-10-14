@@ -9,16 +9,16 @@ export default function Pager(props: {
   const { offset, limit, total, shown, onPage } = props;
   const end = offset + shown;
   return (
-    <div className="toolbar">
+    <nav className="pager" aria-label="Phân trang">
+      <span className="pager-range">
+        {total === 0 ? 0 : offset + 1}-{end} / {total}
+      </span>
       <button type="button" disabled={offset === 0} onClick={() => onPage(Math.max(0, offset - limit))}>
         Trang trước
       </button>
-      <span className="muted">
-        {total === 0 ? 0 : offset + 1}-{end} / {total}
-      </span>
       <button type="button" disabled={end >= total} onClick={() => onPage(offset + limit)}>
         Trang sau
       </button>
-    </div>
+    </nav>
   );
 }

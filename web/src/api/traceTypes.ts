@@ -2,6 +2,7 @@
 
 export interface TraceMethodInfo {
   method: string;
+  /** English name from the API; the UI shows `traceMethodLabel(method)` instead. */
   label: string;
   exact: boolean;
   uses_filters: boolean;

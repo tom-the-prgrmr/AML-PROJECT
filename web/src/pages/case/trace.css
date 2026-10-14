@@ -1,24 +1,106 @@
-.trace-method {
-  display: block;
-  margin: 0.25rem 0;
+/* Fund-flow trace panel: compact form row, method cards, results table. Tokens only. */
+.trace-form {
+  display: grid;
+  gap: var(--space-4);
 }
-
-.trace-method.disabled {
-  opacity: 0.6;
+.trace-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3) var(--space-4);
 }
-
-.trace-reason {
-  margin-left: 1.5rem;
-}
-
-.trace-summary {
-  margin: 0.75rem 0 0.25rem;
-}
-
-.trace-row {
-  cursor: pointer;
-}
-
-.trace-row.cycle td {
+.trace-field {
+  display: grid;
+  gap: var(--space-1);
+  width: 140px;
   font-weight: 600;
+}
+.trace-field-wide {
+  flex: 1 1 220px;
+  width: auto;
+  max-width: 360px;
+}
+.trace-help {
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+.trace-methods {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+}
+.trace-method-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-2);
+}
+.trace-method {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition:
+    border-color var(--transition),
+    background-color var(--transition);
+}
+.trace-method:hover {
+  border-color: var(--color-border-strong);
+}
+.trace-method.checked {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+.trace-method.disabled {
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+.trace-method.disabled:hover {
+  border-color: var(--color-border);
+}
+.trace-method input {
+  margin-top: 3px;
+}
+.trace-method-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.trace-method-name {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+.trace-reason {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+.trace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.trace-summary {
+  margin: 0 0 var(--space-3);
+  line-height: 1.7;
+}
+.trace-summary .badge {
+  margin-left: var(--space-2);
+}
+.trace-chain .code {
+  white-space: nowrap;
+}
+.trace-arrow {
+  color: var(--color-text-muted);
+}
+.trace-cycle {
+  margin-left: var(--space-2);
 }

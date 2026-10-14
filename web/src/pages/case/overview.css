@@ -1,30 +1,105 @@
-.case-header dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0 0 8px; }
-.case-header dt { font-weight: 600; }
-.case-header dd { margin: 0; }
+/* Case queue and case overview. Colours, spacing and type come from the tokens in styles.css. */
+
+/* Header of a case: the facts of the case next to the recorded decision. */
+.case-header {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  gap: var(--space-4);
+  align-items: stretch;
+  margin-bottom: var(--space-4);
+}
+.case-header > .panel {
+  min-width: 0;
+  margin-bottom: 0;
+}
+.case-header .kv {
+  gap: var(--space-2) var(--space-4);
+}
+.case-note {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+/* A badge inside a summary tile keeps its own size and does not stretch. */
+.stat-value .badge {
+  align-self: flex-start;
+  font-size: var(--text-sm);
+}
+/* Free text typed by a user: keep its line breaks. */
+.free-text {
+  white-space: pre-wrap;
+}
+
 /* Blocks are wide enough for their tables; each block is as tall as its own content. */
 .enrich-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
-  gap: 12px;
+  gap: var(--space-3);
   align-items: start;
 }
 /* min-width: 0 lets a block shrink inside the grid; a table that is still too wide scrolls
    inside its own block and never runs over the next one. */
 .enrich-block {
-  border: 1px solid #d9e2ec;
-  border-radius: 6px;
-  padding: 8px 12px;
   min-width: 0;
+  margin-bottom: 0;
+  padding: var(--space-4);
   overflow-x: auto;
 }
-.enrich-block h3 { margin: 0 0 8px; font-size: 1rem; }
-.enrich-block table.data { margin-top: 8px; font-size: 0.9rem; }
+.enrich-block h3 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-base);
+}
+.enrich-block .kv {
+  gap: var(--space-1) var(--space-3);
+  margin-bottom: 0;
+}
+.enrich-block table.data {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+}
 .enrich-block table.data th,
-.enrich-block table.data td { white-space: nowrap; }
-.enrich-block dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; }
-.enrich-block dl > div { display: contents; }
-.enrich-block dd { margin: 0; }
-.memo-cell { white-space: pre-wrap; word-break: break-word; max-width: 360px; }
+.enrich-block table.data td {
+  white-space: nowrap;
+}
+.enrich-block .empty-state {
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+}
 
+/* Evidence tables. */
+.nowrap {
+  white-space: nowrap;
+}
+.memo-cell {
+  max-width: 360px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 /* The alert reason is a sentence: keep the column wide enough to read. */
-.reason-cell { min-width: 360px; }
+.reason-cell {
+  min-width: 360px;
+}
+/* Several badges in one cell (the sources of a case). */
+.badge-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+/* Disposition form. */
+.field-hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+.form-saved {
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success-fg);
+}
+
+/* Alerts behind a transaction: one rule per line. */
+.item-key + .item-key {
+  margin-top: var(--space-1);
+}

@@ -1,3 +1,51 @@
-.case-graph .graph-detail { margin: 8px 0 0; padding: 8px; background: #f0f4f8; border-radius: 4px; }
-.case-graph .graph-legend { display: flex; gap: 12px; flex-wrap: wrap; margin: 0 0 8px; font-size: 0.85rem; }
-.case-graph .graph-missing { color: #8d2b0b; margin: 8px 0 0; }
+/* Layout around the Cytoscape canvas. The colours of the drawing itself live in CaseGraph.tsx. */
+.case-graph .graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.case-graph .graph-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.case-graph .graph-legend-mark {
+  flex: none;
+}
+.case-graph .graph-canvas {
+  height: 460px;
+}
+.case-graph .graph-hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+}
+.case-graph .graph-detail {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+}
+.case-graph .graph-detail h3 {
+  margin-bottom: var(--space-2);
+}
+.case-graph .graph-detail .kv {
+  margin: 0;
+}
+.case-graph .graph-detail-line {
+  display: block;
+}
+.case-graph .graph-missing {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-fg);
+}

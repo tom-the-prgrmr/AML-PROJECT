@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ApiError, apiGet, clearStoredUser, getStoredUser, storeUser } from "../api/client";
 import type { Me } from "../api/types";
+import { piiLabel, roleLabel } from "../i18n";
 
 /** Shows the current actor and role, and lets the user switch to another actor. */
 export default function UserSwitch({ onChange }: { onChange: () => void }) {
@@ -32,8 +33,9 @@ export default function UserSwitch({ onChange }: { onChange: () => void }) {
   if (!me) return <div className="user-switch muted">Chưa xác định người dùng</div>;
   return (
     <div className="user-switch">
-      <span>
-        <strong>{me.actor}</strong> / {me.role}
+      <span className="user-name">{me.actor}</span>
+      <span className="badge badge-info" title={piiLabel(me.pii)}>
+        {roleLabel(me.role)}
       </span>
       <select
         aria-label="Đổi người dùng"

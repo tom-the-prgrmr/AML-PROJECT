@@ -29,6 +29,7 @@ export interface GraphData {
 
 export interface GraphMeta {
   graph_source: string;
+  backend?: string;
   counterparties: { total: number; shown: number };
   truncated: boolean;
   window_start: string | null;
