@@ -111,21 +111,46 @@ ANOMALY_FEATURES = (
 )  # fmt: skip
 GRAPH_FEATURES = ("in_degree", "out_degree", "pagerank_ratio", "shared_cluster_size")
 FEATURE_DOCS: dict[str, str]  # một câu tiếng Anh cho mỗi feature (cho model card)
-LEG_COLUMNS = ("cif", "account_id", "txn_id", "txn_ts", "direction", "amount_vnd", "counterparty_id", "channel")
-SAMPLE_COLUMNS = ("cif", "month", "window_start", "window_end", "first_ts", "last_ts", "txn_count", "amount_vnd", "accounts")
+LEG_COLUMNS = (
+    "cif",
+    "account_id",
+    "txn_id",
+    "txn_ts",
+    "direction",
+    "amount_vnd",
+    "counterparty_id",
+    "channel",
+)
+SAMPLE_COLUMNS = (
+    "cif",
+    "month",
+    "window_start",
+    "window_end",
+    "first_ts",
+    "last_ts",
+    "txn_count",
+    "amount_vnd",
+    "accounts",
+)
 
 
 def build_samples(
     legs: pd.DataFrame, graph: pd.DataFrame, *, as_of: date, start_date: date, cfg: AnomalyConfig
-) -> pd.DataFrame: ...  # một dòng mỗi (cif, month) có >= 1 leg; SAMPLE_COLUMNS + ANOMALY_FEATURES; sắp (cif, month)
+) -> (
+    pd.DataFrame
+): ...  # một dòng mỗi (cif, month) có >= 1 leg; SAMPLE_COLUMNS + ANOMALY_FEATURES; sắp (cif, month)
 
 
 # src/aml/ml/anomaly/model.py  (thuần)
-def fit_score(X: pd.DataFrame, cfg: AnomalyConfig, *, seed: int) -> pd.Series: ...  # điểm làm tròn 6, cùng index
+def fit_score(
+    X: pd.DataFrame, cfg: AnomalyConfig, *, seed: int
+) -> pd.Series: ...  # điểm làm tròn 6, cùng index
 def rank_scores(scores: pd.Series) -> pd.Series: ...  # 1..n theo (điểm giảm, cif tăng, month tăng)
 def alert_count(n: int, fraction: float) -> int: ...  # ceil(round(fraction * n, 9)); n = 0 -> 0
 def top_deviations(X: pd.DataFrame, key: tuple[str, str], k: int) -> list[dict[str, Any]]: ...
-def data_hash(X: pd.DataFrame) -> str: ...  # 16 hex đầu của SHA-256 trên CSV của X (index cif, month)
+def data_hash(
+    X: pd.DataFrame,
+) -> str: ...  # 16 hex đầu của SHA-256 trên CSV của X (index cif, month)
 
 
 # src/aml/ml/anomaly/runner.py
@@ -152,7 +177,9 @@ class AnomalyRun:
     seconds: float
 
 
-def detect_anomalies(db: Database, settings: Settings, *, as_of: date | None = None) -> pd.DataFrame: ...  # không ghi
+def detect_anomalies(
+    db: Database, settings: Settings, *, as_of: date | None = None
+) -> pd.DataFrame: ...  # không ghi
 def run_anomaly(
     db: Database, settings: Settings, *, as_of: date | None = None, actor: str | None = None
 ) -> AnomalyRun: ...
@@ -163,12 +190,20 @@ COVERAGE_COLUMNS = [
     "typology", "is_suspicious", "scenarios", "flagged_rules", "flagged_anomaly", "flagged_any",
     "new_by_anomaly", "accounts", "accounts_rules", "accounts_anomaly", "accounts_new",
 ]  # fmt: skip
-def anomaly_coverage(db: Database) -> pd.DataFrame: ...  # một dòng mỗi typology của TYPOLOGY_KEYS có scenario
-def evaluate_anomaly(db: Database, settings: Settings) -> dict[str, Any]: ...  # tóm tắt + coverage; không ghi
+
+
+def anomaly_coverage(
+    db: Database,
+) -> pd.DataFrame: ...  # một dòng mỗi typology của TYPOLOGY_KEYS có scenario
+def evaluate_anomaly(
+    db: Database, settings: Settings
+) -> dict[str, Any]: ...  # tóm tắt + coverage; không ghi
 
 
 # src/aml/ml/anomaly/card.py  (đường dẫn mà specs/ml-governance.md CARD_SOURCES trỏ tới)
-def card_facts(db: Database, settings: Settings, run_id: int | None = None) -> dict[str, Any]: ...  # Q16
+def card_facts(
+    db: Database, settings: Settings, run_id: int | None = None
+) -> dict[str, Any]: ...  # Q16
 
 
 # src/aml/ml/anomaly/case_features.py  (nối vào 7c như 8d)
@@ -179,7 +214,9 @@ ANOMALY_FEATURE_TAG = "+anom/v1"
 
 def write_anomaly_features(db: Database, settings: Settings, run_id: int) -> int: ...
 def read_anomaly_features(db: Database, settings: Settings, run_id: int) -> pd.DataFrame | None: ...
-def decided_anomaly_features(db: Database, settings: Settings, decided: pd.DataFrame) -> pd.DataFrame | None: ...
+def decided_anomaly_features(
+    db: Database, settings: Settings, decided: pd.DataFrame
+) -> pd.DataFrame | None: ...
 ```
 - `config.yaml`: section cấp cao nhất mới `ml: {anomaly: {baseline_days: 90, min_baseline_days: 28, night_start_hour: 22,
   night_end_hour: 6, n_estimators: 200, max_samples: 256, alert_top_fraction: 0.005, min_samples: 50, top_deviations: 3,

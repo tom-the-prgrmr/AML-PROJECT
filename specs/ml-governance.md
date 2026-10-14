@@ -102,7 +102,9 @@ SUSPICIOUS, NOT_SUSPICIOUS = "SUSPICIOUS", "NOT_SUSPICIOUS"
 
 
 def seeded_positions(seed: int, population: int, size: int) -> list[int]: ...  # thuần
-def wilson_interval(k: int, n: int) -> tuple[float | None, float | None]: ...  # thuần, z = 1.959964, làm tròn 4
+def wilson_interval(
+    k: int, n: int
+) -> tuple[float | None, float | None]: ...  # thuần, z = 1.959964, làm tròn 4
 
 
 @dataclass(frozen=True)
@@ -113,7 +115,9 @@ class BtlMember:
     reason: str
 
 
-def btl_label(golden_customer_id: str, run_id: int, typologies: Sequence[str]) -> BtlMember: ...  # thuần
+def btl_label(
+    golden_customer_id: str, run_id: int, typologies: Sequence[str]
+) -> BtlMember: ...  # thuần
 
 
 @dataclass(frozen=True)
@@ -140,7 +144,9 @@ def draw_sample(
 def write_btl_features(db: Database, settings: Settings, sample_id: int) -> int: ...
 def read_btl_features(
     db: Database, settings: Settings, sample_id: int, *, memo: bool = False
-) -> pd.DataFrame: ...  # index golden_customer_id tăng dần; cột FEATURES (+ MEMO_FEATURES khi memo=True)
+) -> (
+    pd.DataFrame
+): ...  # index golden_customer_id tăng dần; cột FEATURES (+ MEMO_FEATURES khi memo=True)
 
 
 # src/aml/cases/btl_model.py
@@ -150,7 +156,9 @@ class BtlEvaluation:
     sample_id: int
     model_id: int
     version: str
-    metrics: dict[str, Any]  # ranking_metrics của 7c trên mẫu + {"population", "estimated_missed", "prevalence_ci95"}
+    metrics: dict[
+        str, Any
+    ]  # ranking_metrics của 7c trên mẫu + {"population", "estimated_missed", "prevalence_ci95"}
 
 
 @dataclass(frozen=True)
@@ -170,14 +178,20 @@ def train_with_btl(
 
 
 # src/aml/cases/model.py (7c) — thêm tham số tuỳ chọn, mặc định giữ nguyên hành vi
-def fit_model(X, y, groups, cfg, *, seed, kind=None, populations: pd.Series | None = None) -> TrainedModel: ...
+def fit_model(
+    X, y, groups, cfg, *, seed, kind=None, populations: pd.Series | None = None
+) -> TrainedModel: ...
+
+
 # populations (index như X, giá trị "alerted" | "below_the_line") -> metrics thêm khoá
 # "by_population": {tên: ranking_metrics trên điểm out-of-fold của nhóm dòng đó}
 
 
 # src/aml/governance/cards.py  (render thuần + ghi file)
 MODEL_CARDS = ("prioritization", "memo_classifier", "anomaly", "screening_match")
-CARD_SOURCES: dict[str, str]  # tên -> "module:hàm", cả bốn ở aml.governance.sources; anomaly_facts bọc dict của
+CARD_SOURCES: dict[
+    str, str
+]  # tên -> "module:hàm", cả bốn ở aml.governance.sources; anomaly_facts bọc dict của
 # aml.ml.anomaly.card.card_facts (7b-i Q16); screening_match_facts đọc thẳng bảng screening_ml_* (7b-ii Q13).
 # Mỗi adapter probe module của spec anh em (aml.ml.anomaly.card / aml.screening.ml.pipeline) qua importlib.
 NEVER_ACTS = "This model never closes, clears, files or dispositions anything."
@@ -225,10 +239,17 @@ class CardReport:
 
 
 def render_card(facts: CardFacts) -> str: ...  # thuần, tất định
-def collect_facts(db: Database, settings: Settings, names: Sequence[str]) -> list[CardFacts | Skipped]: ...
+def collect_facts(
+    db: Database, settings: Settings, names: Sequence[str]
+) -> list[CardFacts | Skipped]: ...
 def write_cards(
-    db: Database, settings: Settings, *, out_dir: Path | None = None,
-    names: Sequence[str] | None = None, check: bool = False, actor: str | None = None,
+    db: Database,
+    settings: Settings,
+    *,
+    out_dir: Path | None = None,
+    names: Sequence[str] | None = None,
+    check: bool = False,
+    actor: str | None = None,
 ) -> CardReport: ...
 
 
@@ -238,7 +259,9 @@ class ModelDecision:
     module: str
     decision: str
     registry: str  # "case_models" | "memo" | "anomaly_runs" | "screening_ml_models"
-    rule_id: str | None = None  # chỉ xét dòng có details.rule_id bằng giá trị này (ALERT của ML_ANOMALY)
+    rule_id: str | None = (
+        None  # chỉ xét dòng có details.rule_id bằng giá trị này (ALERT của ML_ANOMALY)
+    )
 
 
 @dataclass(frozen=True)
@@ -250,16 +273,33 @@ class VersionGap:
     problem: str  # "missing version" | "unknown version" | "missing details.model"
 
 
-MODEL_DECISIONS: tuple[ModelDecision, ...]  # 11 cặp của mục Thiết kế (6 của 7c / 8d, 2 của 7b-i, 3 của 7b-ii)
+MODEL_DECISIONS: tuple[
+    ModelDecision, ...
+]  # 11 cặp của mục Thiết kế (6 của 7c / 8d, 2 của 7b-i, 3 của 7b-ii)
+
+
 def version_gaps(db: Database, *, since: datetime | None = None) -> list[VersionGap]: ...
 
 
 # src/aml/governance/guard.py
 SCANNED: tuple[str, ...]  # glob tương đối với src/aml
 ALLOWED_WRITERS: dict[str, str]  # module -> lý do; module trong đây không bị quét
-FORBIDDEN_CALLS = ("record_disposition", "add_good_guys", "record_review", "simulate_dispositions", "run_cases")
+FORBIDDEN_CALLS = (
+    "record_disposition",
+    "add_good_guys",
+    "record_review",
+    "simulate_dispositions",
+    "run_cases",
+)
 FORBIDDEN_DECISIONS = (
-    "SUSPICIOUS", "FALSE_POSITIVE", "TRUE_MATCH", "FALSE_MATCH", "AUTO_CLEARED", "CLOSED", "CLEARED", "STR_FILED",
+    "SUSPICIOUS",
+    "FALSE_POSITIVE",
+    "TRUE_MATCH",
+    "FALSE_MATCH",
+    "AUTO_CLEARED",
+    "CLOSED",
+    "CLEARED",
+    "STR_FILED",
 )
 
 
@@ -270,7 +310,9 @@ class Violation:
     what: str
 
 
-def decision_write_violations(root: Path | None = None) -> list[Violation]: ...  # root mặc định = src/aml
+def decision_write_violations(
+    root: Path | None = None,
+) -> list[Violation]: ...  # root mặc định = src/aml
 ```
 - `config.yaml`: `cases.prioritization.below_the_line: {enabled: false, sample_size: 200}`; thêm vào section `ml:` của 7b-i:
   `ml.governance: {cards_dir: docs/models, models: [prioritization, memo_classifier, anomaly, screening_match]}`.
